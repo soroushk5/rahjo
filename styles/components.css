@@ -1,0 +1,164 @@
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: max-content;
+}
+
+.brand-logo__symbol {
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+}
+
+.brand-logo__wordmark {
+  display: grid;
+  gap: 0;
+  line-height: 1;
+}
+
+.brand-logo__fa {
+  color: var(--color-navy-900);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.brand-logo__en {
+  margin-top: 0.22rem;
+  color: var(--color-muted);
+  font: 500 0.72rem/1 var(--font-en);
+  letter-spacing: 0.04em;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 2.85rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 0.8rem;
+  cursor: pointer;
+  font-weight: 650;
+  transition:
+    transform var(--transition),
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button--primary {
+  background: var(--color-navy-900);
+  color: #fff;
+  box-shadow: 0 12px 28px rgb(11 29 51 / 0.2);
+}
+
+.button--primary:hover {
+  background: var(--color-navy-800);
+}
+
+.button--secondary {
+  border: 1px solid var(--color-border);
+  background: white;
+  color: var(--color-navy-900);
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--color-navy-800);
+}
+
+.icon-button {
+  display: inline-grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-navy-800);
+  cursor: pointer;
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.metric-card {
+  min-width: 0;
+  padding: var(--space-5);
+}
+
+.metric-card__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.metric-card__value {
+  margin: 0;
+  color: var(--color-navy-900);
+  font: 700 clamp(1.4rem, 3vw, 2rem)/1.2 var(--font-en);
+}
+
+.metric-card__delta {
+  margin-top: 0.5rem;
+  color: var(--color-success);
+  font: 600 0.78rem/1 var(--font-en);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: max-content;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: #e9f8f2;
+  color: #087451;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.status-badge::before {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.section-heading {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 45rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: var(--color-navy-900);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.section-heading p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+@media (max-width: 700px) {
+  .brand-logo__wordmark {
+    display: none;
+  }
+}

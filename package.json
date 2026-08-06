@@ -1,0 +1,19 @@
+{
+  "name": "rahjo-web-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Rahjo marketing site and product-shell MVP.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "check": "tsc --noEmit --allowJs --checkJs --target ES2022 --module ES2022 --moduleResolution Bundler --lib ES2022,DOM src/**/*.js tests/**/*.mjs",
+    "test": "node --test tests/**/*.test.mjs",
+    "qa": "npm run check && npm run test"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
