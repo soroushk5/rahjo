@@ -9,6 +9,6 @@
     "lib": ["ES2022", "DOM"],
     "strict": true
   },
-  "include": ["src/**/*.js", "tests/**/*.mjs"],
+  "include": ["src/**/*.js"],
   "exclude": ["node_modules"]
 }

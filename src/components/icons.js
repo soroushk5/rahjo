@@ -1,5 +1,6 @@
 /** @param {string} name */
 export function icon(name) {
+  /** @type {Record<string, string>} */
   const icons = {
     dashboard: "▦",
     requests: "◎",

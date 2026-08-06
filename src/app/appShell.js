@@ -3,6 +3,7 @@ import { icon } from "../components/icons.js";
 
 /** @param {{content: string, activePath: string, title: string}} options */
 export function appShell({ content, activePath, title }) {
+  /** @param {string} path @param {string} iconName @param {string} label */
   const navItem = (path, iconName, label) => `
     <a data-link href="${path}" ${activePath === path ? 'aria-current="page"' : ""}>
       <span aria-hidden="true">${icon(iconName)}</span><span>${label}</span>

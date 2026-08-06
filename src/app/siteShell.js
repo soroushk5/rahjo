@@ -2,6 +2,7 @@ import { brandLogo } from "../components/brandLogo.js";
 
 /** @param {{content: string, activePath: string}} options */
 export function siteShell({ content, activePath }) {
+  /** @param {string} path @param {string} label */
   const link = (path, label) => `<a data-link href="${path}" ${activePath === path ? 'aria-current="page"' : ""}>${label}</a>`;
   return `
     <div class="page">

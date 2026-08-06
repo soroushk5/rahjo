@@ -10,6 +10,6 @@ export class MockVerificationGateway {
   async submit(request) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     const suffix = String(Date.now()).slice(-6);
-    return { referenceId: `RH-${request.serviceId.toUpperCase()}-${suffix}`, status: "accepted" };
+    return /** @type {VerificationResponse} */ ({ referenceId: `RH-${request.serviceId.toUpperCase()}-${suffix}`, status: "accepted" });
   }
 }
