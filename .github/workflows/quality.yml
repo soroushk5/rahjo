@@ -1,10 +1,9 @@
 name: Quality
-
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
-
 jobs:
   qa:
     runs-on: ubuntu-latest
@@ -13,7 +12,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install development tools
-        run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Type check and tests
-        run: npm run qa
+      - run: npm install --ignore-scripts
+      - run: npm run qa

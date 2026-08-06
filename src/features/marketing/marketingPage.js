@@ -1,74 +1,16 @@
-import { brandLogo } from "../../components/brandLogo.js";
 import { siteShell } from "../../app/siteShell.js";
-
-function previewChart() {
-  return `
-    <svg viewBox="0 0 480 180" role="img" aria-label="نمودار نمونه درخواست‌ها">
-      <defs>
-        <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#22D3EE" stop-opacity="0.35"/>
-          <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <path d="M10 142 C58 138,78 95,120 108 S182 156,220 94 S294 43,331 83 S392 145,470 42 L470 170 L10 170Z" fill="url(#chartFill)"/>
-      <path d="M10 142 C58 138,78 95,120 108 S182 156,220 94 S294 43,331 83 S392 145,470 42" fill="none" stroke="#22D3EE" stroke-width="4" stroke-linecap="round"/>
-    </svg>`;
-}
-
-export function renderMarketingPage() {
-  const content = `
-    <section class="hero">
-      <div class="hero__grid container">
-        <div>
-          <p class="eyebrow">DATA · VERIFICATION · WORKFLOW</p>
-          <h1>داده‌ها را تأیید کنید؛ با اطمینان تصمیم بگیرید.</h1>
-          <p class="hero__lead">رهجو یک لایه سازمانی برای مدیریت داده، احراز، پیام‌رسانی و گردش‌کارهای قابل ممیزی است؛ بدون ادعای دسترسی یا سرویس اثبات‌نشده.</p>
-          <div class="hero__actions">
-            <a data-link class="button button--primary" href="/request">شروع درخواست نمایشی <span aria-hidden="true">←</span></a>
-            <a data-link class="button button--secondary" href="/dashboard">مشاهده داشبورد</a>
-          </div>
-        </div>
-        <article class="product-preview" aria-label="پیش‌نمایش محصول">
-          <div class="product-preview__bar">${brandLogo()}<span class="status-badge">Demo Mode</span></div>
-          <div class="product-preview__body">
-            <div class="preview-stat-grid">
-              <div class="preview-stat"><strong>99.62%</strong><span>موفقیت پردازش</span></div>
-              <div class="preview-stat"><strong>320ms</strong><span>میانگین پاسخ</span></div>
-              <div class="preview-stat"><strong>128</strong><span>گردش فعال</span></div>
-            </div>
-            <div class="preview-chart"><strong>روند درخواست‌ها</strong>${previewChart()}</div>
-          </div>
-        </article>
-      </div>
-    </section>
-    <section class="trust-strip" aria-label="ارزش‌های برند">
-      <div class="trust-item"><span aria-hidden="true">✓</span><strong>اعتماد</strong><small class="muted">Trust</small></div>
-      <div class="trust-item"><span aria-hidden="true">◎</span><strong>دقت</strong><small class="muted">Accuracy</small></div>
-      <div class="trust-item"><span aria-hidden="true">▱</span><strong>ساختار</strong><small class="muted">Structure</small></div>
-      <div class="trust-item"><span aria-hidden="true">↗</span><strong>هوشمندی</strong><small class="muted">Intelligence</small></div>
-    </section>
-    <section id="solutions" class="solutions">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow">راهکارهای رهجو</p>
-          <h2>از داده خام تا فرایند قابل‌ردیابی</h2>
-          <p>معماری محصول به‌گونه‌ای طراحی شده که منبع داده، تصمیم، پیام و مداخله انسانی در یک مسیر روشن ثبت شوند.</p>
-        </div>
-        <div class="solutions__grid">
-          <article class="solution-card card"><div class="solution-card__icon">◉</div><h3>احراز و تأیید داده</h3><p>تعریف ورودی، هدف، رضایت و خروجی حداقلی پیش از اتصال به هر منبع واقعی.</p></article>
-          <article class="solution-card card"><div class="solution-card__icon">⌘</div><h3>APIهای قابل‌کنترل</h3><p>لایه adapter برای تغییر تأمین‌کننده، fallback و کنترل دسترسی بدون وابستگی صفحات به endpoint.</p></article>
-          <article class="solution-card card"><div class="solution-card__icon">⌁</div><h3>گردش‌کار قابل ممیزی</h3><p>هر درخواست، تصمیم، پیام و بررسی انسانی با شناسه و timeline واحد قابل پیگیری است.</p></article>
-        </div>
-      </div>
-    </section>
-    <section id="contact" class="container">
-      <div class="cta-band">
-        <div class="cta-band__inner">
-          <div><h2>نسخه اولیه را ببینید و معماری را قبل از اتصال داده تثبیت کنید.</h2><p>این MVP صرفاً برای اعتبارسنجی تجربه، ساختار و مسیر محصول است.</p></div>
-          <a data-link class="button button--secondary" href="/request">ورود به جریان درخواست</a>
-        </div>
-      </div>
-    </section>`;
-
-  return siteShell({ content, activePath: "/" });
-}
+import { icon } from "../../components/icons.js";
+import { storyChapters, platformRooms, editorialStories } from "../../data/siteContent.js";
+let activeChapter = "source";
+function chapterNav(){return storyChapters.map(c=>`<button class="chapter-tab" data-chapter="${c.id}" aria-pressed="${activeChapter===c.id}"><span>${c.number}</span>${c.eyebrow}</button>`).join("");}
+function chapterPanel(){const c=storyChapters.find(x=>x.id===activeChapter)??storyChapters[0];return `<article class="story-panel accent-${c.accent}"><div><p class="eyebrow">${c.number} / ${c.eyebrow}</p><h2>${c.title}</h2><p>${c.text}</p></div><div class="artifact-card"><span>${icon("document")}</span><strong>${c.artifact}</strong><small>${c.artifactMeta}</small><div class="artifact-lines"><i></i><i></i><i></i></div></div></article>`;}
+function heroVisual(){return `<div class="story-orbit"><div class="orbit-core"><span>${icon("spark",{size:28})}</span><strong>روایت تصمیم</strong><small>از منبع تا اقدام</small></div><div class="orbit-node n1">منبع</div><div class="orbit-node n2">زمینه</div><div class="orbit-node n3">تصمیم</div><div class="orbit-node n4">پیگیری</div><svg viewBox="0 0 500 500" aria-hidden="true"><circle cx="250" cy="250" r="170"/><circle cx="250" cy="250" r="115"/><path d="M250 80C360 110 420 210 400 315C375 420 260 455 165 405C70 355 45 225 115 135C150 92 198 75 250 80Z"/></svg></div>`;}
+export function renderMarketingPage(){const rooms=platformRooms.map(r=>`<article class="room-card"><span>${icon(r.icon,{size:24})}</span><small>${r.label}</small><h3>${r.title}</h3><p>${r.text}</p></article>`).join("");const stories=editorialStories.map((s,i)=>`<article class="editorial-card ${i===0?'editorial-card--lead':''}"><div class="editorial-card__meta"><span>${s.section}</span><span>${s.time}</span></div><h3>${s.title}</h3><p>${s.dek}</p><footer><span>${s.tag}</span><a data-link href="/stories">ادامه ${icon("arrow")}</a></footer></article>`).join("");const content=`
+<section class="hero hero--story"><div class="container hero__grid"><div><p class="eyebrow">RAHJO · STORY-DRIVEN DATA PLATFORM</p><h1>هر تصمیم، یک داستان داده دارد.</h1><p class="hero__lead">رهجو داده را فقط پاسخ نمی‌دهد؛ مسیر منبع، زمینه، تصمیم و نتیجه را به یک روایت قابل‌فهم و قابل ممیزی تبدیل می‌کند.</p><div class="hero__actions"><a data-link class="button button--primary" href="/dashboard">ورود به میز تصمیم ${icon("arrow")}</a><a data-link class="button button--secondary" href="/map">دیدن نقشه پلتفرم</a></div><div class="hero-proof"><span>${icon("shield")}</span><p><strong>مرز روشن ادعا</strong><small>هیچ سرویس واقعی بدون قرارداد، مجوز و ممیزی فعال نمی‌شود.</small></p></div></div>${heroVisual()}</div></section>
+<section class="manifesto"><div class="container manifesto-grid"><p class="eyebrow">مانیفست رهجو</p><blockquote>«عدد وقتی قابل اتکاست که بتوانیم داستان رسیدنش به تصمیم را دوباره بخوانیم.»</blockquote><p>برای تیم‌هایی که با داده حساس، تصمیم سازمانی و مسئولیت واقعی سروکار دارند.</p></div></section>
+<section class="story-system"><div class="container"><div class="section-heading"><p class="eyebrow">سیستم روایت</p><h2>چهار فصل برای یک تصمیم قابل دفاع</h2><p>این مسیر، ستون فقرات تجربه محصول و معماری اطلاعات رهجو است.</p></div><div class="chapter-nav" role="tablist">${chapterNav()}</div><div id="chapter-panel">${chapterPanel()}</div></div></section>
+<section class="platform-rooms"><div class="container"><div class="section-heading"><p class="eyebrow">چهار فضای محصول</p><h2>از اتاق خبر تا اتاق عملیات</h2></div><div class="rooms-grid">${rooms}</div><a data-link class="text-link" href="/platform">معماری کامل پلتفرم ${icon("arrow")}</a></div></section>
+<section class="editorial-section"><div class="container"><div class="section-heading"><p class="eyebrow">دفتر روایت</p><h2>محصولی که توضیح می‌دهد، نه فقط نمایش.</h2></div><div class="editorial-grid">${stories}</div></div></section>
+<section class="container"><div class="cta-band"><div><p class="eyebrow eyebrow--light">MVP REVIEW</p><h2>اول داستان و تجربه را تثبیت کنیم؛ بعد داده واقعی را وصل کنیم.</h2><p>نسخه فعلی برای ارزیابی معماری، لحن، ظاهر و جریان تصمیم طراحی شده است.</p></div><a data-link class="button button--light" href="/request">شروع جریان نمایشی</a></div></section>`;return siteShell({content,activePath:"/"});}
+/** @param {() => void} rerender */
+export function mountMarketingPage(rerender){void rerender;document.querySelectorAll("[data-chapter]").forEach((button)=>button.addEventListener("click",()=>{activeChapter=button.getAttribute("data-chapter")||"source";document.querySelectorAll("[data-chapter]").forEach((item)=>item.setAttribute("aria-pressed",String(item===button)));const panel=document.querySelector("#chapter-panel");if(panel instanceof HTMLElement)panel.innerHTML=chapterPanel();}));}

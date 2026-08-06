@@ -1,27 +1,34 @@
 # Rahjo frontend architecture
 
-## Why this baseline is framework-light
+## Product idea
 
-The MVP uses browser-native ES modules and a small amount of explicit infrastructure. This keeps the first release easy to read, cheap to host, and simple to audit. The domain, services, design system, and page boundaries can later move into React without rewriting the business rules.
+Rahjo is designed as a story-driven data platform. Its common narrative model is:
+
+```text
+Source → Context → Decision → Follow-up
+```
+
+The marketing site explains this model, the product atlas maps it, and the decision-room dashboard demonstrates how it feels in daily use.
 
 ## Dependency rule
 
 ```text
-pages/features -> components -> design system
-features -> domain -> service contracts
-adapters -> service contracts
+pages/features → shared components → design tokens
+features → domain → service contracts
+adapters → service contracts
 ```
 
-Pages must not call external endpoints directly. A future provider is added behind a gateway implementation.
+Pages never call external providers directly. A future provider is introduced behind a gateway adapter after its legal and operational gate passes.
 
 ## State ownership
 
-- URL state: router
+- URL and route state: router
+- Editorial chapter state: marketing feature
 - Request workflow state: request feature
-- Business rules: domain module
-- External calls: service adapter
+- Business rules: domain modules
+- External calls: service adapters
 - Visual values: CSS tokens
 
-## Definition of a healthy component
+## Human-friendly code rule
 
-A component has one reason to change, uses shared tokens, receives explicit data, and does not know how remote providers work.
+A module should have one clear reason to change, use explicit data, avoid hidden global behavior, and keep provider details outside rendering code.

@@ -1,17 +1,17 @@
-# Rahjo Web Platform MVP
+# Rahjo — Story-driven data platform
 
-A human-readable, dependency-light frontend baseline for Rahjo.
+A Persian-first, RTL product and editorial experience for turning data into traceable decisions.
 
-## What exists
+## Current experience
 
-- Persian RTL marketing landing page
-- Product dashboard demo
-- Stateful verification/request demo
-- Centralized design tokens
-- Domain state machine and provider adapter boundary
-- Responsive and accessible foundations
-- GitHub quality workflow
-- Hostinger SPA fallback and deployment guide
+- Story-led public homepage
+- Platform architecture page
+- Editorial story desk
+- Trust and data-governance center
+- Visual product/site atlas
+- Decision-room dashboard demo
+- Stateful verification/request flow
+- Vazinmatn typography and responsive design system
 
 ## Run locally
 
@@ -28,12 +28,12 @@ npm install
 npm run qa
 ```
 
-Runtime code has no third-party dependencies. TypeScript is used only for static checking of the JavaScript modules.
+Runtime code has no third-party JavaScript dependencies. TypeScript is used for strict static checking of the browser-native ES modules.
 
 ## Architecture
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/HOSTINGER.md`](docs/HOSTINGER.md).
 
 ## Safety boundary
 
-This MVP contains demo data only. It does not connect to the claimed 52 data services and must not process real personal data until legal, source, security, and product gates are passed.
+This repository contains demo data only. It does not connect to Rahjo's claimed data services and must not process real personal data until legal, source, security, and product gates are passed.
