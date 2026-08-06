@@ -1,0 +1,12 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { renderMarketingPage } from "../src/features/marketing/marketingPage.js";
+import { renderPlatformPage } from "../src/features/platform/platformPage.js";
+import { renderStoriesPage } from "../src/features/stories/storiesPage.js";
+import { renderTrustPage } from "../src/features/trust/trustPage.js";
+import { renderMapPage } from "../src/features/map/mapPage.js";
+import { renderDashboardPage } from "../src/features/dashboard/dashboardPage.js";
+import { renderRequestPage } from "../src/features/requests/requestPage.js";
+const pages=[renderMarketingPage,renderPlatformPage,renderStoriesPage,renderTrustPage,renderMapPage,renderDashboardPage,renderRequestPage];
+test("all primary routes render meaningful, safe markup",()=>{for(const render of pages){const html=render();assert.match(html,/<h1>/);assert.doesNotMatch(html,/undefined|null/);assert.match(html,/رهجو/);}});
+test("public navigation exposes the story architecture",()=>{const html=renderMarketingPage();for(const path of ["/platform","/stories","/trust","/map","/dashboard","/request"])assert.match(html,new RegExp(`href="${path}"`));});

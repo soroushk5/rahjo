@@ -1,34 +1,6 @@
 import { appShell } from "../../app/appShell.js";
-import { metricCard } from "../../components/metricCard.js";
-import { statusBadge } from "../../components/statusBadge.js";
-import { metrics, recentRequests, services } from "../../data/demoData.js";
-
-function dashboardChart() {
-  return `
-    <svg class="chart-area" viewBox="0 0 800 340" role="img" aria-label="نمودار نمونه درخواست‌های هفتگی">
-      <g stroke="#E3E9EF" stroke-width="1">
-        <line x1="40" y1="50" x2="760" y2="50"/><line x1="40" y1="110" x2="760" y2="110"/>
-        <line x1="40" y1="170" x2="760" y2="170"/><line x1="40" y1="230" x2="760" y2="230"/>
-        <line x1="40" y1="290" x2="760" y2="290"/>
-      </g>
-      <path d="M40 260 C110 252,120 165,190 186 S300 278,355 178 S460 86,520 145 S625 240,760 92" fill="none" stroke="#0FA3B1" stroke-width="6" stroke-linecap="round"/>
-      <g fill="#0B1D33"><circle cx="190" cy="186" r="6"/><circle cx="355" cy="178" r="6"/><circle cx="520" cy="145" r="6"/><circle cx="760" cy="92" r="6"/></g>
-    </svg>`;
-}
-
-export function renderDashboardPage() {
-  const metricMarkup = metrics.map(metricCard).join("");
-  const serviceMarkup = services.map((service) => `<div class="service-row"><span>${service.name}</span>${statusBadge(service.status)}</div>`).join("");
-  const requestRows = recentRequests.map((request) => `<tr><td class="en">${request.id}</td><td>${request.type}</td><td>${request.status}</td><td>${request.time}</td></tr>`).join("");
-
-  const content = `
-    <section class="dashboard-title"><h1>نمای کلی سامانه</h1><p class="muted">داده‌های این صفحه نمونه‌اند و به سرویس واقعی متصل نیستند.</p></section>
-    <section class="metric-grid" aria-label="شاخص‌های اصلی">${metricMarkup}</section>
-    <section class="dashboard-grid">
-      <article class="panel card"><div class="panel__heading"><h2>روند درخواست‌ها</h2><span class="muted">۷ روز اخیر</span></div>${dashboardChart()}</article>
-      <article class="panel card"><div class="panel__heading"><h2>وضعیت سرویس‌ها</h2><span class="muted">Demo</span></div><div class="service-list">${serviceMarkup}</div></article>
-    </section>
-    <section class="panel card" style="margin-top: 1rem;"><div class="panel__heading"><h2>آخرین درخواست‌ها</h2><a data-link class="muted" href="/request">درخواست جدید ←</a></div><table class="data-table"><thead><tr><th>شناسه</th><th>نوع</th><th>وضعیت</th><th>زمان</th></tr></thead><tbody>${requestRows}</tbody></table></section>`;
-
-  return appShell({ content, activePath: "/dashboard", title: "داشبورد" });
-}
+import { icon } from "../../components/icons.js";
+import { recentRequests } from "../../data/demoData.js";
+const briefs=[{time:"09:20",title:"افزایش درخواست‌های تطبیق تلفن",text:"رشد نمونه ۱۸٪ نسبت به بازه قبل؛ نیازمند بررسی منبع ترافیک.",tone:"teal"},{time:"10:45",title:"یک مسیر در انتظار تصمیم انسانی",text:"درخواست خودرو به دلیل ناکافی‌بودن مدرک وارد صف بررسی شد.",tone:"amber"},{time:"12:10",title:"کیفیت منبع پایدار است",text:"در داده نمایشی، خطای schema مشاهده نشده است.",tone:"blue"}];
+function sparkline(){return `<svg class="decision-chart" viewBox="0 0 680 210" role="img" aria-label="روند نمایشی سیگنال‌ها"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#18a7a0" stop-opacity=".28"/><stop offset="1" stop-color="#18a7a0" stop-opacity="0"/></linearGradient></defs><path class="gridline" d="M20 45h640M20 105h640M20 165h640"/><path d="M20 155C75 146 92 82 145 105s90 70 140 5 94-89 146-44 92 119 149 50 64-63 80-70v145H20Z" fill="url(#area)"/><path d="M20 155C75 146 92 82 145 105s90 70 140 5 94-89 146-44 92 119 149 50 64-63 80-70" fill="none" stroke="#18a7a0" stroke-width="5" stroke-linecap="round"/></svg>`;}
+export function renderDashboardPage(){const briefMarkup=briefs.map(b=>`<article class="brief-item tone-${b.tone}"><time>${b.time}</time><div><h3>${b.title}</h3><p>${b.text}</p></div></article>`).join("");const rows=recentRequests.map(r=>`<tr><td class="en">${r.id}</td><td>${r.type}</td><td><span class="table-status">${r.status}</span></td><td>${r.time}</td></tr>`).join("");const content=`<section class="decision-head"><div><p class="eyebrow">DAILY DECISION BRIEF</p><h1>صبح بخیر؛ امروز چه چیزی نیاز به توجه دارد؟</h1><p>یک نمای روایی از سیگنال، زمینه و تصمیم‌های در انتظار.</p></div><div class="decision-date"><strong>۱۶ مرداد</strong><span>پنج‌شنبه · Demo</span></div></section><section class="decision-kpis"><article><span>${icon("signal")}</span><small>سیگنال‌های امروز</small><strong>۲۴۸</strong><em>۱۲٪ رشد</em></article><article><span>${icon("audit")}</span><small>نیازمند تصمیم</small><strong>۰۷</strong><em>۳ مورد مهم</em></article><article><span>${icon("shield")}</span><small>کیفیت منبع</small><strong>۹۶٪</strong><em>پایدار</em></article><article><span>${icon("timeline")}</span><small>میانگین پاسخ</small><strong>۳۲۰ms</strong><em>نمونه</em></article></section><section class="decision-grid"><article class="panel card chart-panel"><div class="panel__heading"><div><small>روند سیگنال‌ها</small><h2>روایت هفت روز اخیر</h2></div><button class="filter-chip">۷ روز ${icon("filter")}</button></div>${sparkline()}<div class="chart-caption"><span><i></i>درخواست‌های پردازش‌شده</span><strong>نقطه اوج: سه‌شنبه ۱۴:۰۰</strong></div></article><article class="panel card brief-panel"><div class="panel__heading"><div><small>Briefing</small><h2>آنچه باید بخوانید</h2></div><span class="live-dot"></span></div><div class="brief-list">${briefMarkup}</div></article></section><section class="panel card request-table-panel"><div class="panel__heading"><div><small>رد عملیات</small><h2>آخرین درخواست‌ها</h2></div><a data-link class="text-link" href="/request">درخواست جدید ${icon("arrow")}</a></div><div class="table-wrap"><table class="data-table"><thead><tr><th>شناسه</th><th>نوع روایت</th><th>وضعیت</th><th>زمان</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;return appShell({content,activePath:"/dashboard",title:"میز تصمیم"});}
