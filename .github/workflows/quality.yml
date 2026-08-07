@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+
 jobs:
   qa:
     runs-on: ubuntu-latest
@@ -14,3 +15,11 @@ jobs:
           node-version: 22
       - run: npm install --ignore-scripts
       - run: npm run qa
+      - run: npm run build:hostinger
+      - run: npm run smoke:hostinger
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rahjo-hostinger-preview
+          path: dist-hostinger
+          if-no-files-found: error
+          retention-days: 14
