@@ -8,15 +8,19 @@ import {
   updateVerificationFields
 } from "../src/domain/verification.js";
 
-test("service selection unlocks the first step", () => {
+test("cluster selection unlocks the first step", () => {
   const initial = createVerificationState();
   assert.equal(canContinue(initial), false);
   const selected = selectService(initial, "identity");
   assert.equal(canContinue(selected), true);
 });
 
-test("details require valid local shapes", () => {
+test("access details require organization, purpose and volume", () => {
   let state = nextVerificationStep(selectService(createVerificationState(), "identity"));
-  state = updateVerificationFields(state, { nationalId: "1234567890", mobile: "09123456789" });
+  state = updateVerificationFields(state, {
+    organization: "شرکت نمونه",
+    purpose: "پذیرش مشتری در فرایند سازمانی",
+    monthlyVolume: "pilot"
+  });
   assert.equal(canContinue(state), true);
 });

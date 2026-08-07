@@ -1,34 +1,42 @@
 # Rahjo frontend architecture
 
-## Product idea
+## Product model
 
-Rahjo is designed as a story-driven data platform. Its common narrative model is:
+Rahjo sits between sensitive data sources and organizational workflows. The UI is organized around four control stages:
 
-```text
-Source → Context → Decision → Follow-up
-```
+`source evidence -> access policy -> controlled delivery -> audit`
 
-The marketing site explains this model, the product atlas maps it, and the decision-room dashboard demonstrates how it feels in daily use.
+This model is shared by the landing page, data atlas, ecosystem map, console and access-request flow.
 
-## Dependency rule
+## Code boundaries
 
 ```text
-pages/features → shared components → design tokens
-features → domain → service contracts
-adapters → service contracts
+src/
+  app/          # routing and page shells
+  components/   # shared presentation primitives
+  data/         # immutable content and demo fixtures
+  domain/       # framework-independent state and validation
+  features/     # route-level product capabilities
+  lib/          # small generic helpers
+  services/     # provider and gateway adapters
+styles/
+  tokens.css
+  base.css
+  components.css
+  public.css
+  app.css
+  responsive.css
 ```
 
-Pages never call external providers directly. A future provider is introduced behind a gateway adapter after its legal and operational gate passes.
+## Dependency rules
 
-## State ownership
+- feature pages may depend on shared components, immutable data and domain contracts
+- domain code must not depend on the DOM or page rendering
+- UI pages must not call upstream providers directly
+- real providers must implement a service adapter contract
+- access policy and audit boundaries must remain separate from presentation code
+- demo data must be clearly labeled and must contain no real personal information
 
-- URL and route state: router
-- Editorial chapter state: marketing feature
-- Request workflow state: request feature
-- Business rules: domain modules
-- External calls: service adapters
-- Visual values: CSS tokens
+## Deployment model
 
-## Human-friendly code rule
-
-A module should have one clear reason to change, use explicit data, avoid hidden global behavior, and keep provider details outside rendering code.
+The current MVP uses browser-native ES modules and static assets. It can be deployed directly to Hostinger without a runtime server. A future framework migration may replace the rendering layer while retaining domain, data contracts, tokens and service boundaries.

@@ -1,21 +1,34 @@
-# Rahjo — Story-driven data platform
+# Rahjo — Controlled Data Access Platform
 
-A Persian-first, RTL product and editorial experience for turning data into traceable decisions.
+A human-readable, dependency-light frontend baseline for Rahjo.
 
-## Current experience
+## Product direction
 
-- Story-led public homepage
-- Platform architecture page
-- Editorial story desk
-- Trust and data-governance center
-- Visual product/site atlas
-- Decision-room dashboard demo
-- Stateful verification/request flow
-- Vazinmatn typography and responsive design system
+Rahjo is positioned as a control layer between sensitive data sources and organizational use cases. The interface makes five things explicit:
+
+1. data cluster and source
+2. sensitivity level
+3. customer and purpose
+4. controlled delivery
+5. audit and operational ownership
+
+## What exists
+
+- Persian RTL marketing landing page
+- interactive data-cluster explorer
+- data atlas and use-case catalog
+- layered platform architecture
+- interactive ecosystem map
+- data control console
+- access-request flow with explicit domain state
+- centralized design tokens and Vazirmatn typography
+- GitHub quality workflow
+- Hostinger SPA fallback and deployment guide
 
 ## Run locally
 
 ```bash
+npm install
 npm run dev
 ```
 
@@ -24,16 +37,11 @@ Open `http://localhost:4173`.
 ## Quality checks
 
 ```bash
-npm install
 npm run qa
 ```
 
-Runtime code has no third-party JavaScript dependencies. TypeScript is used for strict static checking of the browser-native ES modules.
-
-## Architecture
-
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/HOSTINGER.md`](docs/HOSTINGER.md).
+Runtime code has no third-party dependencies. TypeScript is used only for strict static checking of JavaScript modules.
 
 ## Safety boundary
 
-This repository contains demo data only. It does not connect to Rahjo's claimed data services and must not process real personal data until legal, source, security, and product gates are passed.
+This MVP contains demonstration data only. It does not connect to the claimed portfolio services and must not process real personal data until source, legal, security and product gates are passed.
