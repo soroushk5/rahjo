@@ -18,12 +18,18 @@ function detectBasePath() {
   return "";
 }
 
+function detectRoutingMode() {
+  const hostname = window.location.hostname;
+  return hostname === "raw.githack.com" || hostname === "rawcdn.githack.com" ? "hash" : "history";
+}
+
 export class Router {
-  /** @param {{root: HTMLElement, routes: Route[], basePath?: string}} options */
-  constructor({ root, routes, basePath = detectBasePath() }) {
+  /** @param {{root: HTMLElement, routes: Route[], basePath?: string, routingMode?: "history" | "hash"}} options */
+  constructor({ root, routes, basePath = detectBasePath(), routingMode = detectRoutingMode() }) {
     this.root = root;
     this.routes = routes;
     this.basePath = normalizeBasePath(basePath);
+    this.routingMode = routingMode;
     this.handleNavigation = this.handleNavigation.bind(this);
   }
 
@@ -43,6 +49,11 @@ export class Router {
   /** @param {string} routePath */
   browserPath(routePath) {
     const path = this.routePath(routePath);
+
+    if (this.routingMode === "hash") {
+      return `${window.location.pathname}#${path}`;
+    }
+
     if (!this.basePath) return path;
     return path === "/" ? `${this.basePath}/` : `${this.basePath}${path}`;
   }
@@ -61,13 +72,15 @@ export class Router {
 
   start() {
     window.addEventListener("popstate", this.handleNavigation);
+    window.addEventListener("hashchange", this.handleNavigation);
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target.closest("a[data-link]") : null;
       if (!(target instanceof HTMLAnchorElement) || target.origin !== window.location.origin) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || target.target === "_blank") return;
 
       event.preventDefault();
-      this.navigate(target.pathname);
+      const nextPath = this.routingMode === "hash" ? target.hash.slice(1) || "/" : target.pathname;
+      this.navigate(nextPath);
     });
     this.handleNavigation();
   }
@@ -79,7 +92,8 @@ export class Router {
   }
 
   handleNavigation() {
-    const currentPath = this.routePath(window.location.pathname);
+    const sourcePath = this.routingMode === "hash" ? window.location.hash.slice(1) || "/" : window.location.pathname;
+    const currentPath = this.routePath(sourcePath);
     const route = this.routes.find((candidate) => candidate.path === currentPath) ?? this.routes[0];
 
     document.title = route.title ? `${route.title} | رهجو` : "رهجو";
