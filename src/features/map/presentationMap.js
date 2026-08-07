@@ -6,6 +6,7 @@ import { setPreferredClusterId } from "../../services/prototypeStore.js";
 let activeNodeId = "policy";
 let activeGroup = "all";
 
+/** @type {Readonly<Record<string, string>>} */
 const nodeCluster = Object.freeze({
   "src-identity": "identity",
   "src-vehicle": "vehicle",
