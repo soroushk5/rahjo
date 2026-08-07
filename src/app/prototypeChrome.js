@@ -39,11 +39,12 @@ function commandMarkup() {
     </section>`;
 }
 
+/** @returns {HTMLElement} */
 function ensureCommandPalette() {
-  let palette = document.querySelector("#command-palette");
-  if (palette instanceof HTMLElement) return palette;
+  const existing = document.querySelector("#command-palette");
+  if (existing instanceof HTMLElement) return existing;
 
-  palette = document.createElement("div");
+  const palette = document.createElement("div");
   palette.id = "command-palette";
   palette.className = "command-palette";
   palette.hidden = true;
