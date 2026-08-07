@@ -2,6 +2,7 @@ import { icon } from "../components/icons.js";
 import { verificationServices } from "../data/demoData.js";
 import { setPreferredClusterId } from "../services/prototypeStore.js";
 
+/** @param {ParentNode} [root] */
 function bindClusterContext(root = document) {
   root.querySelectorAll("[data-flow-cluster]").forEach((control) => {
     if (!(control instanceof HTMLElement) || control.dataset.flowBound) return;
@@ -33,6 +34,7 @@ export function mountConnectedRequestFlow() {
   }
 }
 
+/** @param {HTMLElement} detail */
 function clusterIdFromRequestDetail(detail) {
   const title = detail.querySelector(".request-detail-head h3")?.textContent?.trim();
   if (!title) return null;
