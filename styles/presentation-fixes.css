@@ -3,6 +3,74 @@
 .app-topbar__title { min-width: 0; }
 .app-topbar__title > div { min-width: 0; }
 .app-topbar__title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-topbar__title small b { color: #9aa9b6; font-weight: 500; padding-inline: .25rem; }
+
+/* Connected public walkthrough */
+.journey-rail-section { padding: 1rem 0 4.5rem; background: linear-gradient(180deg, transparent, #f5f8fa 42%); }
+.journey-rail { border: 1px solid #dce5ea; border-radius: 24px; background: rgba(255,255,255,.96); box-shadow: 0 24px 70px rgba(11,29,51,.07); overflow: hidden; }
+.journey-rail__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.35rem; border-bottom: 1px solid #e7edf1; }
+.journey-rail__head > div { display: grid; gap: .15rem; }
+.journey-rail__head small { color: #71808d; letter-spacing: .08em; font-size: .7rem; }
+.journey-rail__head strong { color: #0b1d33; font-size: .92rem; }
+.journey-rail__head > span { min-width: 60px; text-align: center; padding: .45rem .7rem; border-radius: 999px; background: #f0f5f7; color: #536372; font-size: .75rem; }
+.journey-rail__steps { display: grid; grid-template-columns: repeat(6, 1fr); padding: .6rem; gap: .45rem; }
+.journey-step { position: relative; display: grid; grid-template-columns: 30px minmax(0,1fr) auto; gap: .6rem; align-items: center; min-height: 72px; padding: .75rem; border-radius: 15px; color: #667582; text-decoration: none; transition: .18s ease; }
+.journey-step:hover { background: #f4f8f9; color: #0b1d33; }
+.journey-step > span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: #eef3f5; color: #61717e; font-size: .7rem; font-weight: 800; }
+.journey-step > div { min-width: 0; display: grid; gap: .12rem; }
+.journey-step small { font-size: .66rem; color: #84929d; }
+.journey-step strong { font-size: .76rem; line-height: 1.55; font-weight: 650; }
+.journey-step[data-complete="true"] > span { background: #e8f7f5; color: #0b8b96; }
+.journey-step[aria-current="step"] { background: #0b1d33; color: white; box-shadow: 0 12px 26px rgba(11,29,51,.18); }
+.journey-step[aria-current="step"] > span { background: #0fa3b1; color: white; }
+.journey-step[aria-current="step"] small { color: #a9c0cc; }
+.journey-step[aria-current="step"] svg { color: #39d5df; }
+.journey-rail__actions { display: flex; align-items: stretch; justify-content: space-between; gap: 1rem; padding: 1rem 1.2rem; border-top: 1px solid #e7edf1; background: #fbfcfd; }
+.journey-back, .journey-next { display: inline-flex; align-items: center; gap: .65rem; min-width: 190px; padding: .65rem .8rem; border-radius: 12px; text-decoration: none; color: #425361; transition: .18s ease; }
+.journey-back:hover, .journey-next:hover { background: #eef4f6; color: #0b1d33; }
+.journey-back > span, .journey-next > span { display: grid; gap: .1rem; }
+.journey-back small, .journey-next small { font-size: .65rem; color: #8a98a3; }
+.journey-back strong, .journey-next strong { font-size: .8rem; }
+.journey-next { justify-content: flex-end; color: #087f89; }
+
+/* Console context */
+.app-context-strip { min-height: 38px; display: flex; align-items: center; gap: .7rem; padding: .45rem clamp(1rem,2vw,1.6rem); background: #f7fafb; border-bottom: 1px solid #e3eaee; font-size: .72rem; color: #6c7a86; }
+.app-context-strip span { display: inline-flex; align-items: center; gap: .35rem; color: #0a7f88; font-weight: 700; }
+.app-context-strip a { color: #5c6c79; text-decoration: none; }
+.app-context-strip a:hover { color: #0b1d33; text-decoration: underline; text-underline-offset: 3px; }
+.app-context-strip i { width: 3px; height: 3px; border-radius: 50%; background: #b8c4cb; }
+
+/* Contextual actions */
+.map-detail__actions, .atlas-detail__actions { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e9ed; }
+.map-detail__actions .button, .atlas-detail__actions .button { min-height: 42px; padding-inline: .85rem; font-size: .74rem; justify-content: center; }
+
+/* Interactive access gate */
+.gate-simulator { padding-block: 1.5rem 5rem; }
+.gate-simulator__intro { display: grid; grid-template-columns: 1.1fr .9fr; gap: 2rem; align-items: end; margin-bottom: 1.2rem; }
+.gate-simulator__intro > div { display: grid; gap: .2rem; }
+.gate-simulator__intro small { color: #0c8e98; font-size: .7rem; letter-spacing: .08em; }
+.gate-simulator__intro h2 { margin: 0; font-size: clamp(1.65rem,3vw,2.4rem); color: #0b1d33; }
+.gate-simulator__intro p { margin: 0; color: #667682; line-height: 1.9; }
+.access-gate-card--interactive { appearance: none; width: 100%; text-align: right; font: inherit; cursor: pointer; border-color: #dce5ea; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.access-gate-card--interactive:hover { transform: translateY(-2px); border-color: #9fd5da; box-shadow: 0 14px 34px rgba(11,29,51,.08); }
+.access-gate-card--interactive[aria-pressed="true"] { border-color: #6bc5cc; background: linear-gradient(180deg,#f8fdfd,#eef9f8); box-shadow: inset 0 0 0 1px rgba(15,163,177,.08); }
+.access-gate-card__state { display: inline-flex; align-items: center; gap: .35rem; margin-top: auto; padding-top: .8rem; color: #82909b; font-size: .68rem; font-weight: 650; }
+.access-gate-card--interactive[aria-pressed="true"] .access-gate-card__state { color: #087f89; }
+.gate-simulator__status { margin-top: 1rem; padding: 1.15rem 1.25rem; border: 1px solid #dde6ea; border-radius: 18px; background: #f8fafb; display: grid; grid-template-columns: minmax(220px,.8fr) 1.4fr; gap: .8rem 1.5rem; align-items: center; }
+.gate-simulator__status > div:first-child { display: flex; align-items: center; gap: .7rem; }
+.gate-simulator__status > div:first-child > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #e8f2f4; color: #0b8590; }
+.gate-simulator__status > div:first-child > div { display: grid; gap: .1rem; }
+.gate-simulator__status small { color: #7d8b96; font-size: .66rem; letter-spacing: .06em; }
+.gate-simulator__status strong { color: #0b1d33; font-size: .9rem; }
+.gate-simulator__status > p { margin: 0; color: #657581; line-height: 1.8; font-size: .78rem; }
+.gate-simulator__bar { grid-column: 1 / -1; height: 7px; border-radius: 999px; background: #e8edef; overflow: hidden; }
+.gate-simulator__bar > span { display: block; width: var(--progress); height: 100%; border-radius: inherit; background: linear-gradient(90deg,#0fa3b1,#22d3ee); transition: width .25s ease; }
+.gate-simulator__actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: .65rem; }
+.gate-simulator__status[data-complete="true"] { border-color: #8bd0c8; background: #f1fbf8; }
+
+@media (max-width: 1180px) {
+  .journey-rail__steps { grid-template-columns: repeat(3, 1fr); }
+}
 
 @media (max-width: 980px) {
   .presentation-app-shell .app-sidebar {
@@ -24,4 +92,24 @@
   .presentation-app-shell .app-main,
   .presentation-app-shell .app-content,
   .presentation-app-shell .app-topbar { width: 100%; min-width: 0; }
+  .app-context-strip { overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .app-context-strip::-webkit-scrollbar { display: none; }
+  .gate-simulator__intro { grid-template-columns: 1fr; gap: .7rem; }
+}
+
+@media (max-width: 720px) {
+  .journey-rail-section { padding-bottom: 2.5rem; }
+  .journey-rail { border-radius: 18px; }
+  .journey-rail__steps { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding: .55rem; scrollbar-width: none; }
+  .journey-rail__steps::-webkit-scrollbar { display: none; }
+  .journey-step { min-width: 230px; scroll-snap-align: start; }
+  .journey-rail__actions { gap: .4rem; padding: .75rem; }
+  .journey-back, .journey-next { min-width: 0; flex: 1; padding: .6rem; }
+  .journey-back small, .journey-next small { display: none; }
+  .journey-back strong, .journey-next strong { font-size: .72rem; }
+  .map-detail__actions, .atlas-detail__actions { grid-template-columns: 1fr; }
+  .gate-simulator__status { grid-template-columns: 1fr; }
+  .gate-simulator__bar, .gate-simulator__actions { grid-column: 1; }
+  .gate-simulator__actions { justify-content: stretch; }
+  .gate-simulator__actions .button { flex: 1; }
 }

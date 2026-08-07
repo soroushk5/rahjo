@@ -18,3 +18,10 @@ test("router supports a GitHub Pages project base path", () => {
   assert.match(router, /rewriteInternalLinks/);
   assert.match(router, /browserPath/);
 });
+
+test("hash preview link rewriting is idempotent", () => {
+  assert.match(router, /dataset\.routePath/);
+  assert.match(router, /url\.hash\.startsWith\("#\/"\)/);
+  assert.match(router, /logicalPathForLink/);
+  assert.match(router, /target\.dataset\.routePath/);
+});
