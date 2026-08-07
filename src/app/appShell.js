@@ -12,7 +12,7 @@ export function appShell({ content, activePath, title }) {
 
   return `
     <div class="app-shell">
-      <aside class="app-sidebar">
+      <aside class="app-sidebar" aria-label="ناوبری کنسول">
         <a data-link href="/">${brandLogo({ inverted: true })}</a>
         <div class="sidebar-kicker">DATA CONTROL CONSOLE</div>
         <nav class="app-nav" aria-label="ناوبری محصول">
@@ -29,13 +29,16 @@ export function appShell({ content, activePath, title }) {
 
       <div class="app-main">
         <header class="app-topbar">
-          <div>
-            <small>رهجو / محیط نمایشی</small>
-            <strong>${title}</strong>
+          <div class="app-topbar__title">
+            <button id="app-menu-toggle" class="icon-button app-menu-toggle" type="button" aria-label="باز کردن منوی کنسول" aria-expanded="false">${icon("menu")}</button>
+            <div>
+              <small>رهجو / محیط نمایشی</small>
+              <strong>${title}</strong>
+            </div>
           </div>
           <div class="site-header__actions">
             <span class="demo-badge">Demo data</span>
-            <button class="icon-button" aria-label="جست‌وجو">${icon("search")}</button>
+            <button id="global-search" class="icon-button" type="button" aria-label="جست‌وجوی سریع">${icon("search")}</button>
           </div>
         </header>
         <main id="main-content" class="app-content">${content}</main>

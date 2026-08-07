@@ -17,7 +17,7 @@ export function siteShell({ content, activePath }) {
             ${brandLogo()}
           </a>
 
-          <nav class="site-nav" aria-label="ناوبری اصلی">
+          <nav id="site-nav" class="site-nav" aria-label="ناوبری اصلی">
             ${link("/", "خانه")}
             ${link("/data", "اطلس داده")}
             ${link("/platform", "معماری")}
@@ -26,6 +26,15 @@ export function siteShell({ content, activePath }) {
           </nav>
 
           <div class="site-header__actions">
+            <button
+              id="mobile-nav-toggle"
+              class="icon-button mobile-nav-toggle"
+              type="button"
+              aria-label="باز کردن منو"
+              aria-controls="site-nav"
+              aria-expanded="false"
+            >${icon("menu")}</button>
+            <button class="icon-button hide-mobile" type="button" data-open-command aria-label="جست‌وجوی سریع">${icon("search")}</button>
             <a data-link class="button button--ghost hide-mobile" href="/dashboard">کنسول داده</a>
             <a data-link class="button button--primary" href="/request">درخواست دسترسی</a>
           </div>
