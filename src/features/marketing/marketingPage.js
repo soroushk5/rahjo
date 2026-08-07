@@ -1,9 +1,15 @@
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
 import { controlLayers, dataClusters, platformLayers, useCases } from "../../data/siteContent.js";
+import { getPreferredClusterId, setPreferredClusterId } from "../../services/prototypeStore.js";
 
 let activeClusterId = "vehicle";
 let activeLayerId = "source";
+
+function syncPreferredCluster() {
+  const preferred = getPreferredClusterId();
+  if (preferred && dataClusters.some((cluster) => cluster.id === preferred)) activeClusterId = preferred;
+}
 
 function activeCluster() {
   return dataClusters.find((cluster) => cluster.id === activeClusterId) ?? dataClusters[0];
@@ -82,6 +88,9 @@ function clusterPreview() {
       </div>
       <div class="tag-row">${examples}</div>
       <ul>${useCasesMarkup}</ul>
+      <div class="catalog-card__actions">
+        <a data-link data-request-cluster="${cluster.id}" class="text-link" href="/request">بررسی دسترسی همین خوشه ${icon("arrow")}</a>
+      </div>
     </article>`;
 }
 
@@ -154,6 +163,7 @@ function useCaseCards() {
 }
 
 export function renderMarketingPage() {
+  syncPreferredCluster();
   const content = `
     <section class="hero hero--data">
       <div class="container hero__grid">
@@ -263,12 +273,20 @@ export function mountMarketingPage(rerender) {
   document.querySelectorAll("[data-cluster-id]").forEach((button) => {
     button.addEventListener("click", () => {
       activeClusterId = button.getAttribute("data-cluster-id") ?? dataClusters[0].id;
+      setPreferredClusterId(activeClusterId);
       document.querySelectorAll("[data-cluster-id]").forEach((item) => {
         item.setAttribute("aria-pressed", String(item === button));
       });
       const preview = document.querySelector("#cluster-preview");
       if (preview instanceof HTMLElement) preview.innerHTML = clusterPreview();
     });
+  });
+
+  document.querySelector(".hero-network-wrap")?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("[data-request-cluster]") : null;
+    if (!(target instanceof HTMLElement)) return;
+    const id = target.getAttribute("data-request-cluster");
+    if (id) setPreferredClusterId(id);
   });
 
   document.querySelectorAll("[data-layer-id]").forEach((button) => {
