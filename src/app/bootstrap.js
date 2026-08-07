@@ -1,5 +1,6 @@
 import { Router } from "./router.js";
 import { mountPrototypeChrome } from "./prototypeChrome.js";
+import { mountConnectedDashboardData, mountConnectedDashboardRequests, mountConnectedRequestFlow } from "./connectedFlow.js";
 import { renderPresentationMarketingPage, mountPresentationMarketingPage } from "../features/marketing/presentationMarketing.js";
 import { renderPlatformPage } from "../features/platform/platformPage.js";
 import { mountPresentationAtlasPage, renderPresentationAtlasPage } from "../features/stories/presentationAtlas.js";
@@ -41,6 +42,14 @@ function mountWithSession(pageMount, returnTo) {
   };
 }
 
+/** @param {((rerender: () => void) => void) | undefined} primary @param {() => void} enhancement */
+function composeMount(primary, enhancement) {
+  return (rerender) => {
+    primary?.(rerender);
+    enhancement();
+  };
+}
+
 function loginMount() {
   mountPrototypeChrome();
   mountLoginPage({ onSuccess: (path) => router.navigate(path || "/dashboard") });
@@ -57,10 +66,10 @@ router = new Router({
     { path: "/map", title: "نقشه اکوسیستم", render: renderPresentationMapPage, mount: withChrome(mountPresentationMapPage) },
     { path: "/login", title: "ورود به محیط نمایشی", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
     { path: "/dashboard", title: "نمای کلی کنسول", render: renderWithSession(renderDashboardOverviewPage, "/dashboard"), mount: mountWithSession(undefined, "/dashboard") },
-    { path: "/dashboard/requests", title: "درخواست‌ها", render: renderWithSession(renderDashboardRequestsPage, "/dashboard/requests"), mount: mountWithSession(mountDashboardRequestsPage, "/dashboard/requests") },
-    { path: "/dashboard/data", title: "سبد داده", render: renderWithSession(renderDashboardDataPage, "/dashboard/data"), mount: mountWithSession(mountDashboardDataPage, "/dashboard/data") },
+    { path: "/dashboard/requests", title: "درخواست‌ها", render: renderWithSession(renderDashboardRequestsPage, "/dashboard/requests"), mount: mountWithSession(composeMount(mountDashboardRequestsPage, mountConnectedDashboardRequests), "/dashboard/requests") },
+    { path: "/dashboard/data", title: "سبد داده", render: renderWithSession(renderDashboardDataPage, "/dashboard/data"), mount: mountWithSession(composeMount(mountDashboardDataPage, mountConnectedDashboardData), "/dashboard/data") },
     { path: "/dashboard/audit", title: "کنترل و ممیزی", render: renderWithSession(renderDashboardAuditPage, "/dashboard/audit"), mount: mountWithSession(undefined, "/dashboard/audit") },
-    { path: "/request", title: "درخواست دسترسی", render: renderWithSession(renderRequestPage, "/request"), mount: mountWithSession(mountRequestPage, "/request") }
+    { path: "/request", title: "درخواست دسترسی", render: renderWithSession(renderRequestPage, "/request"), mount: mountWithSession(composeMount(mountRequestPage, mountConnectedRequestFlow), "/request") }
   ]
 });
 
