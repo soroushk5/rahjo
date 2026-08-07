@@ -13,11 +13,34 @@ import {
 } from "../../domain/verification.js";
 import { escapeHtml, on } from "../../lib/html.js";
 import { MockAccessRequestGateway } from "../../services/verificationGateway.js";
+import {
+  addPrototypeAccessRequest,
+  clearRequestDraft,
+  getPreferredClusterId,
+  loadRequestDraft,
+  saveRequestDraft,
+  setPreferredClusterId
+} from "../../services/prototypeStore.js";
 
-let state = createVerificationState();
+const storedDraft = loadRequestDraft();
+let state = storedDraft ?? createVerificationState();
 const gateway = new MockAccessRequestGateway();
 const stepOrder = ["service", "details", "review", "result"];
 const stepLabels = ["انتخاب خوشه", "تعریف کاربرد", "بررسی دسترسی", "ثبت درخواست"];
+
+function hydratePreferredCluster() {
+  if (state.step !== "service" || state.payload.serviceId) return;
+  const preferred = getPreferredClusterId();
+  if (preferred && verificationServices.some((service) => service.id === preferred)) {
+    state = selectService(state, preferred);
+    saveRequestDraft(state);
+  }
+}
+
+function persistDraft() {
+  if (state.step === "result") return;
+  saveRequestDraft(state);
+}
 
 function stepper() {
   const activeIndex = stepOrder.indexOf(state.step);
@@ -58,16 +81,20 @@ function serviceStep() {
       <p class="eyebrow">ACCESS REQUEST</p>
       <h1>به کدام خوشه داده نیاز دارید؟</h1>
       <p>انتخاب شما فقط شروع ارزیابی است و به معنی فعال‌بودن سرویس یا تأیید دسترسی نیست.</p>
+      <div class="request-persistence">انتخاب و فرم این نسخه به‌صورت محلی در مرورگر شما ذخیره می‌شود.</div>
     </div>
     <div class="service-options">${options}</div>`;
 }
 
 function detailsStep() {
+  const organizationLength = state.payload.organization.trim().length;
+  const purposeLength = state.payload.purpose.trim().length;
   return `
     <div class="request-intro">
       <p class="eyebrow">PURPOSE & VOLUME</p>
       <h1>کاربرد سازمانی را دقیق تعریف کنید.</h1>
       <p>در داده حساس، «چرا» و «چه مقدار» بخشی از تصمیم دسترسی هستند.</p>
+      <div class="request-persistence">Draft این مرحله خودکار ذخیره می‌شود.</div>
     </div>
     <form id="verification-form" class="request-form">
       <div class="field">
@@ -79,6 +106,7 @@ function detailsStep() {
           value="${escapeHtml(state.payload.organization)}"
           placeholder="مثلاً شرکت بیمه نمونه"
         />
+        <small data-validation>${organizationLength >= 3 ? "✓ حداقل اطلاعات لازم وارد شده" : "حداقل ۳ نویسه"}</small>
       </div>
       <div class="field">
         <label for="monthly-volume">حجم ماهانه مورد انتظار</label>
@@ -98,6 +126,7 @@ function detailsStep() {
           rows="5"
           placeholder="داده در کدام مرحله، برای چه تصمیمی و توسط چه نقشی استفاده می‌شود؟"
         >${escapeHtml(state.payload.purpose)}</textarea>
+        <small data-validation>${purposeLength >= 12 ? "✓ شرح برای ارزیابی اولیه کافی است" : `${purposeLength}/12 نویسه حداقل`}</small>
         <small>اطلاعات واقعی شخص یا credential در این نسخه وارد نکنید.</small>
       </div>
     </form>`;
@@ -147,7 +176,10 @@ function resultStep() {
         <span>کاربرد ثبت شد</span>
         <span>در انتظار ارزیابی دسترسی</span>
       </div>
-      <button id="restart-request" class="button button--secondary" type="button">ثبت درخواست دیگر</button>
+      <div class="result-actions">
+        <a data-link class="button button--primary" href="/dashboard">دیدن در کنسول</a>
+        <button id="restart-request" class="button button--secondary" type="button">ثبت درخواست دیگر</button>
+      </div>
     </div>`;
 }
 
@@ -170,6 +202,7 @@ function actions() {
 }
 
 export function renderRequestPage() {
+  hydratePreferredCluster();
   const content = `
     <section class="request-page">
       <div class="request-context">
@@ -190,6 +223,8 @@ export function mountRequestPage(rerender) {
       const id = button.getAttribute("data-service-id");
       if (id) {
         state = selectService(state, id);
+        setPreferredClusterId(id);
+        persistDraft();
         rerender();
       }
     });
@@ -205,12 +240,14 @@ export function mountRequestPage(rerender) {
     ) return;
 
     state = updateVerificationFields(state, { [target.name]: target.value });
+    persistDraft();
     const next = document.querySelector("#next-step");
     if (next instanceof HTMLButtonElement) next.disabled = !canContinue(state);
   });
 
   on(document.querySelector("#previous-step"), "click", () => {
     state = previousVerificationStep(state);
+    persistDraft();
     rerender();
   });
 
@@ -219,8 +256,16 @@ export function mountRequestPage(rerender) {
 
     if (state.step !== "review") {
       state = nextVerificationStep(state);
+      persistDraft();
       rerender();
       return;
+    }
+
+    const button = document.querySelector("#next-step");
+    if (button instanceof HTMLButtonElement) {
+      button.disabled = true;
+      button.dataset.loading = "true";
+      button.textContent = "در حال ثبت…";
     }
 
     const response = await gateway.submit({
@@ -229,11 +274,26 @@ export function mountRequestPage(rerender) {
       purpose: state.payload.purpose,
       monthlyVolume: state.payload.monthlyVolume
     });
+
+    addPrototypeAccessRequest({
+      referenceId: response.referenceId,
+      serviceId: state.payload.serviceId ?? "unknown",
+      organization: state.payload.organization,
+      purpose: state.payload.purpose,
+      monthlyVolume: state.payload.monthlyVolume,
+      status: "در بررسی",
+      createdAt: new Date().toISOString()
+    });
+
+    clearRequestDraft();
+    setPreferredClusterId(null);
     state = completeVerification(state, response.referenceId);
     rerender();
   });
 
   on(document.querySelector("#restart-request"), "click", () => {
+    clearRequestDraft();
+    setPreferredClusterId(null);
     state = createVerificationState();
     rerender();
   });
