@@ -16,6 +16,7 @@ if (!(root instanceof HTMLElement)) throw new Error("App root not found");
 /** @type {Router} */
 let router;
 
+/** @param {((rerender: () => void) => void) | undefined} pageMount */
 function withChrome(pageMount) {
   return () => {
     mountPrototypeChrome();
@@ -23,10 +24,12 @@ function withChrome(pageMount) {
   };
 }
 
+/** @param {() => string} render @param {string} returnTo */
 function renderWithSession(render, returnTo) {
   return () => isAuthenticated() ? render() : renderLoginPage({ returnTo });
 }
 
+/** @param {((rerender: () => void) => void) | undefined} pageMount @param {string} returnTo */
 function mountWithSession(pageMount, returnTo) {
   return () => {
     mountPrototypeChrome();
