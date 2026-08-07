@@ -1,11 +1,23 @@
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
 import { dataClusters, useCases } from "../../data/siteContent.js";
+import { getAtlasFilters, setAtlasFilters, setPreferredClusterId } from "../../services/prototypeStore.js";
 
 /** @param {(typeof dataClusters)[number]} cluster */
 function clusterCard(cluster) {
+  const searchable = [cluster.title, cluster.shortTitle, cluster.description, cluster.sensitivity, cluster.access, ...cluster.examples, ...cluster.useCases]
+    .join(" ")
+    .toLocaleLowerCase("fa");
+
   return `
-    <article class="catalog-card">
+    <article
+      class="catalog-card"
+      data-catalog-card
+      data-cluster-id="${cluster.id}"
+      data-sensitivity="${cluster.sensitivity}"
+      data-search="${searchable}"
+      data-match="true"
+    >
       <header>
         <span>${icon(cluster.icon, { size: 24 })}</span>
         <div>
@@ -26,6 +38,9 @@ function clusterCard(cluster) {
         <small>کاربردهای محتمل</small>
         <ul>${cluster.useCases.map((/** @type {string} */ item) => `<li>${item}</li>`).join("")}</ul>
       </div>
+      <div class="catalog-card__actions">
+        <a data-link data-request-cluster="${cluster.id}" class="text-link" href="/request">بررسی دسترسی این خوشه ${icon("arrow")}</a>
+      </div>
       <footer>${icon("shield", { size: 16 })}عرضه فقط پس از تکمیل ممیزی اختصاصی</footer>
     </article>`;
 }
@@ -43,6 +58,26 @@ function useCaseRow(item, index) {
       <ul>${item.data.map((/** @type {string} */ dataItem) => `<li>${dataItem}</li>`).join("")}</ul>
       <div class="industry-row__control">${icon("lock", { size: 17 })}${item.control}</div>
     </article>`;
+}
+
+function filterControls() {
+  const filters = getAtlasFilters();
+  const sensitivities = ["all", "بسیار حساس", "حساس", "متوسط", "کنترل‌شده"];
+  return `
+    <div class="prototype-toolbar" aria-label="فیلتر اطلس داده">
+      <label class="prototype-search">
+        ${icon("search", { size: 18 })}
+        <input id="atlas-search" type="search" value="${filters.query}" placeholder="جست‌وجو در خوشه، کاربرد یا نمونه داده…" />
+      </label>
+      ${sensitivities.map((value) => `
+        <button
+          type="button"
+          class="filter-chip"
+          data-atlas-sensitivity="${value}"
+          aria-pressed="${filters.sensitivity === value}"
+        >${value === "all" ? "همه سطوح" : value}</button>`).join("")}
+      <span id="atlas-result-count" class="prototype-result-count">۶ خوشه</span>
+    </div>`;
 }
 
 export function renderDataCatalogPage() {
@@ -70,7 +105,10 @@ export function renderDataCatalogPage() {
       <p>تفاوت میان «عنوان محصول» و «سرویس آماده عرضه» عمداً در رابط حفظ شده است.</p>
     </section>
 
-    <section class="container catalog-grid">${clusters}</section>
+    <section class="container">
+      ${filterControls()}
+      <div class="catalog-grid">${clusters}</div>
+    </section>
 
     <section class="industry-section">
       <div class="container">
@@ -83,6 +121,53 @@ export function renderDataCatalogPage() {
     </section>`;
 
   return siteShell({ content, activePath: "/data" });
+}
+
+function applyAtlasFilters() {
+  const search = document.querySelector("#atlas-search");
+  const activeChip = document.querySelector("[data-atlas-sensitivity][aria-pressed='true']");
+  const query = search instanceof HTMLInputElement ? search.value.trim().toLocaleLowerCase("fa") : "";
+  const sensitivity = activeChip instanceof HTMLElement ? activeChip.getAttribute("data-atlas-sensitivity") ?? "all" : "all";
+  let visible = 0;
+
+  document.querySelectorAll("[data-catalog-card]").forEach((card) => {
+    const haystack = card.getAttribute("data-search") ?? "";
+    const cardSensitivity = card.getAttribute("data-sensitivity") ?? "";
+    const matchesQuery = !query || haystack.includes(query);
+    const matchesSensitivity = sensitivity === "all" || cardSensitivity === sensitivity;
+    const matches = matchesQuery && matchesSensitivity;
+    card.setAttribute("data-match", String(matches));
+    if (matches) visible += 1;
+  });
+
+  const count = document.querySelector("#atlas-result-count");
+  if (count instanceof HTMLElement) count.textContent = `${visible} خوشه`;
+  setAtlasFilters({ query, sensitivity });
+}
+
+export function mountDataCatalogPage() {
+  const filters = getAtlasFilters();
+  const search = document.querySelector("#atlas-search");
+  if (search instanceof HTMLInputElement) search.value = filters.query;
+
+  document.querySelectorAll("[data-atlas-sensitivity]").forEach((chip) => {
+    chip.setAttribute("aria-pressed", String(chip.getAttribute("data-atlas-sensitivity") === filters.sensitivity));
+    chip.addEventListener("click", () => {
+      document.querySelectorAll("[data-atlas-sensitivity]").forEach((item) => item.setAttribute("aria-pressed", String(item === chip)));
+      applyAtlasFilters();
+    });
+  });
+
+  search?.addEventListener("input", applyAtlasFilters);
+
+  document.querySelectorAll("[data-request-cluster]").forEach((link) => {
+    link.addEventListener("click", () => {
+      const id = link.getAttribute("data-request-cluster");
+      if (id) setPreferredClusterId(id);
+    });
+  });
+
+  applyAtlasFilters();
 }
 
 export const renderStoriesPage = renderDataCatalogPage;
