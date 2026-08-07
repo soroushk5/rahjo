@@ -3,7 +3,7 @@ import { mountPrototypeChrome } from "./prototypeChrome.js";
 import { renderPresentationMarketingPage, mountPresentationMarketingPage } from "../features/marketing/presentationMarketing.js";
 import { renderPlatformPage } from "../features/platform/platformPage.js";
 import { mountPresentationAtlasPage, renderPresentationAtlasPage } from "../features/stories/presentationAtlas.js";
-import { renderTrustPage } from "../features/trust/trustPage.js";
+import { mountTrustPage, renderTrustPage } from "../features/trust/trustPage.js";
 import { mountPresentationMapPage, renderPresentationMapPage } from "../features/map/presentationMap.js";
 import { mountDashboardDataPage, mountDashboardRequestsPage, renderDashboardAuditPage, renderDashboardDataPage, renderDashboardOverviewPage, renderDashboardRequestsPage } from "../features/dashboard/presentationDashboard.js";
 import { mountRequestPage, renderRequestPage } from "../features/requests/requestPage.js";
@@ -53,7 +53,7 @@ router = new Router({
     { path: "/data", title: "اطلس داده", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
     { path: "/stories", title: "اطلس داده", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
     { path: "/platform", title: "معماری پلتفرم", render: renderPlatformPage, mount: withChrome(undefined) },
-    { path: "/trust", title: "کنترل دسترسی", render: renderTrustPage, mount: withChrome(undefined) },
+    { path: "/trust", title: "کنترل دسترسی", render: renderTrustPage, mount: withChrome(mountTrustPage) },
     { path: "/map", title: "نقشه اکوسیستم", render: renderPresentationMapPage, mount: withChrome(mountPresentationMapPage) },
     { path: "/login", title: "ورود به محیط نمایشی", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
     { path: "/dashboard", title: "نمای کلی کنسول", render: renderWithSession(renderDashboardOverviewPage, "/dashboard"), mount: mountWithSession(undefined, "/dashboard") },
