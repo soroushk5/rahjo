@@ -105,7 +105,7 @@ export function mountLoginPage({ onSuccess }) {
       if (!result.ok) {
         if (error instanceof HTMLElement) {
           error.hidden = false;
-          error.textContent = "message" in result ? result.message : "ورود به محیط نمایشی انجام نشد.";
+          error.textContent = "ایمیل یا رمز عبور محیط نمایشی درست نیست.";
         }
         if (submit instanceof HTMLButtonElement) {
           submit.disabled = false;
