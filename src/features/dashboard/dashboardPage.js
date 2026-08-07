@@ -1,6 +1,13 @@
 import { appShell } from "../../app/appShell.js";
 import { icon } from "../../components/icons.js";
-import { clusterReadiness, portfolioMetrics, sampleAccessRequests } from "../../data/demoData.js";
+import { clusterReadiness, portfolioMetrics, sampleAccessRequests, verificationServices } from "../../data/demoData.js";
+import { escapeHtml } from "../../lib/html.js";
+import {
+  clearPrototypeAccessRequests,
+  getDashboardFilters,
+  listPrototypeAccessRequests,
+  setDashboardFilters
+} from "../../services/prototypeStore.js";
 
 /** @param {string} value */
 function statusClass(value) {
@@ -11,7 +18,13 @@ function statusClass(value) {
 }
 
 function portfolioCards() {
-  return portfolioMetrics
+  const localCount = listPrototypeAccessRequests().length;
+  const metrics = [
+    ...portfolioMetrics,
+    { label: "درخواست‌های این مرورگر", value: String(localCount).padStart(2, "0"), note: "ثبت‌شده در Prototype", icon: "requests" }
+  ];
+
+  return metrics
     .map(
       (metric) => `
         <article class="portfolio-kpi">
@@ -42,19 +55,80 @@ function readinessRows() {
     .join("");
 }
 
+/** @typedef {{id: string, organization: string, cluster: string, purpose: string, status: string, volume: string, createdAt: string, source: "seed" | "local"}} DashboardRequest */
+
+/** @returns {DashboardRequest[]} */
+function allAccessRequests() {
+  const seed = sampleAccessRequests.map((request) => ({
+    ...request,
+    volume: "—",
+    createdAt: "داده نمونه",
+    source: /** @type {const} */ ("seed")
+  }));
+
+  const local = listPrototypeAccessRequests().map((request) => ({
+    id: request.referenceId,
+    organization: request.organization,
+    cluster: verificationServices.find((service) => service.id === request.serviceId)?.title ?? request.serviceId,
+    purpose: request.purpose,
+    status: request.status,
+    volume: request.monthlyVolume,
+    createdAt: request.createdAt,
+    source: /** @type {const} */ ("local")
+  }));
+
+  return [...local, ...seed];
+}
+
+/** @param {DashboardRequest} request */
+function accessRow(request) {
+  const searchText = [request.id, request.organization, request.cluster, request.purpose, request.status].join(" ").toLocaleLowerCase("fa");
+  return `
+    <tr
+      data-request-row
+      data-request-id="${escapeHtml(request.id)}"
+      data-status="${escapeHtml(request.status)}"
+      data-search="${escapeHtml(searchText)}"
+      data-organization="${escapeHtml(request.organization)}"
+      data-cluster="${escapeHtml(request.cluster)}"
+      data-purpose="${escapeHtml(request.purpose)}"
+      data-volume="${escapeHtml(request.volume)}"
+      data-created-at="${escapeHtml(request.createdAt)}"
+      data-source="${request.source}"
+      data-match="true"
+      tabindex="0"
+      aria-selected="false"
+    >
+      <td class="en">${escapeHtml(request.id)}</td>
+      <td>${escapeHtml(request.organization)}</td>
+      <td>${escapeHtml(request.cluster)}</td>
+      <td>${escapeHtml(request.purpose)}</td>
+      <td><span class="table-status table-status--${statusClass(request.status)}">${escapeHtml(request.status)}</span></td>
+    </tr>`;
+}
+
 function accessRows() {
-  return sampleAccessRequests
-    .map(
-      (request) => `
-        <tr>
-          <td class="en">${request.id}</td>
-          <td>${request.organization}</td>
-          <td>${request.cluster}</td>
-          <td>${request.purpose}</td>
-          <td><span class="table-status table-status--${statusClass(request.status)}">${request.status}</span></td>
-        </tr>`
-    )
-    .join("");
+  return allAccessRequests().map(accessRow).join("");
+}
+
+function dashboardToolbar() {
+  const filters = getDashboardFilters();
+  return `
+    <div class="prototype-toolbar dashboard-toolbar">
+      <label class="prototype-search">
+        ${icon("search", { size: 18 })}
+        <input id="dashboard-search" type="search" value="${escapeHtml(filters.query)}" placeholder="شناسه، سازمان، خوشه یا کاربرد…" />
+      </label>
+      <select id="dashboard-status" aria-label="فیلتر وضعیت درخواست">
+        <option value="all" ${filters.status === "all" ? "selected" : ""}>همه وضعیت‌ها</option>
+        <option value="در بررسی" ${filters.status === "در بررسی" ? "selected" : ""}>در بررسی</option>
+        <option value="بررسی حقوقی" ${filters.status === "بررسی حقوقی" ? "selected" : ""}>بررسی حقوقی</option>
+        <option value="نیازمند مدرک" ${filters.status === "نیازمند مدرک" ? "selected" : ""}>نیازمند مدرک</option>
+        <option value="قابل پایلوت" ${filters.status === "قابل پایلوت" ? "selected" : ""}>قابل پایلوت</option>
+      </select>
+      <span id="dashboard-result-count" class="prototype-result-count"></span>
+      <button id="clear-local-requests" class="filter-chip" type="button">پاک‌کردن درخواست‌های این مرورگر</button>
+    </div>`;
 }
 
 function sensitivityVisual() {
@@ -72,6 +146,10 @@ function sensitivityVisual() {
         <circle cx="160" cy="160" r="82" />
       </svg>
     </div>`;
+}
+
+function emptyDetail() {
+  return `<p class="prototype-empty">یک درخواست را انتخاب کنید تا جزئیاتش اینجا دیده شود.</p>`;
 }
 
 export function renderDashboardPage() {
@@ -118,16 +196,96 @@ export function renderDashboardPage() {
 
     <section class="panel card access-table-panel">
       <div class="panel__heading">
-        <div><small>Sample access requests</small><h2>درخواست‌های دسترسی نمونه</h2></div>
+        <div><small>Prototype access requests</small><h2>درخواست‌های دسترسی</h2></div>
         <a data-link class="text-link" href="/request">درخواست جدید ${icon("arrow")}</a>
       </div>
+      ${dashboardToolbar()}
       <div class="table-wrap">
         <table class="data-table">
           <thead><tr><th>شناسه</th><th>سازمان</th><th>خوشه</th><th>کاربرد</th><th>وضعیت</th></tr></thead>
           <tbody>${accessRows()}</tbody>
         </table>
       </div>
+      <div id="dashboard-request-detail" class="dashboard-request-detail" aria-live="polite">${emptyDetail()}</div>
     </section>`;
 
   return appShell({ content, activePath: "/dashboard", title: "کنسول داده" });
+}
+
+function applyDashboardFilters() {
+  const search = document.querySelector("#dashboard-search");
+  const statusSelect = document.querySelector("#dashboard-status");
+  const query = search instanceof HTMLInputElement ? search.value.trim().toLocaleLowerCase("fa") : "";
+  const status = statusSelect instanceof HTMLSelectElement ? statusSelect.value : "all";
+  let visible = 0;
+
+  document.querySelectorAll("[data-request-row]").forEach((row) => {
+    const haystack = row.getAttribute("data-search") ?? "";
+    const rowStatus = row.getAttribute("data-status") ?? "";
+    const match = (!query || haystack.includes(query)) && (status === "all" || rowStatus === status);
+    row.setAttribute("data-match", String(match));
+    if (match) visible += 1;
+  });
+
+  const count = document.querySelector("#dashboard-result-count");
+  if (count instanceof HTMLElement) count.textContent = `${visible} درخواست`;
+  setDashboardFilters({ query, status });
+}
+
+/** @param {HTMLElement} row */
+function showRequestDetail(row) {
+  document.querySelectorAll("[data-request-row]").forEach((item) => item.setAttribute("aria-selected", String(item === row)));
+  const detail = document.querySelector("#dashboard-request-detail");
+  if (!(detail instanceof HTMLElement)) return;
+
+  const id = row.getAttribute("data-request-id") ?? "—";
+  const organization = row.getAttribute("data-organization") ?? "—";
+  const cluster = row.getAttribute("data-cluster") ?? "—";
+  const purpose = row.getAttribute("data-purpose") ?? "—";
+  const volume = row.getAttribute("data-volume") ?? "—";
+  const createdAt = row.getAttribute("data-created-at") ?? "—";
+  const source = row.getAttribute("data-source") === "local" ? "ثبت‌شده در این مرورگر" : "داده نمونه اولیه";
+
+  detail.innerHTML = `
+    <div class="dashboard-request-detail__grid">
+      <div><small>شناسه</small><strong class="en">${escapeHtml(id)}</strong></div>
+      <div><small>سازمان</small><strong>${escapeHtml(organization)}</strong></div>
+      <div><small>خوشه</small><strong>${escapeHtml(cluster)}</strong></div>
+      <div><small>منبع رکورد</small><strong>${source}</strong></div>
+      <div><small>حجم</small><strong>${escapeHtml(volume)}</strong></div>
+      <div><small>زمان</small><strong>${escapeHtml(createdAt)}</strong></div>
+      <div class="dashboard-request-detail__wide"><small>کاربرد اعلام‌شده</small><strong>${escapeHtml(purpose)}</strong></div>
+    </div>`;
+}
+
+/** @param {() => void} rerender */
+export function mountDashboardPage(rerender) {
+  const filters = getDashboardFilters();
+  const search = document.querySelector("#dashboard-search");
+  const statusSelect = document.querySelector("#dashboard-status");
+  if (search instanceof HTMLInputElement) search.value = filters.query;
+  if (statusSelect instanceof HTMLSelectElement) statusSelect.value = filters.status;
+
+  search?.addEventListener("input", applyDashboardFilters);
+  statusSelect?.addEventListener("change", applyDashboardFilters);
+
+  document.querySelectorAll("[data-request-row]").forEach((row) => {
+    if (!(row instanceof HTMLElement)) return;
+    row.addEventListener("click", () => showRequestDetail(row));
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        showRequestDetail(row);
+      }
+    });
+  });
+
+  document.querySelector("#clear-local-requests")?.addEventListener("click", () => {
+    if (!listPrototypeAccessRequests().length) return;
+    if (!window.confirm("درخواست‌های نمایشی ثبت‌شده در این مرورگر پاک شوند؟")) return;
+    clearPrototypeAccessRequests();
+    rerender();
+  });
+
+  applyDashboardFilters();
 }
