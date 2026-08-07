@@ -5,6 +5,7 @@ import { ecosystemEdges, ecosystemNodes } from "../../data/siteContent.js";
 let activeNodeId = "policy";
 let activeGroup = "all";
 
+/** @param {string} group */
 function groupMeta(group) {
   if (group === "source") return { label: "منبع داده", icon: "database", index: "01" };
   if (group === "control") return { label: "کنترل رهجو", icon: "lock", index: "02" };
@@ -12,6 +13,7 @@ function groupMeta(group) {
   return { label: "کاربرد", icon: "business", index: "04" };
 }
 
+/** @param {string} id */
 function nodeById(id) {
   return ecosystemNodes.find((node) => node.id === id);
 }
