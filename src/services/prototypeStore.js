@@ -6,6 +6,16 @@ const STORAGE_KEY = "rahjo.prototype.v1";
 /** @typedef {{query: string, status: string}} DashboardFilters */
 /** @typedef {{preferredClusterId: string | null, requestDraft: RequestDraft | null, accessRequests: PrototypeAccessRequest[], atlasFilters: AtlasFilters, dashboardFilters: DashboardFilters}} PrototypeSnapshot */
 
+const requestSteps = new Set(["service", "details", "review", "result"]);
+const volumeOptions = new Set(["", "pilot", "small", "medium", "large"]);
+const sensitivityOptions = new Set(["all", "بسیار حساس", "حساس", "متوسط", "کنترل‌شده"]);
+const dashboardStatusOptions = new Set(["all", "در بررسی", "بررسی حقوقی", "نیازمند مدرک", "قابل پایلوت"]);
+
+/** @param {unknown} value @param {number} [maxLength] */
+function safeString(value, maxLength = 2000) {
+  return typeof value === "string" ? value.slice(0, maxLength) : "";
+}
+
 /** @returns {PrototypeSnapshot} */
 function defaultSnapshot() {
   return {
@@ -14,6 +24,49 @@ function defaultSnapshot() {
     accessRequests: [],
     atlasFilters: { query: "", sensitivity: "all" },
     dashboardFilters: { query: "", status: "all" }
+  };
+}
+
+/** @param {unknown} input @returns {RequestDraft | null} */
+function sanitizeDraft(input) {
+  if (!input || typeof input !== "object") return null;
+  const candidate = /** @type {{step?: unknown, payload?: unknown, referenceId?: unknown}} */ (input);
+  if (typeof candidate.step !== "string" || !requestSteps.has(candidate.step)) return null;
+  if (!candidate.payload || typeof candidate.payload !== "object") return null;
+
+  const payload = /** @type {{serviceId?: unknown, organization?: unknown, purpose?: unknown, monthlyVolume?: unknown}} */ (candidate.payload);
+  const serviceId = typeof payload.serviceId === "string" ? safeString(payload.serviceId, 80) : null;
+  const monthlyVolume = safeString(payload.monthlyVolume, 20);
+
+  return /** @type {RequestDraft} */ ({
+    step: candidate.step,
+    payload: {
+      serviceId,
+      organization: safeString(payload.organization, 180),
+      purpose: safeString(payload.purpose, 2000),
+      monthlyVolume: volumeOptions.has(monthlyVolume) ? monthlyVolume : ""
+    },
+    referenceId: typeof candidate.referenceId === "string" ? safeString(candidate.referenceId, 120) : null
+  });
+}
+
+/** @param {unknown} input @returns {PrototypeAccessRequest | null} */
+function sanitizeAccessRequest(input) {
+  if (!input || typeof input !== "object") return null;
+  const candidate = /** @type {Record<string, unknown>} */ (input);
+  const referenceId = safeString(candidate.referenceId, 120);
+  const serviceId = safeString(candidate.serviceId, 80);
+  if (!referenceId || !serviceId) return null;
+
+  const monthlyVolume = safeString(candidate.monthlyVolume, 20);
+  return {
+    referenceId,
+    serviceId,
+    organization: safeString(candidate.organization, 180),
+    purpose: safeString(candidate.purpose, 2000),
+    monthlyVolume: volumeOptions.has(monthlyVolume) ? monthlyVolume : "",
+    status: safeString(candidate.status, 80) || "در بررسی",
+    createdAt: safeString(candidate.createdAt, 80)
   };
 }
 
@@ -35,14 +88,30 @@ export function readPrototypeSnapshot() {
   try {
     const raw = storage.getItem(STORAGE_KEY);
     if (!raw) return defaultSnapshot();
-    const parsed = /** @type {Partial<PrototypeSnapshot>} */ (JSON.parse(raw));
-    const defaults = defaultSnapshot();
+    const parsed = /** @type {Record<string, unknown>} */ (JSON.parse(raw));
+    const atlas = parsed.atlasFilters && typeof parsed.atlasFilters === "object"
+      ? /** @type {Record<string, unknown>} */ (parsed.atlasFilters)
+      : {};
+    const dashboard = parsed.dashboardFilters && typeof parsed.dashboardFilters === "object"
+      ? /** @type {Record<string, unknown>} */ (parsed.dashboardFilters)
+      : {};
+    const sensitivity = safeString(atlas.sensitivity, 40);
+    const status = safeString(dashboard.status, 80);
+
     return {
-      preferredClusterId: typeof parsed.preferredClusterId === "string" ? parsed.preferredClusterId : null,
-      requestDraft: parsed.requestDraft ?? null,
-      accessRequests: Array.isArray(parsed.accessRequests) ? parsed.accessRequests.slice(0, 30) : [],
-      atlasFilters: { ...defaults.atlasFilters, ...(parsed.atlasFilters ?? {}) },
-      dashboardFilters: { ...defaults.dashboardFilters, ...(parsed.dashboardFilters ?? {}) }
+      preferredClusterId: typeof parsed.preferredClusterId === "string" ? safeString(parsed.preferredClusterId, 80) : null,
+      requestDraft: sanitizeDraft(parsed.requestDraft),
+      accessRequests: Array.isArray(parsed.accessRequests)
+        ? parsed.accessRequests.map(sanitizeAccessRequest).filter((item) => item !== null).slice(0, 30)
+        : [],
+      atlasFilters: {
+        query: safeString(atlas.query, 240),
+        sensitivity: sensitivityOptions.has(sensitivity) ? sensitivity : "all"
+      },
+      dashboardFilters: {
+        query: safeString(dashboard.query, 240),
+        status: dashboardStatusOptions.has(status) ? status : "all"
+      }
     };
   } catch {
     return defaultSnapshot();
