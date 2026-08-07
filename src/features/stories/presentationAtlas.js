@@ -13,6 +13,7 @@ function activeCluster() {
   return dataClusters.find((item) => item.id === activeClusterId) ?? dataClusters[0];
 }
 
+/** @param {string} id */
 function portfolioFor(id) {
   const index = dataClusters.findIndex((item) => item.id === id);
   return demoPortfolio[index] ?? demoPortfolio[0];
