@@ -1,24 +1,11 @@
 import { icon } from "../components/icons.js";
+import { allDestinations } from "./navigation.js";
 import { signOut } from "../services/authStore.js";
 
 let keyboardBound = false;
 
-const destinations = Object.freeze([
-  { path: "/", label: "خانه", meta: "معرفی پلتفرم" },
-  { path: "/data", label: "اطلس داده", meta: "خوشه‌ها و سطح حساسیت" },
-  { path: "/platform", label: "معماری", meta: "لایه‌های فنی و کنترل" },
-  { path: "/trust", label: "کنترل دسترسی", meta: "سیاست و ممیزی" },
-  { path: "/map", label: "نقشه اکوسیستم", meta: "منبع تا کاربرد" },
-  { path: "/dashboard", label: "نمای کلی کنسول", meta: "وضعیت سبد و درخواست‌ها" },
-  { path: "/dashboard/requests", label: "درخواست‌ها", meta: "جست‌وجو و مرور Gate" },
-  { path: "/dashboard/data", label: "سبد داده", meta: "آمادگی و وضعیت عرضه" },
-  { path: "/dashboard/audit", label: "کنترل و ممیزی", meta: "Policy و رخدادهای دمو" },
-  { path: "/request", label: "درخواست دسترسی", meta: "فرایند چندمرحله‌ای" },
-  { path: "/login", label: "ورود", meta: "محیط نمایشی رهجو" }
-]);
-
 function commandMarkup() {
-  return `<div class="command-backdrop" data-command-close></div><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><header><div><small>Quick navigation</small><h2 id="command-title">کجا می‌خواهید بروید؟</h2></div><button type="button" class="icon-button" data-command-close aria-label="بستن">${icon("close")}</button></header><label class="command-search">${icon("search")}<input id="command-query" autocomplete="off" placeholder="جست‌وجوی صفحه یا مفهوم…" /></label><nav class="command-results" aria-label="نتایج جست‌وجوی سریع">${destinations.map((item) => `<a data-link data-command-item data-command-text="${item.label} ${item.meta}" href="${item.path}"><strong>${item.label}</strong><small>${item.meta}</small><span>${icon("arrow")}</span></a>`).join("")}</nav><footer><kbd>Esc</kbd> بستن · <kbd>Ctrl K</kbd> باز کردن</footer></section>`;
+  return `<div class="command-backdrop" data-command-close></div><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><header><div><small>Quick navigation</small><h2 id="command-title">کجا می‌خواهید بروید؟</h2></div><button type="button" class="icon-button" data-command-close aria-label="بستن">${icon("close")}</button></header><label class="command-search">${icon("search")}<input id="command-query" autocomplete="off" placeholder="جست‌وجوی صفحه یا مفهوم…" /></label><nav class="command-results" aria-label="نتایج جست‌وجوی سریع">${allDestinations.map((item) => `<a data-link data-command-item data-command-text="${item.label} ${item.meta}" href="${item.path}"><strong>${item.label}</strong><small>${item.meta}</small><span>${icon("arrow")}</span></a>`).join("")}</nav><footer><kbd>Esc</kbd> بستن · <kbd>Ctrl K</kbd> باز کردن</footer></section>`;
 }
 
 function ensureCommandPalette() {
@@ -78,7 +65,7 @@ function mountCommandPalette() {
     keyboardBound = true;
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeCommandPalette();
-      if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "k") {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase("fa") === "k") {
         event.preventDefault();
         openCommandPalette();
       }
