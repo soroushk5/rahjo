@@ -58,15 +58,33 @@ export class Router {
     return path === "/" ? `${this.basePath}/` : `${this.basePath}${path}`;
   }
 
+  /** @param {HTMLAnchorElement} link */
+  logicalPathForLink(link) {
+    const stored = link.dataset.routePath;
+    if (stored) return this.routePath(stored);
+
+    const href = link.getAttribute("href");
+    if (!href) return null;
+    const url = new URL(href, window.location.origin);
+    if (url.origin !== window.location.origin) return null;
+
+    if (this.routingMode === "hash" && url.hash.startsWith("#/")) {
+      return this.routePath(url.hash.slice(1));
+    }
+
+    return this.routePath(url.pathname);
+  }
+
   rewriteInternalLinks() {
     document.querySelectorAll("a[data-link]").forEach((link) => {
       if (!(link instanceof HTMLAnchorElement)) return;
       const href = link.getAttribute("href");
-      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+      if (!href || href.startsWith("mailto:") || href.startsWith("tel:")) return;
 
-      const url = new URL(href, window.location.origin);
-      if (url.origin !== window.location.origin) return;
-      link.setAttribute("href", this.browserPath(url.pathname));
+      const logicalPath = this.logicalPathForLink(link);
+      if (!logicalPath) return;
+      link.dataset.routePath = logicalPath;
+      link.setAttribute("href", this.browserPath(logicalPath));
     });
   }
 
@@ -78,9 +96,9 @@ export class Router {
       if (!(target instanceof HTMLAnchorElement) || target.origin !== window.location.origin) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || target.target === "_blank") return;
 
+      const logicalPath = target.dataset.routePath ?? (this.routingMode === "hash" ? target.hash.slice(1) || "/" : target.pathname);
       event.preventDefault();
-      const nextPath = this.routingMode === "hash" ? target.hash.slice(1) || "/" : target.pathname;
-      this.navigate(nextPath);
+      this.navigate(logicalPath);
     });
     this.handleNavigation();
   }
