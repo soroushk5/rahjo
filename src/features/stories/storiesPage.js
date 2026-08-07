@@ -1,6 +1,7 @@
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
 import { dataClusters, useCases } from "../../data/siteContent.js";
+import { escapeHtml } from "../../lib/html.js";
 import { getAtlasFilters, setAtlasFilters, setPreferredClusterId } from "../../services/prototypeStore.js";
 
 /** @param {(typeof dataClusters)[number]} cluster */
@@ -67,7 +68,7 @@ function filterControls() {
     <div class="prototype-toolbar" aria-label="فیلتر اطلس داده">
       <label class="prototype-search">
         ${icon("search", { size: 18 })}
-        <input id="atlas-search" type="search" value="${filters.query}" placeholder="جست‌وجو در خوشه، کاربرد یا نمونه داده…" />
+        <input id="atlas-search" type="search" value="${escapeHtml(filters.query)}" placeholder="جست‌وجو در خوشه، کاربرد یا نمونه داده…" />
       </label>
       ${sensitivities.map((value) => `
         <button
