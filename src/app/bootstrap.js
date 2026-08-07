@@ -42,9 +42,13 @@ function mountWithSession(pageMount, returnTo) {
   };
 }
 
-/** @param {((rerender: () => void) => void) | undefined} primary @param {() => void} enhancement */
+/**
+ * @param {((rerender: () => void) => void) | undefined} primary
+ * @param {() => void} enhancement
+ * @returns {(rerender: () => void) => void}
+ */
 function composeMount(primary, enhancement) {
-  return (rerender) => {
+  return function composedMount(rerender) {
     primary?.(rerender);
     enhancement();
   };
