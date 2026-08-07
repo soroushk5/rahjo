@@ -162,6 +162,7 @@ function requestTableRows() {
     </tr>`).join("");
 }
 
+/** @param {string} referenceId */
 function requestDetail(referenceId) {
   const request = allRequests().find((item) => item.referenceId === referenceId) ?? allRequests()[0];
   if (!request) return `<div class="empty-panel">درخواستی برای نمایش وجود ندارد.</div>`;
@@ -215,6 +216,7 @@ function applyRequestFilters() {
 
 export function mountDashboardRequestsPage() {
   const detail = document.querySelector("#present-request-detail");
+  /** @param {Element} row */
   const selectRow = (row) => {
     if (!(row instanceof HTMLElement)) return;
     const reference = row.dataset.reference;
