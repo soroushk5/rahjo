@@ -2,12 +2,17 @@ import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
 import { dataClusters, useCases } from "../../data/siteContent.js";
 import { demoPortfolio } from "../../data/presentationData.js";
-import { setPreferredClusterId } from "../../services/prototypeStore.js";
+import { getPreferredClusterId, setPreferredClusterId } from "../../services/prototypeStore.js";
 import { escapeHtml } from "../../lib/html.js";
 
 let activeClusterId = "vehicle";
 let activeSensitivity = "all";
 let query = "";
+
+function hydratePreferredCluster() {
+  const preferred = getPreferredClusterId();
+  if (preferred && dataClusters.some((item) => item.id === preferred)) activeClusterId = preferred;
+}
 
 function activeCluster() {
   return dataClusters.find((item) => item.id === activeClusterId) ?? dataClusters[0];
@@ -50,8 +55,11 @@ function clusterDetail() {
     <dl class="atlas-detail__facts"><div><dt>مدل دسترسی</dt><dd>${cluster.access}</dd></div><div><dt>وضعیت سبد</dt><dd>${cluster.status}</dd></div><div><dt>آمادگی نمایشی</dt><dd>${readiness.progress}%</dd></div><div><dt>وضعیت عرضه</dt><dd>${readiness.launch}</dd></div></dl>
     <div class="atlas-detail__section"><small>نمونه داده‌های احتمالی</small><div class="tag-row">${cluster.examples.map((item) => `<span>${item}</span>`).join("")}</div></div>
     <div class="atlas-detail__section"><small>کاربردهای محتمل</small><ul>${cluster.useCases.map((item) => `<li>${item}</li>`).join("")}</ul></div>
-    <div class="atlas-detail__gate">${icon("shield", { size: 19 })}<div><strong>Gate این خوشه هنوز بسته است.</strong><small>انتخاب خوشه فقط Draft درخواست را آماده می‌کند و به معنی دسترسی یا فعال بودن سرویس نیست.</small></div></div>
-    <a data-link id="atlas-request-link" data-request-cluster="${cluster.id}" class="button button--primary atlas-detail__cta" href="/request">بررسی مسیر دسترسی ${icon("arrow")}</a>`;
+    <div class="atlas-detail__gate">${icon("shield", { size: 19 })}<div><strong>Gate این خوشه هنوز بسته است.</strong><small>انتخاب خوشه فقط context دمو را نگه می‌دارد و به معنی دسترسی یا فعال بودن سرویس نیست.</small></div></div>
+    <div class="atlas-detail__actions">
+      <a data-link data-context-cluster="${cluster.id}" class="button button--secondary" href="/map">دیدن مسیر در نقشه</a>
+      <a data-link id="atlas-request-link" data-context-cluster="${cluster.id}" class="button button--primary" href="/request">بررسی مسیر دسترسی ${icon("arrow", { size: 15 })}</a>
+    </div>`;
 }
 
 function industryRows() {
@@ -60,8 +68,9 @@ function industryRows() {
 }
 
 export function renderPresentationAtlasPage() {
+  hydratePreferredCluster();
   const content = `
-    <section class="atlas-hero"><div class="container"><div><h1>اطلس داده رهجو</h1><p>به‌جای نمایش یک فهرست طولانی سرویس، سبد اولیه در شش خوشه دیده می‌شود؛ همراه با حساسیت، مدل دسترسی و آمادگی نمایشی.</p></div><div class="atlas-hero__stats"><span><strong>۵۲</strong><small>عنوان در سبد بررسی</small></span><span><strong>۰۶</strong><small>خوشه داده</small></span><span><strong>۰۰</strong><small>ادعای عمومی تأییدشده</small></span></div></div></section>
+    <section class="atlas-hero"><div class="container"><div><h1>اطلس داده رهجو</h1><p>سبد اولیه در شش خوشه دیده می‌شود؛ همراه با حساسیت، مدل دسترسی، کاربرد و وضعیت آمادگی. انتخاب شما بین اطلس، مپ و درخواست حفظ می‌شود.</p></div><div class="atlas-hero__stats"><span><strong>۵۲</strong><small>عنوان در سبد بررسی</small></span><span><strong>۰۶</strong><small>خوشه داده</small></span><span><strong>۰۰</strong><small>ادعای عمومی تأییدشده</small></span></div></div></section>
 
     <section class="container atlas-workspace">
       <div class="atlas-toolbar"><label class="atlas-search">${icon("search", { size: 18 })}<input id="presentation-atlas-search" type="search" placeholder="جست‌وجو در خوشه، کاربرد یا نمونه داده…" /></label><div class="atlas-filters">${["all", "بسیار حساس", "حساس", "متوسط", "کنترل‌شده"].map((value) => `<button type="button" data-atlas-filter="${value}" aria-pressed="${activeSensitivity === value}">${value === "all" ? "همه" : value}</button>`).join("")}</div><span id="atlas-visible-count">۶ خوشه</span></div>
@@ -85,9 +94,11 @@ function applyFilters() {
   if (count instanceof HTMLElement) count.textContent = `${visible} خوشه`;
 }
 
-function mountRequestLink() {
-  const link = document.querySelector("#atlas-request-link");
-  link?.addEventListener("click", () => setPreferredClusterId(activeClusterId), { once: true });
+function mountContextLinks() {
+  document.querySelectorAll("[data-context-cluster]").forEach((link) => link.addEventListener("click", () => {
+    const cluster = link.getAttribute("data-context-cluster");
+    if (cluster) setPreferredClusterId(cluster);
+  }, { once: true }));
 }
 
 export function mountPresentationAtlasPage() {
@@ -108,13 +119,14 @@ export function mountPresentationAtlasPage() {
   document.querySelectorAll("[data-atlas-cluster]").forEach((card) => {
     card.addEventListener("click", () => {
       activeClusterId = card.getAttribute("data-atlas-cluster") ?? dataClusters[0].id;
+      setPreferredClusterId(activeClusterId);
       document.querySelectorAll("[data-atlas-cluster]").forEach((item) => item.setAttribute("aria-pressed", String(item === card)));
       const detail = document.querySelector("#atlas-detail");
       if (detail instanceof HTMLElement) detail.innerHTML = clusterDetail();
-      mountRequestLink();
+      mountContextLinks();
     });
   });
 
   applyFilters();
-  mountRequestLink();
+  mountContextLinks();
 }
