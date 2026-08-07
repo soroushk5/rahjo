@@ -29,9 +29,9 @@ const stepOrder = ["service", "details", "review", "result"];
 const stepLabels = ["انتخاب خوشه", "تعریف کاربرد", "بررسی دسترسی", "ثبت درخواست"];
 
 function hydratePreferredCluster() {
-  if (state.step !== "service" || state.payload.serviceId) return;
+  if (state.step !== "service") return;
   const preferred = getPreferredClusterId();
-  if (preferred && verificationServices.some((service) => service.id === preferred)) {
+  if (preferred && preferred !== state.payload.serviceId && verificationServices.some((service) => service.id === preferred)) {
     state = selectService(state, preferred);
     saveRequestDraft(state);
   }
@@ -106,7 +106,7 @@ function detailsStep() {
           value="${escapeHtml(state.payload.organization)}"
           placeholder="مثلاً شرکت بیمه نمونه"
         />
-        <small data-validation>${organizationLength >= 3 ? "✓ حداقل اطلاعات لازم وارد شده" : "حداقل ۳ نویسه"}</small>
+        <small id="organization-validation" data-validation>${organizationLength >= 3 ? "✓ حداقل اطلاعات لازم وارد شده" : "حداقل ۳ نویسه"}</small>
       </div>
       <div class="field">
         <label for="monthly-volume">حجم ماهانه مورد انتظار</label>
@@ -126,7 +126,7 @@ function detailsStep() {
           rows="5"
           placeholder="داده در کدام مرحله، برای چه تصمیمی و توسط چه نقشی استفاده می‌شود؟"
         >${escapeHtml(state.payload.purpose)}</textarea>
-        <small data-validation>${purposeLength >= 12 ? "✓ شرح برای ارزیابی اولیه کافی است" : `${purposeLength}/12 نویسه حداقل`}</small>
+        <small id="purpose-validation" data-validation>${purposeLength >= 12 ? "✓ شرح برای ارزیابی اولیه کافی است" : `${purposeLength}/12 نویسه حداقل`}</small>
         <small>اطلاعات واقعی شخص یا credential در این نسخه وارد نکنید.</small>
       </div>
     </form>`;
@@ -216,6 +216,20 @@ export function renderRequestPage() {
   return appShell({ content, activePath: "/request", title: "درخواست دسترسی" });
 }
 
+function updateValidationHints() {
+  const organization = document.querySelector("#organization-validation");
+  const purpose = document.querySelector("#purpose-validation");
+  const organizationLength = state.payload.organization.trim().length;
+  const purposeLength = state.payload.purpose.trim().length;
+
+  if (organization instanceof HTMLElement) {
+    organization.textContent = organizationLength >= 3 ? "✓ حداقل اطلاعات لازم وارد شده" : "حداقل ۳ نویسه";
+  }
+  if (purpose instanceof HTMLElement) {
+    purpose.textContent = purposeLength >= 12 ? "✓ شرح برای ارزیابی اولیه کافی است" : `${purposeLength}/12 نویسه حداقل`;
+  }
+}
+
 /** @param {() => void} rerender */
 export function mountRequestPage(rerender) {
   document.querySelectorAll("[data-service-id]").forEach((button) => {
@@ -241,6 +255,7 @@ export function mountRequestPage(rerender) {
 
     state = updateVerificationFields(state, { [target.name]: target.value });
     persistDraft();
+    updateValidationHints();
     const next = document.querySelector("#next-step");
     if (next instanceof HTMLButtonElement) next.disabled = !canContinue(state);
   });
