@@ -82,6 +82,12 @@ function mountCommandPalette() {
     button.addEventListener("click", closeCommandPalette);
   });
 
+  palette.querySelectorAll("[data-command-item]").forEach((item) => {
+    if (!(item instanceof HTMLElement) || item.dataset.closeBound) return;
+    item.dataset.closeBound = "true";
+    item.addEventListener("click", closeCommandPalette);
+  });
+
   const query = palette.querySelector("#command-query");
   if (query instanceof HTMLInputElement && !query.dataset.bound) {
     query.dataset.bound = "true";
