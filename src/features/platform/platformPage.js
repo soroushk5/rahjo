@@ -1,4 +1,73 @@
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
-import { platformRooms } from "../../data/siteContent.js";
-export function renderPlatformPage(){const rooms=platformRooms.map((r,i)=>`<article class="platform-module"><div class="module-index">0${i+1}</div><span class="module-icon">${icon(r.icon,{size:26})}</span><div><small>${r.label}</small><h2>${r.title}</h2><p>${r.text}</p></div><ul><li>ورودی و مالک مشخص</li><li>رد تصمیم قابل بازگشت</li><li>مرز انسانی و خودکار روشن</li></ul></article>`).join("");const content=`<section class="page-hero"><div class="container"><p class="eyebrow">PLATFORM ARCHITECTURE</p><h1>پلتفرمی برای دیدن مسیر، نه فقط نتیجه.</h1><p>رهجو بین منبع داده، زمینه، تصمیم و عملیات یک زبان مشترک می‌سازد.</p></div></section><section class="container platform-stack">${rooms}</section><section class="container"><div class="principle-grid"><article><span>${icon("node")}</span><h3>Adapter-first</h3><p>صفحه‌ها به فروشنده یا endpoint وابسته نیستند.</p></article><article><span>${icon("eye")}</span><h3>Human-readable</h3><p>هر وضعیت باید برای انسان قابل توضیح باشد.</p></article><article><span>${icon("audit")}</span><h3>Audit by design</h3><p>ممیزی بعداً اضافه نمی‌شود؛ از ابتدا در جریان است.</p></article></div></section>`;return siteShell({content,activePath:"/platform"});}
+import { platformLayers } from "../../data/siteContent.js";
+
+/** @param {(typeof platformLayers)[number]} layer @param {number} index */
+function layerMarkup(layer, index) {
+  return `
+    <article class="platform-layer">
+      <div class="platform-layer__index">${String(index + 1).padStart(2, "0")}</div>
+      <span class="platform-layer__icon">${icon(layer.icon, { size: 25 })}</span>
+      <div class="platform-layer__copy">
+        <small>${layer.label}</small>
+        <h2>${layer.title}</h2>
+        <p>${layer.text}</p>
+      </div>
+      <ul class="platform-layer__checks">
+        ${layer.checks.map((/** @type {string} */ check) => `<li>${icon("check", { size: 15 })}${check}</li>`).join("")}
+      </ul>
+    </article>`;
+}
+
+export function renderPlatformPage() {
+  const layers = platformLayers.map(layerMarkup).join("");
+
+  const content = `
+    <section class="page-hero page-hero--architecture">
+      <div class="container split-heading">
+        <div>
+          <p class="eyebrow">PLATFORM ARCHITECTURE</p>
+          <h1>کنترل باید میان منبع و مصرف قرار بگیرد.</h1>
+        </div>
+        <p>
+          معماری رهجو تأمین‌کننده داده را از تجربه مشتری جدا می‌کند و سیاست دسترسی،
+          نرمال‌سازی، تحویل و ممیزی را به لایه‌های مستقل تبدیل می‌کند.
+        </p>
+      </div>
+    </section>
+
+    <section class="container architecture-flow" aria-label="جریان معماری رهجو">
+      <div class="flow-stage"><span>منابع داده</span><strong>ناهمگون و حساس</strong></div>
+      <div class="flow-arrow">${icon("arrow", { size: 22 })}</div>
+      <div class="flow-stage flow-stage--core"><span>لایه کنترل رهجو</span><strong>Policy · Gateway · Audit</strong></div>
+      <div class="flow-arrow">${icon("arrow", { size: 22 })}</div>
+      <div class="flow-stage"><span>مصرف سازمانی</span><strong>API · Workflow · Message</strong></div>
+    </section>
+
+    <section class="container platform-stack">${layers}</section>
+
+    <section class="container principle-grid principle-grid--four">
+      <article>
+        <span>${icon("link")}</span>
+        <h3>Adapter-first</h3>
+        <p>تغییر منبع، قرارداد محصول و رابط مشتری را نمی‌شکند.</p>
+      </article>
+      <article>
+        <span>${icon("lock")}</span>
+        <h3>Least privilege</h3>
+        <p>هر مشتری فقط حداقل فیلد لازم برای هدف تأییدشده را می‌بیند.</p>
+      </article>
+      <article>
+        <span>${icon("eye")}</span>
+        <h3>Human-readable</h3>
+        <p>وضعیت، محدودیت و خطا برای اپراتور و توسعه‌دهنده قابل فهم است.</p>
+      </article>
+      <article>
+        <span>${icon("audit")}</span>
+        <h3>Audit by design</h3>
+        <p>ممیزی بخشی از جریان است، نه گزارشی که بعداً ساخته شود.</p>
+      </article>
+    </section>`;
+
+  return siteShell({ content, activePath: "/platform" });
+}

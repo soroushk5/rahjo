@@ -1,15 +1,18 @@
 /**
- * @typedef {{serviceId: string, nationalId: string, mobile: string}} VerificationRequest
- * @typedef {{referenceId: string, status: "accepted"}} VerificationResponse
- * @typedef {{submit(request: VerificationRequest): Promise<VerificationResponse>}} VerificationGateway
+ * @typedef {{serviceId: string, organization: string, purpose: string, monthlyVolume: string}} AccessRequest
+ * @typedef {{referenceId: string, status: "accepted"}} AccessResponse
+ * @typedef {{submit(request: AccessRequest): Promise<AccessResponse>}} AccessRequestGateway
  */
 
-/** @implements {VerificationGateway} */
-export class MockVerificationGateway {
-  /** @param {VerificationRequest} request */
+/** @implements {AccessRequestGateway} */
+export class MockAccessRequestGateway {
+  /** @param {AccessRequest} request */
   async submit(request) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 450));
     const suffix = String(Date.now()).slice(-6);
-    return /** @type {VerificationResponse} */ ({ referenceId: `RH-${request.serviceId.toUpperCase()}-${suffix}`, status: "accepted" });
+    return /** @type {AccessResponse} */ ({
+      referenceId: `RA-${request.serviceId.toUpperCase()}-${suffix}`,
+      status: "accepted"
+    });
   }
 }
