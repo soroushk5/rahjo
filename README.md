@@ -1,10 +1,10 @@
 # Rahjo — Controlled Data Access Platform
 
-A human-readable, dependency-light frontend baseline for Rahjo.
+A presentation-ready, dependency-light frontend prototype for Rahjo.
 
 ## Product direction
 
-Rahjo is positioned as a control layer between sensitive data sources and organizational use cases. The interface makes five things explicit:
+Rahjo is positioned as a control layer between data sources and organizational use cases. The interface makes five things explicit:
 
 1. data cluster and source
 2. sensitivity level
@@ -12,18 +12,46 @@ Rahjo is positioned as a control layer between sensitive data sources and organi
 4. controlled delivery
 5. audit and operational ownership
 
-## What exists
+## Presentation build
 
-- Persian RTL marketing landing page
-- interactive data-cluster explorer
-- data atlas and use-case catalog
-- layered platform architecture
+The current build includes:
+
+- Persian RTL public landing page
+- Vazirmatn typography across the interface
+- interactive data atlas
 - interactive ecosystem map
-- data control console
-- access-request flow with explicit domain state
-- centralized design tokens and Vazirmatn typography
-- GitHub quality workflow
-- Hostinger SPA fallback and deployment guide
+- platform and access-control pages
+- demo login and browser-local session
+- dashboard overview
+- access-request dashboard
+- data portfolio/readiness dashboard
+- audit/control dashboard
+- multi-step access-request flow
+- browser-local draft and request persistence
+- centralized design tokens and 2px Rahjo icon system
+- responsive desktop/mobile layouts
+- Hostinger static package and smoke tests
+
+## Demo login
+
+Route: `/login`
+
+```text
+demo@rahjo.ir
+RahjoDemo1405
+```
+
+This is a static demo credential. It creates a local browser session only and is not connected to a backend account.
+
+Recommended presentation flow:
+
+```text
+/login
+→ /dashboard
+→ /request
+→ submit demo request
+→ /dashboard/requests
+```
 
 ## Run locally
 
@@ -40,8 +68,14 @@ Open `http://localhost:4173`.
 npm run qa
 ```
 
+The quality pipeline runs strict static checking, automated tests, the Hostinger build and deployment smoke tests.
+
 Runtime code has no third-party dependencies. TypeScript is used only for strict static checking of JavaScript modules.
+
+## Design reference
+
+See `docs/PRESENTATION_SYSTEM.md` for design tokens, mock-data rules, routes and the presentation QA contract.
 
 ## Safety boundary
 
-This MVP contains demonstration data only. It does not connect to the claimed portfolio services and must not process real personal data until source, legal, security and product gates are passed.
+This prototype contains demonstration data only. It does not connect to the claimed portfolio services and must not process real personal data until source, legal, security and product gates are passed.

@@ -37,7 +37,11 @@ const paths = {
   timeline: '<path d="M6 3v18M6 7h8M6 12h12M6 17h6"/><circle cx="6" cy="7" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="17" r="1.5"/>',
   filter: '<path d="M4 6h16M7 12h10M10 18h4"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
-  close: '<path d="m6 6 12 12M18 6 6 18"/>'
+  close: '<path d="m6 6 12 12M18 6 6 18"/>',
+  external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 13v6H5V5h6"/>',
+  logout: '<path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4M18 12H9"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.5 2.5 0 0 1 4.8 1c0 1.7-2.5 2.1-2.5 4M12 18h.01"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'
 };
 
 /** @param {string} name @param {{label?: string, size?: number}} [options] */
