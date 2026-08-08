@@ -1,4 +1,4 @@
-name: Publish Hostinger Preview Branch
+name: Publish Hostinger Production Branch
 
 on:
   workflow_run:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: hostinger-preview
+  group: hostinger-production
   cancel-in-progress: false
 
 jobs:
@@ -24,16 +24,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Build preview-only public files
+      - name: Require the production origin
         env:
-          DEPLOY_MODE: preview
+          SITE_ORIGIN: ${{ vars.RAHJO_PRODUCTION_ORIGIN }}
+        run: test -n "$SITE_ORIGIN"
+      - name: Build and verify production public files
+        env:
+          DEPLOY_MODE: production
+          SITE_ORIGIN: ${{ vars.RAHJO_PRODUCTION_ORIGIN }}
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: node scripts/build-hostinger.mjs
+        run: |
+          node scripts/build-hostinger.mjs
+          node scripts/smoke-hostinger.mjs
       - name: Publish generated branch without rewriting history
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
-          TARGET_BRANCH: hostinger-preview
+          TARGET_BRANCH: hostinger-production
         run: |
           publish_dir="$(mktemp -d)"
           cd "$publish_dir"
@@ -51,8 +58,8 @@ jobs:
           cp -a "$GITHUB_WORKSPACE/dist-hostinger/." .
           git add -A
           if git diff --cached --quiet; then
-            echo "Generated preview branch is already current."
+            echo "Generated production branch is already current."
             exit 0
           fi
-          git commit -m "deploy: Hostinger preview ${SOURCE_SHA::7}"
+          git commit -m "deploy: Hostinger production ${SOURCE_SHA::7}"
           git push origin "$TARGET_BRANCH"

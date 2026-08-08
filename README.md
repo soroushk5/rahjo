@@ -72,6 +72,8 @@ The quality pipeline runs strict static checking, automated tests, the Hostinger
 
 Runtime code has no third-party dependencies. TypeScript is used only for strict static checking of JavaScript modules.
 
+Production is published from the quality-checked `main` branch to the generated `hostinger-production` branch. See `docs/HOSTINGER_PRODUCTION.md` for the source-of-truth and Hostinger connection contract.
+
 ## Design reference
 
 See `docs/PRESENTATION_SYSTEM.md` for design tokens, mock-data rules, routes and the presentation QA contract.

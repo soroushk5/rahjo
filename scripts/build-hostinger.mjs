@@ -8,9 +8,20 @@ const siteOrigin = (process.env.SITE_ORIGIN || '').replace(/\/$/, '');
 const commitSha = process.env.GITHUB_SHA || process.env.COMMIT_SHA || 'local';
 const generatedAt = new Date().toISOString();
 
+if (mode === 'production') {
+  if (!siteOrigin) {
+    throw new Error('SITE_ORIGIN is required for a production Hostinger build');
+  }
+
+  const productionUrl = new URL(siteOrigin);
+  if (productionUrl.protocol !== 'https:' || productionUrl.pathname !== '/') {
+    throw new Error('SITE_ORIGIN must be an HTTPS origin without a path');
+  }
+}
+
 const runtimeEntries = ['assets', 'src', 'styles', '.htaccess'];
 
-await rm(output, { recursive: true, force: true });
+await rm(output, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
 await mkdir(output, { recursive: true });
 
 for (const entry of runtimeEntries) {
@@ -26,7 +37,9 @@ index = index
   .replace(/<meta name="robots"[^>]*>\s*/g, '')
   .replace('<meta name="theme-color" content="#0b1d33" />', `<meta name="theme-color" content="#0b1d33" />\n    ${robotsMeta}`)
   .replace('رهجو؛ زیرساخت داده، احراز و گردش‌کار برای فرایندهای سازمانی قابل‌اعتماد.', 'رهجو؛ لایه دسترسی کنترل‌شده به داده‌های حساس و کمیاب برای کاربردهای سازمانی.')
-  .replace('<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />', '<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />\n    <link rel="manifest" href="/assets/site.webmanifest" />');
+  .replace(/href="(assets|styles)\//g, 'href="/$1/')
+  .replace(/src="src\//g, 'src="/src/')
+  .replace(/(<link rel="icon" href="\/?assets\/favicon\.svg" type="image\/svg\+xml" \/>)/, '$1\n    <link rel="manifest" href="/assets/site.webmanifest" />');
 
 if (mode === 'production' && siteOrigin) {
   index = index.replace('</head>', `    <link rel="canonical" href="${siteOrigin}/" />\n  </head>`);
@@ -34,6 +47,13 @@ if (mode === 'production' && siteOrigin) {
 
 await writeFile(join(output, 'index.html'), index);
 await writeFile(join(output, '404.html'), index);
+
+if (mode === 'production') {
+  const htaccessPath = join(output, '.htaccess');
+  const htaccess = (await readFile(htaccessPath, 'utf8'))
+    .replace(/^\s*Header always set X-Robots-Tag .*\r?\n/m, '');
+  await writeFile(htaccessPath, htaccess);
+}
 
 const robots = mode === 'preview'
   ? 'User-agent: *\nDisallow: /\n'
