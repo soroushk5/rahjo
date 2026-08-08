@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://linen-crocodile-733177.hostingersite.com/sitemap.xml
