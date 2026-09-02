@@ -9,6 +9,22 @@ import { mountPresentationMapPage, renderPresentationMapPage } from "../features
 import { mountDashboardDataPage, mountDashboardRequestsPage, renderDashboardAuditPage, renderDashboardDataPage, renderDashboardOverviewPage, renderDashboardRequestsPage } from "../features/dashboard/presentationDashboard.js";
 import { mountRequestPage, renderRequestPage } from "../features/requests/requestPage.js";
 import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
+import {
+  mountAutomationPage,
+  mountCrmPage,
+  mountGovernancePage,
+  mountOperationalDashboardPage,
+  mountSalesPage,
+  mountServicesPage,
+  mountThinkRoomPage,
+  renderAutomationPage,
+  renderCrmPage,
+  renderGovernancePage,
+  renderOperationalDashboardPage,
+  renderSalesPage,
+  renderServicesPage,
+  renderThinkRoomPage
+} from "../features/operations/operationalPages.js";
 import { isAuthenticated } from "../services/authStore.js";
 
 const root = document.querySelector("#app");
@@ -69,7 +85,13 @@ router = new Router({
     { path: "/trust", title: "کنترل دسترسی", render: renderTrustPage, mount: withChrome(mountTrustPage) },
     { path: "/map", title: "نقشه اکوسیستم", render: renderPresentationMapPage, mount: withChrome(mountPresentationMapPage) },
     { path: "/login", title: "ورود به محیط نمایشی", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
-    { path: "/dashboard", title: "نمای کلی کنسول", render: renderWithSession(renderDashboardOverviewPage, "/dashboard"), mount: mountWithSession(undefined, "/dashboard") },
+    { path: "/dashboard", title: "داشبورد عملیات", render: renderWithSession(renderOperationalDashboardPage, "/dashboard"), mount: mountWithSession(mountOperationalDashboardPage, "/dashboard") },
+    { path: "/crm", title: "مشتریان و حافظه تجاری", render: renderWithSession(renderCrmPage, "/crm"), mount: mountWithSession(mountCrmPage, "/crm") },
+    { path: "/sales", title: "فروش", render: renderWithSession(renderSalesPage, "/sales"), mount: mountWithSession(mountSalesPage, "/sales") },
+    { path: "/services", title: "سرویس‌ها و APIها", render: renderWithSession(renderServicesPage, "/services"), mount: mountWithSession(mountServicesPage, "/services") },
+    { path: "/automation", title: "اتوماسیون", render: renderWithSession(renderAutomationPage, "/automation"), mount: mountWithSession(mountAutomationPage, "/automation") },
+    { path: "/governance", title: "ممیزی و کیفیت داده", render: renderWithSession(renderGovernancePage, "/governance"), mount: mountWithSession(mountGovernancePage, "/governance") },
+    { path: "/think-room", title: "اتاق فکر — آینده", render: renderWithSession(renderThinkRoomPage, "/think-room"), mount: mountWithSession(mountThinkRoomPage, "/think-room") },
     { path: "/dashboard/requests", title: "درخواست‌ها", render: renderWithSession(renderDashboardRequestsPage, "/dashboard/requests"), mount: mountWithSession(composeMount(mountDashboardRequestsPage, mountConnectedDashboardRequests), "/dashboard/requests") },
     { path: "/dashboard/data", title: "سبد داده", render: renderWithSession(renderDashboardDataPage, "/dashboard/data"), mount: mountWithSession(composeMount(mountDashboardDataPage, mountConnectedDashboardData), "/dashboard/data") },
     { path: "/dashboard/audit", title: "کنترل و ممیزی", render: renderWithSession(renderDashboardAuditPage, "/dashboard/audit"), mount: mountWithSession(undefined, "/dashboard/audit") },
