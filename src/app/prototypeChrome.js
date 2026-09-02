@@ -1,8 +1,10 @@
 import { icon } from "../components/icons.js";
 import { allDestinations } from "./navigation.js";
 import { signOut } from "../services/authStore.js";
+import { demoAction, resetDemoScenario } from "../services/demoScenarioStore.js";
 
 let keyboardBound = false;
+let demoBound = false;
 
 function commandMarkup() {
   return `<div class="command-backdrop" data-command-close></div><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><header><div><small>Quick navigation</small><h2 id="command-title">کجا می‌خواهید بروید؟</h2></div><button type="button" class="icon-button" data-command-close aria-label="بستن">${icon("close")}</button></header><label class="command-search">${icon("search")}<input id="command-query" autocomplete="off" placeholder="جست‌وجوی صفحه یا مفهوم…" /></label><nav class="command-results" aria-label="نتایج جست‌وجوی سریع">${allDestinations.map((item) => `<a data-link data-command-item data-command-text="${item.label} ${item.meta}" href="${item.path}"><strong>${item.label}</strong><small>${item.meta}</small><span>${icon("arrow")}</span></a>`).join("")}</nav><footer><kbd>Esc</kbd> بستن · <kbd>Ctrl K</kbd> باز کردن</footer></section>`;
@@ -109,8 +111,53 @@ function mountLogout() {
   });
 }
 
+function rerenderCurrentRoute() {
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function mountGoldenDemo() {
+  if (demoBound) return;
+  demoBound = true;
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const reset = target.closest("[data-demo-reset]");
+    if (reset) {
+      resetDemoScenario();
+      return;
+    }
+
+    const presenterAction = target.closest("[data-demo-action]");
+    if (presenterAction instanceof HTMLElement) {
+      const action = presenterAction.dataset.demoAction;
+      if (action) {
+        demoAction(action);
+        rerenderCurrentRoute();
+      }
+      return;
+    }
+
+    if (target.closest("[data-log-followup]")) {
+      demoAction("followup");
+      window.setTimeout(rerenderCurrentRoute, 20);
+      return;
+    }
+    if (target.closest("#sales-handoff")) {
+      demoAction("qualify");
+      window.setTimeout(rerenderCurrentRoute, 20);
+      return;
+    }
+    if (target.closest("#new-service-request")) {
+      demoAction("case");
+      window.setTimeout(rerenderCurrentRoute, 20);
+    }
+  });
+}
+
 export function mountPrototypeChrome() {
   mountMobileNavigation();
   mountCommandPalette();
   mountLogout();
+  mountGoldenDemo();
 }
