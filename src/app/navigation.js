@@ -11,11 +11,11 @@ export const publicNavigation = Object.freeze([
  * These surfaces share one commercial memory and must remain useful with AI disabled.
  */
 export const consoleNavigation = Object.freeze([
-  { path: "/dashboard", label: "نمای عملیاتی", meta: "وضعیت مشتری، درخواست و اقدام", icon: "dashboard", group: "عملیات" },
-  { path: "/crm", label: "CRM / مشتریان", meta: "Account 360 و حافظه تجاری", icon: "business", group: "عملیات" },
-  { path: "/sales", label: "فروش و پیگیری", meta: "فرصت‌ها و اقدام بعدی", icon: "reports", group: "عملیات" },
-  { path: "/services", label: "سرویس‌ها و API", meta: "کاتالوگ، درخواست و وضعیت", icon: "api", group: "اجرا" },
-  { path: "/automation", label: "اتوماسیون و تأیید", meta: "Workflow، Gate و Run", icon: "workflow", group: "اجرا" },
+  { path: "/dashboard", label: "داشبورد", meta: "وضعیت مشتری، درخواست و اقدام", icon: "dashboard", group: "عملیات" },
+  { path: "/crm", label: "مشتریان", meta: "Account 360 و حافظه تجاری", icon: "users", group: "عملیات" },
+  { path: "/sales", label: "فروش", meta: "سرنخ، فرصت و اقدام بعدی", icon: "reports", group: "عملیات" },
+  { path: "/services", label: "سرویس‌ها و APIها", meta: "کاتالوگ، درخواست و وضعیت", icon: "api", group: "اجرا" },
+  { path: "/automation", label: "اتوماسیون", meta: "Workflow، Gate و Run", icon: "workflow", group: "اجرا" },
   { path: "/governance", label: "ممیزی و کیفیت داده", meta: "دسترسی، رخداد و Data Quality", icon: "audit", group: "کنترل" },
   { path: "/think-room", label: "اتاق فکر", meta: "لایه هوشمندی آینده روی همان حافظه", icon: "spark", group: "هوشمندی" }
 ]);
