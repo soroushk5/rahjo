@@ -12,6 +12,7 @@ import {
   presenterNext
 } from "../services/demoScenarioStore.js";
 
+/** @param {string} activePath */
 function presenterMarkup(activePath) {
   const state = getDemoScenario();
   const summary = demoStatusSummary(state);
@@ -23,7 +24,7 @@ function presenterMarkup(activePath) {
   return `
     <details class="demo-presenter" open>
       <summary>
-        <span>${icon("play", { size: 16 })}<b>Golden Demo</b><small>${demoHero.accountName} · ${demoHero.caseId}</small></span>
+        <span>${icon("workflow", { size: 16 })}<b>Golden Demo</b><small>${demoHero.accountName} · ${demoHero.caseId}</small></span>
         <em>${completed ? "سناریو کامل شد" : `مرحله ${(activeIndex + 1).toLocaleString("fa-IR")} از ${demoScenarioSteps.length.toLocaleString("fa-IR")}`}</em>
       </summary>
       <div class="demo-presenter__body">
