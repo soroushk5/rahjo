@@ -1,0 +1,78 @@
+name: Public Site QA — Operational Alignment
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - website-operational-alignment
+    paths:
+      - "src/app/**"
+      - "src/data/publicOperationalContent.js"
+      - "src/features/marketing/**"
+      - "src/features/platform/**"
+      - "src/features/stories/**"
+      - "src/features/map/**"
+      - "src/features/trust/**"
+      - "styles/**"
+      - "scripts/public-site-qa.mjs"
+      - "scripts/build-hostinger.mjs"
+      - "index.html"
+      - "tests/**"
+      - ".github/workflows/public-site-qa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-site-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install project dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run code and contract QA
+        run: npm run qa
+
+      - name: Build and smoke Hostinger package
+        run: |
+          npm run build:hostinger
+          npm run smoke:hostinger
+
+      - name: Install Chromium for rendered QA
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local Rahjo server
+        run: |
+          node scripts/serve.mjs > /tmp/rahjo-public-server.log 2>&1 &
+          echo $! > /tmp/rahjo-public-server.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/rahjo-public-server.log
+          exit 1
+
+      - name: Render desktop and mobile public pages
+        run: node scripts/public-site-qa.mjs
+
+      - name: Upload rendered evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rahjo-public-site-qa
+          path: |
+            qa-artifacts/public-site
+            /tmp/rahjo-public-server.log
+          if-no-files-found: warn
+          retention-days: 14
