@@ -1,0 +1,74 @@
+name: Mobile QA — Phase 1 Operational Foundation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase1-operational-foundation
+    paths:
+      - "src/**"
+      - "styles/**"
+      - "scripts/mobile-qa.mjs"
+      - ".github/workflows/mobile-qa.yml"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install project dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run existing code QA
+        run: npm run qa
+
+      - name: Install Playwright for CI only
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start Rahjo local server
+        run: |
+          node scripts/serve.mjs > /tmp/rahjo-server.log 2>&1 &
+          echo $! > /tmp/rahjo-server.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/login > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/rahjo-server.log
+          exit 1
+
+      - name: Run 390x844 RTL mobile and off-canvas QA
+        run: node scripts/mobile-qa.mjs
+
+      - name: Build and smoke packaged output
+        run: |
+          npm run build:hostinger
+          npm run smoke:hostinger
+
+      - name: Upload mobile QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rahjo-mobile-qa
+          path: |
+            qa-artifacts
+            /tmp/rahjo-server.log
+          if-no-files-found: warn
+          retention-days: 14

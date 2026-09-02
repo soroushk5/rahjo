@@ -13,6 +13,7 @@ import {
 } from "../src/features/dashboard/presentationDashboard.js";
 import { renderRequestPage } from "../src/features/requests/requestPage.js";
 import { renderLoginPage } from "../src/features/auth/loginPage.js";
+import { renderAutomationPage, renderCrmPage, renderGovernancePage, renderOperationalDashboardPage, renderSalesPage, renderServicesPage, renderThinkRoomPage } from "../src/features/operations/operationalPages.js";
 
 const pages = [
   renderPresentationMarketingPage,
@@ -25,7 +26,14 @@ const pages = [
   renderDashboardDataPage,
   renderDashboardAuditPage,
   renderRequestPage,
-  renderLoginPage
+  renderLoginPage,
+  renderOperationalDashboardPage,
+  renderCrmPage,
+  renderSalesPage,
+  renderServicesPage,
+  renderAutomationPage,
+  renderGovernancePage,
+  renderThinkRoomPage
 ];
 
 test("all primary presentation routes render meaningful, safe markup", () => {
@@ -56,4 +64,12 @@ test("visible product copy avoids newsroom framing", () => {
   for (const phrase of ["اتاق خبر", "دفتر روایت", "میز تصمیم", "داستان داده"]) {
     assert.doesNotMatch(html, new RegExp(phrase));
   }
+});
+
+test("operational foundation surfaces preserve demo and claim boundaries", () => {
+  const html = [renderOperationalDashboardPage(), renderCrmPage(), renderSalesPage(), renderServicesPage(), renderAutomationPage(), renderGovernancePage(), renderThinkRoomPage()].join("\n");
+  for (const phrase of ["دمو", "داده‌های مصنوعی", "Account", "Case", "Outcome", "ممیزی", "سرویس‌ها و APIها", "اتاق فکر"]) {
+    assert.match(html, new RegExp(phrase));
+  }
+  assert.doesNotMatch(html, /production-ready|هوش مصنوعی فعال است|تصمیم خودکار انجام می‌شود/iu);
 });

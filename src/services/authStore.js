@@ -9,11 +9,11 @@ const demoSession = Object.freeze({
   user: {
     name: "کاربر دمو",
     email: demoCredentials.email,
-    role: "مدیر دسترسی داده",
-    organization: "شرکت نمونه سازمانی",
+    role: "مدیر عملیات",
+    organization: "رهجو — محیط نمونه",
     initials: "ر"
   },
-  environment: "Sandbox",
+  environment: "Demo / Synthetic / No-AI",
   signedInAt: "demo"
 });
 
