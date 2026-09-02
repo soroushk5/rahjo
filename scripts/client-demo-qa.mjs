@@ -8,6 +8,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function assertViewport(page, expected, label) {
+  const actual = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  assert(actual.width === expected.width && actual.height === expected.height, `${label}: viewport mismatch expected ${expected.width}x${expected.height}, got ${actual.width}x${actual.height}`);
+}
+
 async function assertNoOverflow(page, label) {
   const dims = await page.evaluate(() => ({
     body: document.body.scrollWidth,
@@ -28,7 +33,7 @@ async function clickPresenterLink(page, text) {
 }
 
 async function runGoldenDemo(browser, viewport, suffix) {
-  const page = await browser.newPage({ viewportSize: viewport });
+  const page = await browser.newPage({ viewport });
   const errors = [];
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("console", (message) => {
@@ -36,12 +41,14 @@ async function runGoldenDemo(browser, viewport, suffix) {
   });
 
   await page.goto(`${baseURL}/login`, { waitUntil: "networkidle" });
+  await assertViewport(page, viewport, `${suffix}: login`);
   await page.locator("#demo-one-click").waitFor({ state: "visible" });
   await assertNoOverflow(page, `${suffix}: login`);
   await screenshot(page, `${suffix}-01-login`);
 
   await page.locator("#demo-one-click").click();
   await page.waitForURL(/\/dashboard$/);
+  await assertViewport(page, viewport, `${suffix}: dashboard`);
   await page.locator(".demo-presenter").waitFor({ state: "visible" });
   await page.getByText("شرکت نمونه آفتاب", { exact: false }).first().waitFor();
   await assertNoOverflow(page, `${suffix}: dashboard`);
@@ -68,6 +75,7 @@ async function runGoldenDemo(browser, viewport, suffix) {
   await page.getByText("تأیید انسانی برای Case ثبت شد", { exact: false }).waitFor();
   await page.locator('[data-demo-action="execute"]').click();
   await page.getByText("Workflow قطعی اجرا", { exact: false }).waitFor();
+  await assertNoOverflow(page, `${suffix}: automation complete`);
   await screenshot(page, `${suffix}-03-automation-complete`);
   await clickPresenterLink(page, "Audit و Receipt");
 
@@ -85,6 +93,7 @@ async function runGoldenDemo(browser, viewport, suffix) {
   await page.waitForURL(/\/dashboard$/);
   await page.getByText("مرحله ۱ از ۷", { exact: false }).waitFor();
   await page.getByText("Requested", { exact: true }).first().waitFor();
+  await assertViewport(page, viewport, `${suffix}: reset`);
   await assertNoOverflow(page, `${suffix}: reset`);
   await screenshot(page, `${suffix}-05-reset`);
 
@@ -96,7 +105,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   await runGoldenDemo(browser, { width: 1366, height: 768 }, "1366x768-run1");
   await runGoldenDemo(browser, { width: 1440, height: 900 }, "1440x900-run2");
-  console.log("Client live demo QA passed twice with deterministic reset.");
+  console.log("Client live demo QA passed twice at verified 1366x768 and 1440x900 viewports with deterministic reset.");
 } finally {
   await browser.close();
 }
