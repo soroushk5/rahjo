@@ -1,72 +1,80 @@
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
-import { platformLayers } from "../../data/siteContent.js";
+import { publicModules } from "../../data/publicOperationalContent.js";
 
-/** @param {(typeof platformLayers)[number]} layer @param {number} index */
-function layerMarkup(layer, index) {
-  return `
-    <article class="platform-layer">
-      <div class="platform-layer__index">${String(index + 1).padStart(2, "0")}</div>
-      <span class="platform-layer__icon">${icon(layer.icon, { size: 25 })}</span>
-      <div class="platform-layer__copy">
-        <small>${layer.label}</small>
-        <h2>${layer.title}</h2>
-        <p>${layer.text}</p>
-      </div>
-      <ul class="platform-layer__checks">
-        ${layer.checks.map((/** @type {string} */ check) => `<li>${icon("check", { size: 15 })}${check}</li>`).join("")}
-      </ul>
-    </article>`;
+const architectureLayers = Object.freeze([
+  { index: "01", icon: "external", title: "Website / Channels", text: "سطح discovery و intake؛ منبع ورودی، context و attribution را حمل می‌کند و نباید رکورد را در یک فرم جدا نگه دارد.", output: "Lead / Request context" },
+  { index: "02", icon: "users", title: "Commercial Memory", text: "Account، Contact، Lead، Opportunity، Case، Interaction، Task، Proposal و Outcome هسته حافظه تجاری مشترک‌اند.", output: "Shared identity & history" },
+  { index: "03", icon: "api", title: "Service & API Layer", text: "Capability، eligibility، access request، approval، adapter، execution status و receipt برای سرویس‌های واجد شرایط مدیریت می‌شوند.", output: "Controlled service execution" },
+  { index: "04", icon: "workflow", title: "Workflow & Action", text: "Rule، Task، Approval، Action، retry/failure و handoff انسانی عملیات را deterministic و قابل بازبینی نگه می‌دارند.", output: "Action / handoff / receipt" },
+  { index: "05", icon: "audit", title: "Governance & Audit", text: "Actor، source، timestamp، permission scope، state، duplicate/missing/stale data و رخداد حساس ثبت می‌شوند.", output: "Traceability & data quality" },
+  { index: "06", icon: "dashboard", title: "Dashboard", text: "نمای مدیریتی از همان objectها و eventهای مشترک ساخته می‌شود؛ نه از fixture یا silo مستقل در نسخه production آینده.", output: "Shared operational visibility" },
+  { index: "07", icon: "spark", title: "Think Room — Future", text: "Context، Evidence، Decision و Recommendation بعداً روی همین حافظه و Outcome سوار می‌شوند؛ مدل AI dependency فاز اول نیست.", output: "Future intelligence layer" }
+]);
+
+function layerCards() {
+  return architectureLayers.map((layer) => `
+    <article class="public-architecture-card ${layer.index === "07" ? "public-architecture-card--future" : ""}">
+      <div class="public-architecture-card__index">${layer.index}</div>
+      <span>${icon(layer.icon, { size: 22 })}</span>
+      <h3>${layer.title}</h3>
+      <p>${layer.text}</p>
+      <footer><small>خروجی</small><strong>${layer.output}</strong></footer>
+    </article>`).join("");
+}
+
+function workspaceMap() {
+  return publicModules.map((item) => `
+    <a data-link href="${item.path}" class="public-workspace-row ${item.id === "think-room" ? "public-workspace-row--future" : ""}">
+      <span>${icon(item.icon, { size: 18 })}</span>
+      <div><small>${item.eyebrow}</small><strong>${item.title}</strong></div>
+      <em>${item.state}</em>
+      ${icon("arrow", { size: 14 })}
+    </a>`).join("");
 }
 
 export function renderPlatformPage() {
-  const layers = platformLayers.map(layerMarkup).join("");
-
   const content = `
-    <section class="page-hero page-hero--architecture">
-      <div class="container split-heading">
+    <section class="public-page-hero">
+      <div class="container public-page-hero__grid">
         <div>
-          <p class="eyebrow">PLATFORM ARCHITECTURE</p>
-          <h1>کنترل باید میان منبع و مصرف قرار بگیرد.</h1>
+          <span class="public-kicker"><i></i>PRODUCT ARCHITECTURE</span>
+          <h1>رهجو یک Dashboard نیست؛<br><span>یک زنجیره عملیاتی مشترک است.</span></h1>
         </div>
-        <p>
-          معماری رهجو تأمین‌کننده داده را از تجربه مشتری جدا می‌کند و سیاست دسترسی،
-          نرمال‌سازی، تحویل و ممیزی را به لایه‌های مستقل تبدیل می‌کند.
-        </p>
+        <div><p>Website، CRM، فروش، Service/API، Workflow، Governance و Dashboard قرار نیست ابزارهای جدا باشند. همه روی یک identity، Case spine، event model و Outcome کار می‌کنند.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن Workspace</a><a data-link class="button button--secondary" href="/map">دیدن جریان انتها‌به‌انتها</a></div></div>
       </div>
     </section>
 
-    <section class="container architecture-flow" aria-label="جریان معماری رهجو">
-      <div class="flow-stage"><span>منابع داده</span><strong>ناهمگون و حساس</strong></div>
-      <div class="flow-arrow">${icon("arrow", { size: 22 })}</div>
-      <div class="flow-stage flow-stage--core"><span>لایه کنترل رهجو</span><strong>Policy · Gateway · Audit</strong></div>
-      <div class="flow-arrow">${icon("arrow", { size: 22 })}</div>
-      <div class="flow-stage"><span>مصرف سازمانی</span><strong>API · Workflow · Message</strong></div>
+    <section class="public-section">
+      <div class="container">
+        <header class="public-section__head"><div><span>هفت لایه محصول</span><h2>Operational Foundation first → Intelligence on top.</h2></div><p>شش لایه اول باید با AI خاموش کار کنند. Think Room بعداً همان Account، Case، Decision، Approval، Action و Outcome را مصرف می‌کند.</p></header>
+        <div class="public-architecture-grid">${layerCards()}</div>
+      </div>
     </section>
 
-    <section class="container platform-stack">${layers}</section>
+    <section class="public-section public-section--muted">
+      <div class="container public-two-column public-two-column--architecture">
+        <div>
+          <span class="public-kicker public-kicker--plain">SHARED SPINE</span>
+          <h2>Account → Case → Decision/Approval → Action → Outcome</h2>
+          <p>این spine به رهجو اجازه می‌دهد CRM، سرویس، اتوماسیون، ممیزی و هوشمندی آینده بدون ساختن شناسه و حافظه‌های جدا با هم کار کنند.</p>
+          <div class="public-spine">
+            ${["Account", "Case", "Decision / Approval", "Action", "Outcome"].map((item, index) => `<span><i>0${index + 1}</i><strong>${item}</strong></span>`).join("")}
+          </div>
+        </div>
+        <div class="public-workspace-list"><header><small>همین معماری در Workspace</small><strong>سطوح فعلی محصول</strong></header>${workspaceMap()}</div>
+      </div>
+    </section>
 
-    <section class="container principle-grid principle-grid--four">
-      <article>
-        <span>${icon("link")}</span>
-        <h3>Adapter-first</h3>
-        <p>تغییر منبع، قرارداد محصول و رابط مشتری را نمی‌شکند.</p>
-      </article>
-      <article>
-        <span>${icon("lock")}</span>
-        <h3>Least privilege</h3>
-        <p>هر مشتری فقط حداقل فیلد لازم برای هدف تأییدشده را می‌بیند.</p>
-      </article>
-      <article>
-        <span>${icon("eye")}</span>
-        <h3>Human-readable</h3>
-        <p>وضعیت، محدودیت و خطا برای اپراتور و توسعه‌دهنده قابل فهم است.</p>
-      </article>
-      <article>
-        <span>${icon("audit")}</span>
-        <h3>Audit by design</h3>
-        <p>ممیزی بخشی از جریان است، نه گزارشی که بعداً ساخته شود.</p>
-      </article>
+    <section class="public-section">
+      <div class="container public-principle-grid">
+        ${[
+          ["layers", "No-AI baseline", "قابلیت حیاتی فاز اول برای کار پایه به LLM یا provider خارجی وابسته نیست."],
+          ["node", "Shared identity", "Website و App باید از object و ID مشترک استفاده کنند تا re-entry و silo کم شود."],
+          ["shield", "Human gate", "اقدام پرریسک و تعهد تجاری/امنیتی بدون approval انسانی انجام نمی‌شود."],
+          ["audit", "Audit by design", "Mutation مهم باید actor، source، time، scope و result قابل بازبینی داشته باشد."]
+        ].map(([name, title, text]) => `<article><span>${icon(name, { size: 21 })}</span><h3>${title}</h3><p>${text}</p></article>`).join("")}
+      </div>
     </section>`;
 
   return siteShell({ content, activePath: "/platform" });
