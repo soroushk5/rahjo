@@ -1,4 +1,5 @@
 const DEMO_STATE_KEY = "rahjo.client.demo.state.v1";
+let memoryState = null;
 
 export const demoScenarioSteps = Object.freeze([
   { id: "overview", path: "/dashboard", label: "تصویر عملیات", short: "Dashboard" },
@@ -66,17 +67,18 @@ function normalize(value) {
 
 export function getDemoScenario() {
   const target = storage();
-  if (!target) return cloneSeed();
+  if (!target) return memoryState ? normalize(memoryState) : cloneSeed();
   try {
     const raw = target.getItem(DEMO_STATE_KEY);
     return raw ? normalize(JSON.parse(raw)) : cloneSeed();
   } catch {
-    return cloneSeed();
+    return memoryState ? normalize(memoryState) : cloneSeed();
   }
 }
 
 function persist(next) {
   const normalized = normalize(next);
+  memoryState = normalized;
   const target = storage();
   if (target) {
     try {
@@ -92,6 +94,7 @@ function persist(next) {
 }
 
 export function resetDemoScenario() {
+  memoryState = null;
   const target = storage();
   if (target) {
     try {
