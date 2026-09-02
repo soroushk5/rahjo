@@ -1,4 +1,22 @@
+/**
+ * @typedef {Object} DemoState
+ * @property {number} version
+ * @property {boolean} started
+ * @property {boolean} completed
+ * @property {number} currentStep
+ * @property {boolean} followupLogged
+ * @property {boolean} salesQualified
+ * @property {boolean} casePrepared
+ * @property {string} approvalStatus
+ * @property {string} actionStatus
+ * @property {string} receiptStatus
+ * @property {string} outcomeStatus
+ * @property {string} lastEvent
+ * @property {number} eventCount
+ */
+
 const DEMO_STATE_KEY = "rahjo.client.demo.state.v1";
+/** @type {DemoState | null} */
 let memoryState = null;
 
 export const demoScenarioSteps = Object.freeze([
@@ -25,6 +43,7 @@ export const demoHero = Object.freeze({
   outcomeId: "OUT-DEMO-LIVE-001"
 });
 
+/** @type {Readonly<DemoState>} */
 const seed = Object.freeze({
   version: 1,
   started: false,
@@ -41,6 +60,7 @@ const seed = Object.freeze({
   eventCount: 1
 });
 
+/** @returns {DemoState} */
 function cloneSeed() {
   return { ...seed };
 }
@@ -54,8 +74,9 @@ function storage() {
   }
 }
 
+/** @param {unknown} value @returns {DemoState} */
 function normalize(value) {
-  const candidate = value && typeof value === "object" ? value : {};
+  const candidate = value && typeof value === "object" ? /** @type {Partial<DemoState>} */ (value) : {};
   return {
     ...cloneSeed(),
     ...candidate,
@@ -65,6 +86,7 @@ function normalize(value) {
   };
 }
 
+/** @returns {DemoState} */
 export function getDemoScenario() {
   const target = storage();
   if (!target) return memoryState ? normalize(memoryState) : cloneSeed();
@@ -76,6 +98,7 @@ export function getDemoScenario() {
   }
 }
 
+/** @param {DemoState} next @returns {DemoState} */
 function persist(next) {
   const normalized = normalize(next);
   memoryState = normalized;
@@ -93,6 +116,7 @@ function persist(next) {
   return normalized;
 }
 
+/** @returns {DemoState} */
 export function resetDemoScenario() {
   memoryState = null;
   const target = storage();
@@ -110,10 +134,12 @@ export function resetDemoScenario() {
   return initial;
 }
 
+/** @returns {DemoState} */
 export function startDemoScenario() {
   return persist({ ...cloneSeed(), started: true, lastEvent: "دموی مشتری از Dashboard شروع شد", eventCount: 2 });
 }
 
+/** @param {string} action @returns {DemoState} */
 export function demoAction(action) {
   const state = getDemoScenario();
   switch (action) {
@@ -136,6 +162,7 @@ export function demoAction(action) {
   }
 }
 
+/** @param {string} path @param {DemoState} [state] */
 export function presenterAction(path, state = getDemoScenario()) {
   if (path === "/crm" && !state.followupLogged) return { action: "followup", label: "ثبت پیگیری سناریو" };
   if (path === "/sales" && !state.salesQualified) return { action: "qualify", label: "تأیید و تحویل به انسان" };
@@ -146,6 +173,7 @@ export function presenterAction(path, state = getDemoScenario()) {
   return null;
 }
 
+/** @param {string} path @param {DemoState} [state] */
 export function presenterNext(path, state = getDemoScenario()) {
   if (path === "/dashboard") return { path: "/crm", label: "Account 360" };
   if (path === "/crm" && state.outcomeStatus === "Recorded") return { path: "/dashboard", label: "بازگشت به Dashboard" };
@@ -157,12 +185,14 @@ export function presenterNext(path, state = getDemoScenario()) {
   return { path: "/dashboard", label: "Dashboard" };
 }
 
+/** @param {string} path @param {DemoState} [state] */
 export function demoStepIndex(path, state = getDemoScenario()) {
   if (path === "/crm" && state.outcomeStatus === "Recorded") return 6;
   const index = demoScenarioSteps.findIndex((step) => step.path === path);
   return index >= 0 ? index : state.currentStep;
 }
 
+/** @param {DemoState} [state] */
 export function demoStatusSummary(state = getDemoScenario()) {
   return {
     account: demoHero.accountName,
