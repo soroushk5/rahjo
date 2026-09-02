@@ -1,7 +1,7 @@
 import { icon } from "../components/icons.js";
 import { allDestinations } from "./navigation.js";
 import { signOut } from "../services/authStore.js";
-import { demoAction, resetDemoScenario } from "../services/demoScenarioStore.js";
+import { demoAction, demoHero, getDemoScenario, resetDemoScenario } from "../services/demoScenarioStore.js";
 
 let keyboardBound = false;
 let demoBound = false;
@@ -111,6 +111,94 @@ function mountLogout() {
   });
 }
 
+/** @param {Element | null} container @param {string} text */
+function setPositiveStatus(container, text) {
+  if (!container) return;
+  const chip = container.querySelector(".status-chip");
+  if (chip instanceof HTMLElement) {
+    chip.className = "status-chip status-chip--positive";
+    chip.textContent = text;
+  }
+}
+
+function syncGoldenDemoDom() {
+  const state = getDemoScenario();
+  const caseStatus = state.outcomeStatus === "Recorded" ? "Resolved" : state.actionStatus === "succeeded" ? "Action/Execution" : state.approvalStatus === "Approved" ? "Approved" : "Waiting/Approval";
+  const nextAction = state.outcomeStatus === "Recorded" ? "Outcome ثبت شد؛ آماده follow-up" : state.actionStatus === "succeeded" ? "Receipt ثبت شد؛ آماده Outcome" : state.approvalStatus === "Approved" ? "آماده اجرای bounded" : "تکمیل مدارک و تأیید انسانی";
+
+  document.querySelectorAll(".compact-list small").forEach((small) => {
+    if (!small.textContent?.includes(demoHero.caseId)) return;
+    const row = small.closest("div");
+    if (!row) return;
+    small.textContent = `${demoHero.caseId} · ${nextAction}`;
+    setPositiveStatus(row, caseStatus);
+  });
+
+  const capability = document.querySelector("#capability-detail");
+  capability?.querySelectorAll("tr").forEach((row) => {
+    const cells = row.querySelectorAll("td");
+    const caseCode = row.querySelector("code");
+    if (caseCode?.textContent !== demoHero.caseId || cells.length < 5) return;
+    if (state.approvalStatus === "Approved") cells[3].innerHTML = '<span class="status-chip status-chip--positive">Approved</span>';
+    if (state.actionStatus === "succeeded") {
+      cells[2].innerHTML = '<span class="status-chip status-chip--positive">Action/Execution</span>';
+      cells[4].innerHTML = '<span class="status-chip status-chip--positive">succeeded</span> · Receipt';
+    }
+    if (state.outcomeStatus === "Recorded") {
+      cells[2].innerHTML = '<span class="status-chip status-chip--positive">Resolved</span>';
+      cells[4].innerHTML = '<span class="status-chip status-chip--positive">Recorded</span> · Outcome';
+    }
+  });
+
+  const runRows = document.querySelector("#run-rows");
+  runRows?.querySelectorAll("tr").forEach((row) => {
+    const cells = row.querySelectorAll("td");
+    const codes = [...row.querySelectorAll("code")];
+    if (!codes.some((code) => code.textContent === demoHero.caseId) || cells.length < 8) return;
+    if (state.approvalStatus === "Approved") cells[3].textContent = "Approved demo";
+    if (state.actionStatus === "succeeded") {
+      cells[4].innerHTML = '<span class="status-chip status-chip--positive">succeeded</span>';
+      cells[6].innerHTML = `<code>${demoHero.receiptId}</code>`;
+      cells[7].textContent = "—";
+    }
+  });
+
+  const auditRows = document.querySelector("#audit-rows");
+  if (auditRows instanceof HTMLElement) {
+    const events = [];
+    if (state.approvalStatus === "Approved") events.push(["دمو", "مدیر عملیات", "Golden Demo approval approved", "Local demo state", "Requested → Approved"]);
+    if (state.actionStatus === "succeeded") events.push(["دمو", "Workflow runner", `Golden Demo action succeeded · ${demoHero.receiptId}`, "Local deterministic runner", "Approved → Action/Execution"]);
+    if (state.outcomeStatus === "Recorded") events.push(["دمو", "مدیر عملیات", `Golden Demo outcome recorded · ${demoHero.outcomeId}`, "Local demo state", "Action/Execution → Resolved"]);
+    events.forEach((event, index) => {
+      if (auditRows.querySelector(`[data-demo-audit="${index}"]`)) return;
+      const row = document.createElement("tr");
+      row.dataset.demoAudit = String(index);
+      row.innerHTML = `<td>${event[0]}</td><td>${event[1]}</td><td>${event[2]}</td><td>${event[3]}</td><td>${event[4]}</td><td><code>${demoHero.caseId}</code></td>`;
+      auditRows.prepend(row);
+    });
+  }
+
+  if (state.outcomeStatus === "Recorded") {
+    const dashboardRow = [...document.querySelectorAll("#dashboard-task-rows tr")].find((row) => row.textContent?.includes(demoHero.caseId));
+    if (dashboardRow) {
+      const cells = dashboardRow.querySelectorAll("td");
+      const title = dashboardRow.querySelector("strong");
+      if (title) title.textContent = "Outcome ثبت شد؛ حلقه پرونده بسته شد";
+      if (cells[2]) cells[2].textContent = "انجام شد";
+      if (cells[3]) cells[3].innerHTML = '<span class="status-chip status-chip--positive">Resolved</span>';
+    }
+
+    const outcomeSection = [...document.querySelectorAll(".account-section")].find((section) => section.querySelector("h2")?.textContent?.includes("خلاصه نتیجه"));
+    const list = outcomeSection?.querySelector(".compact-list");
+    if (list && !list.querySelector("[data-demo-outcome]")) {
+      const row = document.createElement("div");
+      row.dataset.demoOutcome = "true";
+      row.innerHTML = `<span>${icon("check", { size: 17 })}</span><p><strong>Outcome سناریوی زنده ثبت شد</strong><small>${demoHero.outcomeId} · ${demoHero.caseId}</small></p><span class="status-chip status-chip--positive">Recorded</span>`;
+      list.prepend(row);
+    }
+  }
+}
+
 function rerenderCurrentRoute() {
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
@@ -161,4 +249,5 @@ export function mountPrototypeChrome() {
   mountCommandPalette();
   mountLogout();
   mountGoldenDemo();
+  syncGoldenDemoDom();
 }
