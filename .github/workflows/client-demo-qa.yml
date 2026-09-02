@@ -1,0 +1,76 @@
+name: Client Live Demo QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - client-live-demo-readiness
+    paths:
+      - "src/**"
+      - "styles/**"
+      - "tests/**"
+      - "scripts/client-demo-qa.mjs"
+      - ".github/workflows/client-demo-qa.yml"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  client-demo-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install project dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run code QA
+        run: npm run qa
+
+      - name: Install Chromium for presentation rehearsal
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start Rahjo local server
+        run: |
+          node scripts/serve.mjs > /tmp/rahjo-client-demo-server.log 2>&1 &
+          echo $! > /tmp/rahjo-client-demo-server.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/login > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/rahjo-client-demo-server.log
+          exit 1
+
+      - name: Run client demo twice at presentation viewports
+        run: node scripts/client-demo-qa.mjs
+
+      - name: Build and smoke Hostinger package
+        run: |
+          npm run build:hostinger
+          npm run smoke:hostinger
+
+      - name: Upload demo rehearsal evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rahjo-client-live-demo-qa
+          path: |
+            qa-artifacts/client-demo
+            /tmp/rahjo-client-demo-server.log
+          if-no-files-found: warn
+          retention-days: 14
