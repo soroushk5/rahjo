@@ -36,6 +36,24 @@ async function assertNoHorizontalOverflow(label) {
   assert.ok(result.docScrollWidth <= result.docClientWidth + 2, `${label}: document horizontal overflow ${JSON.stringify(result)}`);
 }
 
+async function waitForSidebarOpen() {
+  await page.waitForFunction(() => {
+    const sidebar = document.querySelector(".app-sidebar");
+    if (!(sidebar instanceof HTMLElement) || !sidebar.hasAttribute("data-open")) return false;
+    const box = sidebar.getBoundingClientRect();
+    return box.x >= -2 && box.x < window.innerWidth && box.right <= window.innerWidth + 2;
+  }, { timeout: 2500 });
+}
+
+async function waitForSidebarClosed() {
+  await page.waitForFunction(() => {
+    const sidebar = document.querySelector(".app-sidebar");
+    if (!(sidebar instanceof HTMLElement) || sidebar.hasAttribute("data-open")) return false;
+    const box = sidebar.getBoundingClientRect();
+    return box.x >= window.innerWidth - 2;
+  }, { timeout: 2500 });
+}
+
 try {
   await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
   await page.locator("#login-submit").click();
@@ -47,6 +65,7 @@ try {
   assert.equal(await page.locator("#app-menu-toggle").isVisible(), true, "mobile menu toggle must be visible at 390px");
   assert.equal(await page.locator(".app-sidebar").getAttribute("data-open"), null, "sidebar should start closed");
   assert.equal(await page.locator("#app-menu-toggle").getAttribute("aria-expanded"), "false");
+  await waitForSidebarClosed();
   await assertNoHorizontalOverflow("dashboard closed menu");
   await page.screenshot({ path: `${artifactDir}/mobile-dashboard-390x844.png`, fullPage: true });
 
@@ -54,16 +73,19 @@ try {
   await page.keyboard.press("Enter");
   assert.equal(await page.locator("#app-menu-toggle").getAttribute("aria-expanded"), "true", "keyboard Enter should open mobile menu");
   assert.notEqual(await page.locator(".app-sidebar").getAttribute("data-open"), null, "sidebar should expose data-open when opened");
+  await waitForSidebarOpen();
   const sidebarBox = await page.locator(".app-sidebar").boundingBox();
   assert.ok(sidebarBox, "sidebar must have a rendered bounding box");
   assert.ok(sidebarBox.x >= -2 && sidebarBox.x < 390, `sidebar should be inside viewport when open: ${JSON.stringify(sidebarBox)}`);
   assert.ok(sidebarBox.width <= 390, `sidebar width should fit viewport: ${JSON.stringify(sidebarBox)}`);
+  await assertNoHorizontalOverflow("dashboard open menu");
   await page.screenshot({ path: `${artifactDir}/mobile-menu-open-390x844.png`, fullPage: true });
 
   await page.locator('.app-sidebar a[href="/crm"]').click();
   await page.waitForURL(/\/crm$/, { timeout: 5000 });
   assert.equal(await page.locator("#app-menu-toggle").getAttribute("aria-expanded"), "false", "navigating from sidebar should close mobile menu");
   assert.equal(await page.locator(".app-sidebar").getAttribute("data-open"), null, "sidebar data-open should be removed after navigation");
+  await waitForSidebarClosed();
   await assertNoHorizontalOverflow("crm after sidebar navigation");
 
   for (const route of routes) {
