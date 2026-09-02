@@ -125,6 +125,7 @@ function mountGoldenDemo() {
     const reset = target.closest("[data-demo-reset]");
     if (reset) {
       resetDemoScenario();
+      window.setTimeout(rerenderCurrentRoute, 20);
       return;
     }
 
