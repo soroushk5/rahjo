@@ -1,9 +1,9 @@
 export const publicNavigation = Object.freeze([
-  { path: "/", label: "خانه", meta: "مسئله و جایگاه رهجو" },
-  { path: "/data", label: "اطلس داده", meta: "خوشه‌ها، حساسیت و کاربرد" },
-  { path: "/map", label: "نقشه اکوسیستم", meta: "منبع تا کاربرد" },
-  { path: "/platform", label: "معماری", meta: "لایه‌های فنی و تحویل" },
-  { path: "/trust", label: "کنترل دسترسی", meta: "Gate، سیاست و ممیزی" }
+  { path: "/", label: "خانه", meta: "ارزش عملیاتی امروز و مسیر هوشمندی فردا" },
+  { path: "/platform", label: "محصول", meta: "Website، CRM، عملیات، سرویس و داشبورد روی یک هسته" },
+  { path: "/data", label: "سرویس‌ها", meta: "خانواده قابلیت‌ها و وضعیت عرضه/بررسی" },
+  { path: "/map", label: "نحوه کار", meta: "ورودی تا Case، Action، Outcome و Dashboard" },
+  { path: "/trust", label: "اعتماد و کنترل", meta: "Human gate، permission، audit و claim discipline" }
 ]);
 
 /**
@@ -21,7 +21,7 @@ export const consoleNavigation = Object.freeze([
 ]);
 
 /**
- * Preserved demo/data-access routes. They remain available for traceability but are no longer
+ * Preserved data-access demo routes. They remain available for traceability but are no longer
  * the primary Phase-1 information architecture.
  */
 export const secondaryConsoleNavigation = Object.freeze([
@@ -32,19 +32,19 @@ export const secondaryConsoleNavigation = Object.freeze([
 ]);
 
 export const publicJourney = Object.freeze([
-  { path: "/", index: "01", label: "مسئله", title: "رهجو چه چیزی را کنترل می‌کند؟" },
-  { path: "/data", index: "02", label: "داده", title: "چه خوشه‌هایی در سبد بررسی‌اند؟" },
-  { path: "/map", index: "03", label: "جریان", title: "داده از کجا تا کجا حرکت می‌کند؟" },
-  { path: "/platform", index: "04", label: "معماری", title: "کنترل در کدام لایه اجرا می‌شود؟" },
-  { path: "/trust", index: "05", label: "Gate", title: "چه چیزی دسترسی را مجاز یا متوقف می‌کند؟" },
-  { path: "/login", index: "06", label: "Workspace", title: "این منطق در فضای عملیاتی چگونه دیده می‌شود؟" }
+  { path: "/", index: "01", label: "جایگاه", title: "رهجو امروز چه مسئله عملیاتی را حل می‌کند؟" },
+  { path: "/platform", index: "02", label: "محصول", title: "Website، CRM، سرویس و عملیات چگونه یک سیستم می‌شوند؟" },
+  { path: "/data", index: "03", label: "سرویس", title: "چه capabilityهایی نمایش داده می‌شوند و وضعیتشان چیست؟" },
+  { path: "/map", index: "04", label: "جریان", title: "ورودی چگونه به Case، Action، Outcome و Dashboard می‌رسد؟" },
+  { path: "/trust", index: "05", label: "کنترل", title: "چه چیزی یک اقدام یا ادعا را مجاز، محدود یا متوقف می‌کند؟" },
+  { path: "/login", index: "06", label: "Workspace", title: "این مدل در محیط عملیاتی دمو چگونه دیده می‌شود؟" }
 ]);
 
 export const allDestinations = Object.freeze([
   ...publicNavigation,
   ...consoleNavigation,
   ...secondaryConsoleNavigation,
-  { path: "/login", label: "ورود", meta: "محیط نمایشی رهجو" }
+  { path: "/login", label: "ورود", meta: "محیط نمایشی Operational Foundation" }
 ]);
 
 /** @param {string} path */
