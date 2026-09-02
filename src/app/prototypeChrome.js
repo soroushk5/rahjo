@@ -153,7 +153,7 @@ function syncGoldenDemoDom() {
   const runRows = document.querySelector("#run-rows");
   runRows?.querySelectorAll("tr").forEach((row) => {
     const cells = row.querySelectorAll("td");
-    const codes = [...row.querySelectorAll("code")];
+    const codes = Array.from(row.querySelectorAll("code"));
     if (!codes.some((code) => code.textContent === demoHero.caseId) || cells.length < 8) return;
     if (state.approvalStatus === "Approved") cells[3].textContent = "Approved demo";
     if (state.actionStatus === "succeeded") {
@@ -165,6 +165,7 @@ function syncGoldenDemoDom() {
 
   const auditRows = document.querySelector("#audit-rows");
   if (auditRows instanceof HTMLElement) {
+    /** @type {string[][]} */
     const events = [];
     if (state.approvalStatus === "Approved") events.push(["دمو", "مدیر عملیات", "Golden Demo approval approved", "Local demo state", "Requested → Approved"]);
     if (state.actionStatus === "succeeded") events.push(["دمو", "Workflow runner", `Golden Demo action succeeded · ${demoHero.receiptId}`, "Local deterministic runner", "Approved → Action/Execution"]);
@@ -179,7 +180,7 @@ function syncGoldenDemoDom() {
   }
 
   if (state.outcomeStatus === "Recorded") {
-    const dashboardRow = [...document.querySelectorAll("#dashboard-task-rows tr")].find((row) => row.textContent?.includes(demoHero.caseId));
+    const dashboardRow = Array.from(document.querySelectorAll("#dashboard-task-rows tr")).find((row) => row.textContent?.includes(demoHero.caseId));
     if (dashboardRow) {
       const cells = dashboardRow.querySelectorAll("td");
       const title = dashboardRow.querySelector("strong");
@@ -188,7 +189,7 @@ function syncGoldenDemoDom() {
       if (cells[3]) cells[3].innerHTML = '<span class="status-chip status-chip--positive">Resolved</span>';
     }
 
-    const outcomeSection = [...document.querySelectorAll(".account-section")].find((section) => section.querySelector("h2")?.textContent?.includes("خلاصه نتیجه"));
+    const outcomeSection = Array.from(document.querySelectorAll(".account-section")).find((section) => section.querySelector("h2")?.textContent?.includes("خلاصه نتیجه"));
     const list = outcomeSection?.querySelector(".compact-list");
     if (list && !list.querySelector("[data-demo-outcome]")) {
       const row = document.createElement("div");
