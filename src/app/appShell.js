@@ -2,6 +2,50 @@ import { brandLogo } from "../components/brandLogo.js";
 import { icon } from "../components/icons.js";
 import { consoleNavigation, routeLabel, secondaryConsoleNavigation } from "./navigation.js";
 import { getSession } from "../services/authStore.js";
+import {
+  demoHero,
+  demoScenarioSteps,
+  demoStatusSummary,
+  demoStepIndex,
+  getDemoScenario,
+  presenterAction,
+  presenterNext
+} from "../services/demoScenarioStore.js";
+
+function presenterMarkup(activePath) {
+  const state = getDemoScenario();
+  const summary = demoStatusSummary(state);
+  const activeIndex = demoStepIndex(activePath, state);
+  const action = presenterAction(activePath, state);
+  const next = presenterNext(activePath, state);
+  const completed = state.outcomeStatus === "Recorded";
+
+  return `
+    <details class="demo-presenter" open>
+      <summary>
+        <span>${icon("play", { size: 16 })}<b>Golden Demo</b><small>${demoHero.accountName} · ${demoHero.caseId}</small></span>
+        <em>${completed ? "سناریو کامل شد" : `مرحله ${(activeIndex + 1).toLocaleString("fa-IR")} از ${demoScenarioSteps.length.toLocaleString("fa-IR")}`}</em>
+      </summary>
+      <div class="demo-presenter__body">
+        <ol class="demo-presenter__steps" aria-label="مسیر ارائه زنده">
+          ${demoScenarioSteps.map((step, index) => `<li data-done="${index < activeIndex || completed}" ${index === activeIndex ? 'aria-current="step"' : ""}><span>${(index + 1).toLocaleString("fa-IR")}</span><div><b>${step.label}</b><small>${step.short}</small></div></li>`).join("")}
+        </ol>
+        <div class="demo-presenter__status">
+          <div><small>Account</small><strong>${summary.account}</strong></div>
+          <div><small>Approval</small><strong>${summary.approval}</strong></div>
+          <div><small>Action</small><strong>${summary.action}</strong></div>
+          <div><small>Outcome</small><strong>${summary.outcome}</strong></div>
+          <p><span>${icon("audit", { size: 15 })}</span>${summary.lastEvent} · ${summary.eventCount.toLocaleString("fa-IR")} رخداد دمو</p>
+        </div>
+        <div class="demo-presenter__actions">
+          ${action ? `<button type="button" class="button button--primary" data-demo-action="${action.action}">${action.label} ${icon("arrow", { size: 14 })}</button>` : `<a data-link class="button button--primary" href="${next.path}">${next.label} ${icon("arrow", { size: 14 })}</a>`}
+          ${action ? `<a data-link class="button button--secondary" href="${next.path}">مرحله بعد</a>` : ""}
+          <a data-link class="text-button" href="/dashboard" data-demo-reset>Reset Demo</a>
+          <a data-link class="text-button demo-fast-path" href="/automation">مسیر ۳ دقیقه‌ای</a>
+        </div>
+      </div>
+    </details>`;
+}
 
 /** @param {{content: string, activePath: string, title: string}} options */
 export function appShell({ content, activePath, title }) {
@@ -73,6 +117,7 @@ export function appShell({ content, activePath, title }) {
           <span>${icon("shield", { size: 15 })} محیط دمو؛ هیچ اتصال یا سرویس واقعی ادعا نمی‌شود</span>
           <a data-link href="/governance">مشاهده ممیزی</a>
         </div>
+        ${presenterMarkup(activePath)}
         <main id="main-content" class="app-content">${content}</main>
       </div>
     </div>`;
