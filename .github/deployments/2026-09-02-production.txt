@@ -1,0 +1,4 @@
+Production deployment authorization
+Date: 2026-09-02
+Source: main after PR #12
+Reason: explicit user approval to deploy the Phase 1 Operational Foundation app rebaseline
