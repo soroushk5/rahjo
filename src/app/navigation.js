@@ -6,12 +6,29 @@ export const publicNavigation = Object.freeze([
   { path: "/trust", label: "کنترل دسترسی", meta: "Gate، سیاست و ممیزی" }
 ]);
 
+/**
+ * Phase-1 primary workspace navigation.
+ * These surfaces share one commercial memory and must remain useful with AI disabled.
+ */
 export const consoleNavigation = Object.freeze([
-  { path: "/dashboard", label: "نمای کلی", meta: "وضعیت سبد و درخواست‌ها", icon: "dashboard" },
-  { path: "/dashboard/requests", label: "درخواست‌ها", meta: "جست‌وجو، وضعیت و جزئیات", icon: "requests" },
-  { path: "/dashboard/data", label: "سبد داده", meta: "آمادگی و وضعیت عرضه", icon: "database" },
-  { path: "/dashboard/audit", label: "کنترل و ممیزی", meta: "Gate و رخدادهای دمو", icon: "audit" },
-  { path: "/request", label: "درخواست دسترسی", meta: "فرایند چندمرحله‌ای", icon: "workflow" }
+  { path: "/dashboard", label: "نمای عملیاتی", meta: "وضعیت مشتری، درخواست و اقدام", icon: "dashboard", group: "عملیات" },
+  { path: "/crm", label: "CRM / مشتریان", meta: "Account 360 و حافظه تجاری", icon: "business", group: "عملیات" },
+  { path: "/sales", label: "فروش و پیگیری", meta: "فرصت‌ها و اقدام بعدی", icon: "reports", group: "عملیات" },
+  { path: "/services", label: "سرویس‌ها و API", meta: "کاتالوگ، درخواست و وضعیت", icon: "api", group: "اجرا" },
+  { path: "/automation", label: "اتوماسیون و تأیید", meta: "Workflow، Gate و Run", icon: "workflow", group: "اجرا" },
+  { path: "/governance", label: "ممیزی و کیفیت داده", meta: "دسترسی، رخداد و Data Quality", icon: "audit", group: "کنترل" },
+  { path: "/think-room", label: "اتاق فکر", meta: "لایه هوشمندی آینده روی همان حافظه", icon: "spark", group: "هوشمندی" }
+]);
+
+/**
+ * Preserved demo/data-access routes. They remain available for traceability but are no longer
+ * the primary Phase-1 information architecture.
+ */
+export const secondaryConsoleNavigation = Object.freeze([
+  { path: "/dashboard/requests", label: "درخواست‌های دسترسی — legacy", meta: "نمای دمو درخواست‌های داده", icon: "requests" },
+  { path: "/dashboard/data", label: "سبد داده — legacy", meta: "آمادگی و وضعیت عرضه در دمو", icon: "database" },
+  { path: "/dashboard/audit", label: "Gate و ممیزی — legacy", meta: "رخدادهای کنترل دسترسی در دمو", icon: "audit" },
+  { path: "/request", label: "درخواست دسترسی — legacy", meta: "فرایند چندمرحله‌ای دمو", icon: "workflow" }
 ]);
 
 export const publicJourney = Object.freeze([
@@ -20,12 +37,13 @@ export const publicJourney = Object.freeze([
   { path: "/map", index: "03", label: "جریان", title: "داده از کجا تا کجا حرکت می‌کند؟" },
   { path: "/platform", index: "04", label: "معماری", title: "کنترل در کدام لایه اجرا می‌شود؟" },
   { path: "/trust", index: "05", label: "Gate", title: "چه چیزی دسترسی را مجاز یا متوقف می‌کند؟" },
-  { path: "/login", index: "06", label: "کنسول", title: "این منطق در محصول چگونه دیده می‌شود؟" }
+  { path: "/login", index: "06", label: "Workspace", title: "این منطق در فضای عملیاتی چگونه دیده می‌شود؟" }
 ]);
 
 export const allDestinations = Object.freeze([
   ...publicNavigation,
   ...consoleNavigation,
+  ...secondaryConsoleNavigation,
   { path: "/login", label: "ورود", meta: "محیط نمایشی رهجو" }
 ]);
 
