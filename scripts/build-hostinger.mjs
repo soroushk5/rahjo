@@ -36,7 +36,6 @@ const robotsMeta = mode === 'preview'
 index = index
   .replace(/<meta name="robots"[^>]*>\s*/g, '')
   .replace('<meta name="theme-color" content="#0b1d33" />', `<meta name="theme-color" content="#0b1d33" />\n    ${robotsMeta}`)
-  .replace('رهجو؛ زیرساخت داده، احراز و گردش‌کار برای فرایندهای سازمانی قابل‌اعتماد.', 'رهجو؛ لایه دسترسی کنترل‌شده به داده‌های حساس و کمیاب برای کاربردهای سازمانی.')
   .replace(/href="(assets|styles)\//g, 'href="/$1/')
   .replace(/src="src\//g, 'src="/src/')
   .replace(/(<link rel="icon" href="\/?assets\/favicon\.svg" type="image\/svg\+xml" \/>)/, '$1\n    <link rel="manifest" href="/assets/site.webmanifest" />');
@@ -83,7 +82,7 @@ const health = {
 await writeFile(join(output, 'health.json'), JSON.stringify(health, null, 2));
 
 if (mode === 'production' && siteOrigin) {
-  const routes = ['/', '/platform', '/atlas', '/trust', '/dashboard', '/request', '/map'];
+  const routes = ['/', '/platform', '/data', '/map', '/trust', '/login'];
   const urls = routes.map((route) => `  <url><loc>${siteOrigin}${route}</loc></url>`).join('\n');
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
   await writeFile(join(output, 'sitemap.xml'), sitemap);
