@@ -15,12 +15,16 @@ import { renderRequestPage } from "../src/features/requests/requestPage.js";
 import { renderLoginPage } from "../src/features/auth/loginPage.js";
 import { renderAutomationPage, renderCrmPage, renderGovernancePage, renderOperationalDashboardPage, renderSalesPage, renderServicesPage, renderThinkRoomPage } from "../src/features/operations/operationalPages.js";
 
-const pages = [
+const publicPages = [
   renderPresentationMarketingPage,
   renderPlatformPage,
   renderPresentationAtlasPage,
   renderTrustPage,
-  renderPresentationMapPage,
+  renderPresentationMapPage
+];
+
+const pages = [
+  ...publicPages,
   renderDashboardOverviewPage,
   renderDashboardRequestsPage,
   renderDashboardDataPage,
@@ -45,9 +49,9 @@ test("all primary presentation routes render meaningful, safe markup", () => {
   }
 });
 
-test("public navigation exposes the product journey", () => {
+test("public navigation exposes the operational product journey", () => {
   const html = renderPresentationMarketingPage();
-  for (const path of ["/data", "/platform", "/trust", "/map", "/login", "/request"]) {
+  for (const path of ["/platform", "/data", "/map", "/trust", "/login", "/request"]) {
     assert.match(html, new RegExp(`href="${path}"`));
   }
 });
@@ -72,4 +76,25 @@ test("operational foundation surfaces preserve demo and claim boundaries", () =>
     assert.match(html, new RegExp(phrase));
   }
   assert.doesNotMatch(html, /production-ready|هوش مصنوعی فعال است|تصمیم خودکار انجام می‌شود/iu);
+});
+
+test("public site tells the same operational foundation story as the workspace", () => {
+  const home = renderPresentationMarketingPage();
+  const publicHtml = publicPages.map((render) => render()).join("\n");
+
+  for (const phrase of ["Operational Foundation", "CRM", "Case", "Outcome", "Dashboard", "AI خاموش", "Think Room"]) {
+    assert.match(publicHtml, new RegExp(phrase, "iu"));
+  }
+  assert.match(home, /عملیات تجاری امروز/);
+  assert.match(home, /زیرساخت هوشمندی فردا/);
+  assert.doesNotMatch(home, /داده‌ای که همه‌جا نیست/);
+  assert.doesNotMatch(publicHtml, /اطلس داده رهجو/);
+});
+
+test("public capability surfaces use explicit claim-safe status vocabulary", () => {
+  const html = [renderPresentationAtlasPage(), renderTrustPage()].join("\n");
+  for (const phrase of ["Demo / Synthetic", "Under Review", "Pilot Candidate", "Evidence Required", "Unavailable / TBD", "Production eligibility"] ) {
+    assert.match(html, new RegExp(phrase, "iu"));
+  }
+  assert.doesNotMatch(html, /همه سرویس‌ها فعال|APIهای فعال و آماده|SLA تضمین‌شده/iu);
 });

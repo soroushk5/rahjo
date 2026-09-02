@@ -1,97 +1,65 @@
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
-import { dataClusters, controlLayers, useCases } from "../../data/siteContent.js";
-import { demoOverviewMetrics, demoPortfolio, demoSeedRequests } from "../../data/presentationData.js";
-import { setPreferredClusterId } from "../../services/prototypeStore.js";
+import { publicJourneySteps, publicModules } from "../../data/publicOperationalContent.js";
 
-let activeClusterId = "vehicle";
-let activeControlId = "policy";
-
-function cluster() {
-  return dataClusters.find((item) => item.id === activeClusterId) ?? dataClusters[0];
-}
-
-function control() {
-  return controlLayers.find((item) => item.id === activeControlId) ?? controlLayers[0];
-}
-
-/** @param {string} sensitivity */
-function tone(sensitivity) {
-  if (sensitivity.includes("بسیار")) return "critical";
-  if (sensitivity === "حساس") return "high";
-  if (sensitivity === "متوسط") return "medium";
-  return "controlled";
-}
-
-function heroDataStage() {
-  return `
-    <div class="hero-data-stage" aria-label="نمایش تعاملی خوشه‌های داده">
-      <div class="hero-data-stage__halo"></div>
-      <svg class="hero-data-stage__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        ${dataClusters.map((item) => `<line x1="50" y1="50" x2="${item.x}" y2="${item.y}" />`).join("")}
-        <circle cx="50" cy="50" r="26" />
-        <circle cx="50" cy="50" r="34" />
-      </svg>
-      <div class="hero-data-stage__core">
-        <span>${icon("lock", { size: 26 })}</span>
-        <strong>رهجو</strong>
-        <small>کنترل دسترسی</small>
+function moduleCards() {
+  return publicModules.map((item) => `
+    <article class="public-module-card ${item.id === "think-room" ? "public-module-card--future" : ""}">
+      <div class="public-module-card__head">
+        <span>${icon(item.icon, { size: 21 })}</span>
+        <small>${item.eyebrow}</small>
+        <em>${item.state}</em>
       </div>
-      ${dataClusters.map((item) => `
-        <button class="hero-data-node hero-data-node--${tone(item.sensitivity)}" style="--x:${item.x}%;--y:${item.y}%" type="button" data-hero-cluster="${item.id}" aria-pressed="${activeClusterId === item.id}">
-          <span>${icon(item.icon, { size: 18 })}</span><b>${item.shortTitle}</b><small>${item.sensitivity}</small>
-        </button>`).join("")}
-      <div id="hero-cluster-detail" class="hero-cluster-detail">${clusterDetail()}</div>
-    </div>`;
-}
-
-function clusterDetail() {
-  const item = cluster();
-  return `
-    <div><span class="hero-cluster-detail__icon">${icon(item.icon, { size: 20 })}</span><div><small>خوشه انتخاب‌شده</small><strong>${item.title}</strong></div></div>
-    <p>${item.description}</p>
-    <footer><span>${item.access}</span><a data-link data-request-selected-cluster="${item.id}" href="/request">بررسی مسیر دسترسی ${icon("arrow", { size: 15 })}</a></footer>`;
-}
-
-function controlRail() {
-  return controlLayers.map((layer) => `
-    <button type="button" class="control-rail__item" data-control-layer="${layer.id}" aria-pressed="${activeControlId === layer.id}">
-      <span>${layer.number}</span><div><strong>${layer.label}</strong><small>${layer.artifact}</small></div>
-    </button>`).join("");
-}
-
-function controlDetail() {
-  const layer = control();
-  return `
-    <div class="control-focus__copy"><span class="control-focus__number">${layer.number}</span><div><h3>${layer.title}</h3><p>${layer.text}</p><div class="control-focus__meta">${icon(layer.icon, { size: 18 })}<strong>${layer.artifact}</strong><span>${layer.meta}</span></div></div></div>
-    <div class="control-focus__visual">
-      <span class="control-focus__visual-icon">${icon(layer.icon, { size: 30 })}</span>
-      <div><small>تصمیم این لایه</small><strong>${layer.label}</strong><p>هر پاسخ باید از این Gate عبور کند تا به کانال تحویل برسد.</p></div>
-      <span class="control-focus__status">Demo policy</span>
-    </div>`;
-}
-
-function useCaseCards() {
-  return useCases.map((item, index) => `
-    <article class="usecase-story">
-      <span class="usecase-story__index">0${index + 1}</span>
-      <div><small>${item.industry}</small><h3>${item.title}</h3><p>${item.problem}</p></div>
-      <div class="usecase-story__data"><small>داده مورد نیاز</small>${item.data.map((entry) => `<span>${entry}</span>`).join("")}</div>
-      <footer>${icon("shield", { size: 17 })}<span>${item.control}</span></footer>
+      <h3>${item.title}</h3>
+      <p>${item.text}</p>
+      <a data-link href="${item.path}">${item.id === "think-room" ? "دیدن مسیر آینده" : "دیدن در Workspace"} ${icon("arrow", { size: 14 })}</a>
     </article>`).join("");
 }
 
-function miniConsole() {
-  const sampleRows = demoSeedRequests.slice(0, 3);
+function flowRail() {
+  return publicJourneySteps.slice(0, 7).map((step) => `
+    <div class="public-flow-step">
+      <span class="public-flow-step__index">${step.index}</span>
+      <span class="public-flow-step__icon">${icon(step.icon, { size: 18 })}</span>
+      <div><small>${step.title}</small><strong>${step.label}</strong></div>
+    </div>`).join("");
+}
+
+function operationalPreview() {
   return `
-    <div class="landing-console" aria-label="پیش‌نمایش کنسول رهجو">
-      <aside><div class="landing-console__mark">${icon("node", { size: 22 })}</div><span class="active">${icon("dashboard", { size: 17 })}نمای کلی</span><span>${icon("requests", { size: 17 })}درخواست‌ها</span><span>${icon("database", { size: 17 })}سبد داده</span><span>${icon("audit", { size: 17 })}ممیزی</span></aside>
-      <div class="landing-console__main">
-        <header><div><small>محیط نمایشی</small><strong>کنسول کنترل داده</strong></div><span class="demo-badge">Sandbox</span></header>
-        <div class="landing-console__metrics">${demoOverviewMetrics.slice(0, 3).map((metric) => `<div><small>${metric.label}</small><strong>${metric.value}</strong></div>`).join("")}</div>
-        <div class="landing-console__body">
-          <section><small>آمادگی خوشه‌ها</small>${demoPortfolio.slice(0, 4).map((row) => `<div class="console-readiness"><span>${row.cluster}</span><i><b style="--progress:${row.progress}%"></b></i><em>${row.progress}%</em></div>`).join("")}</section>
-          <section><small>درخواست‌های اخیر</small>${sampleRows.map((row) => `<div class="console-request"><span>${icon("requests", { size: 15 })}</span><div><strong>${row.referenceId}</strong><small>${row.organization}</small></div><em>${row.status}</em></div>`).join("")}</section>
+    <div class="public-cockpit" aria-label="پیش‌نمایش محیط Operational Foundation">
+      <aside class="public-cockpit__sidebar">
+        <div class="public-cockpit__brand">ر</div>
+        <span class="active">${icon("dashboard", { size: 16 })}<b>داشبورد</b></span>
+        <span>${icon("users", { size: 16 })}<b>مشتریان</b></span>
+        <span>${icon("reports", { size: 16 })}<b>فروش</b></span>
+        <span>${icon("api", { size: 16 })}<b>سرویس‌ها</b></span>
+        <span>${icon("workflow", { size: 16 })}<b>اتوماسیون</b></span>
+        <span>${icon("audit", { size: 16 })}<b>ممیزی</b></span>
+      </aside>
+      <div class="public-cockpit__main">
+        <header>
+          <div><small>رهجو / داشبورد</small><strong>مرکز عملیات</strong></div>
+          <em><i></i> Demo / Synthetic</em>
+        </header>
+        <div class="public-cockpit__metrics">
+          <article><small>پرونده‌های نیازمند اقدام</small><strong>Case</strong><span>مالک + اقدام بعدی</span></article>
+          <article><small>فرصت‌های فروش</small><strong>Pipeline</strong><span>Lead → Opportunity</span></article>
+          <article><small>وضعیت سرویس</small><strong>Service</strong><span>Review / Pilot / Evidence</span></article>
+        </div>
+        <div class="public-cockpit__grid">
+          <section>
+            <header><strong>صف اقدام امروز</strong><small>نمونه</small></header>
+            <div class="public-cockpit__row"><span>${icon("requests", { size: 15 })}</span><p><strong>CASE-DEMO-101</strong><small>تکمیل مدارک و Approval</small></p><em>امروز</em></div>
+            <div class="public-cockpit__row"><span>${icon("users", { size: 15 })}</span><p><strong>Account 360</strong><small>پیگیری تعامل و Opportunity</small></p><em>بعدی</em></div>
+            <div class="public-cockpit__row"><span>${icon("workflow", { size: 15 })}</span><p><strong>Workflow receipt</strong><small>اجرای deterministic + audit</small></p><em>Demo</em></div>
+          </section>
+          <section>
+            <header><strong>کیفیت و کنترل</strong><small>No-AI</small></header>
+            <div class="public-control-line"><span>Ownerless records</span><i><b style="--progress:30%"></b></i><em>بررسی</em></div>
+            <div class="public-control-line"><span>Service evidence</span><i><b style="--progress:58%"></b></i><em>Gate</em></div>
+            <div class="public-control-line"><span>Audit completeness</span><i><b style="--progress:82%"></b></i><em>Demo</em></div>
+          </section>
         </div>
       </div>
     </div>`;
@@ -99,73 +67,87 @@ function miniConsole() {
 
 export function renderPresentationMarketingPage() {
   const content = `
-    <section class="present-hero">
-      <div class="container present-hero__grid">
-        <div class="present-hero__copy">
-          <h1>داده‌ای که همه‌جا نیست، باید با کنترل بیشتری حرکت کند.</h1>
-          <p>رهجو لایه‌ای میان منابع داده حساس و فرایندهای سازمانی می‌سازد؛ منبع، حق استفاده، سطح دسترسی و رد مصرف را در یک جریان قابل‌کنترل کنار هم قرار می‌دهد.</p>
-          <div class="present-hero__actions"><a data-link class="button button--primary" href="/data">دیدن اطلس داده ${icon("arrow")}</a><a data-link class="button button--secondary" href="/login">ورود به دموی کنسول</a></div>
-          <div class="present-hero__proof"><span>${icon("shield", { size: 20 })}</span><div><strong>۵۲ عنوان در سبد بررسی، نه ۵۲ سرویس فعال</strong><small>نسخه ارائه عمداً بین موجودی سبد، مدرک منبع و امکان عرضه تفاوت می‌گذارد.</small></div></div>
+    <section class="public-hero">
+      <div class="container public-hero__grid">
+        <div class="public-hero__copy">
+          <span class="public-kicker"><i></i>PHASE 1 · OPERATIONAL FOUNDATION</span>
+          <h1>عملیات تجاری امروز؛<br><span>زیرساخت هوشمندی فردا.</span></h1>
+          <p>رهجو ورودی‌های دیجیتال، CRM، فروش، پرونده‌ها، سرویس‌ها، گردش‌کار و ممیزی را روی یک حافظه عملیاتی مشترک جمع می‌کند؛ طوری که محصول با AI خاموش هم ارزش واقعی داشته باشد و Think Room بعداً روی همان داده و Outcome ساخته شود.</p>
+          <div class="public-hero__actions">
+            <a data-link class="button button--primary" href="/login">دیدن دموی محصول ${icon("arrow", { size: 15 })}</a>
+            <a data-link class="button button--secondary" href="/platform">محصول چگونه کار می‌کند؟</a>
+          </div>
+          <div class="public-hero__boundary">
+            ${icon("shield", { size: 19 })}
+            <div><strong>دمو، نه ادعای Production</strong><small>داده‌ها مصنوعی‌اند؛ سرویس/API فقط وقتی live محسوب می‌شود که evidence و eligibility آن تأیید شده باشد.</small></div>
+          </div>
         </div>
-        <div class="present-hero__visual">${heroDataStage()}</div>
+        <div class="public-hero__visual">${operationalPreview()}</div>
       </div>
     </section>
 
-    <section class="principle-strip"><div class="container">${[
-      ["shield", "اعتماد", "دسترسی فقط با Gate"],
-      ["node", "دقت", "منبع و Purpose روشن"],
-      ["layers", "ساختار", "قراردادهای داده پایدار"],
-      ["audit", "قابلیت بازبینی", "رد تصمیم و رخداد"]
-    ].map(([iconName, title, text]) => `<div><span>${icon(iconName, { size: 21 })}</span><p><strong>${title}</strong><small>${text}</small></p></div>`).join("")}</div></section>
-
-    <section class="present-control-section">
+    <section class="public-proof-strip">
       <div class="container">
-        <header class="present-section-head"><div><small>مدل محصول</small><h2>داده قبل از پاسخ، چهار تصمیم را طی می‌کند.</h2></div><p>به‌جای فهرست‌کردن APIهای پراکنده، معماری رهجو روی مسیر «منبع → دسترسی → تحویل → ممیزی» بنا شده است.</p></header>
-        <div class="present-control-layout"><nav class="control-rail" aria-label="لایه‌های کنترل">${controlRail()}</nav><article id="control-focus" class="control-focus">${controlDetail()}</article></div>
+        ${[
+          ["external", "Website / Intake", "کشف نیاز و ثبت منبع ورودی"],
+          ["users", "Commercial Memory", "Account، Lead، Case و Outcome"],
+          ["workflow", "Deterministic Ops", "Rule، Gate، Task و Receipt"],
+          ["audit", "Audit & Quality", "Actor، Source، State و Data Quality"]
+        ].map(([name, title, text]) => `<article><span>${icon(name, { size: 20 })}</span><div><strong>${title}</strong><small>${text}</small></div></article>`).join("")}
       </div>
     </section>
 
-    <section class="present-product-section">
-      <div class="container present-product-grid"><div class="present-product-copy"><small>محصول در عمل</small><h2>همان منطق کنترل، داخل کنسول تبدیل به تصمیم قابل‌نمایش می‌شود.</h2><p>کاربر سازمانی می‌تواند درخواست را ثبت کند، وضعیت Gate را ببیند، سبد داده را مرور کند و رد ممیزی را دنبال کند؛ همه در یک Workspace واحد.</p><ul><li>${icon("check", { size: 17 })}Login و Session نمایشی</li><li>${icon("check", { size: 17 })}درخواست چندمرحله‌ای با Draft</li><li>${icon("check", { size: 17 })}Dashboard، Portfolio و Audit</li></ul><a data-link class="button button--primary" href="/login">باز کردن محیط نمایشی ${icon("arrow")}</a></div><div>${miniConsole()}</div></div>
+    <section class="public-section public-section--flow">
+      <div class="container">
+        <header class="public-section__head">
+          <div><span>یک سیستم، نه چند ابزار</span><h2>از اولین ورودی تا Outcome، Context نباید گم شود.</h2></div>
+          <p>Website یک brochure جدا نیست و CRM هم یک silo مستقل نیست. هر ورودی باید به objectهای مشترک تبدیل شود و در عملیات، سرویس و داشبورد همان مسیر را ادامه دهد.</p>
+        </header>
+        <div class="public-flow-rail">${flowRail()}</div>
+        <div class="public-flow-summary">
+          <strong>Website / Channel</strong><span>→</span><strong>Lead / Account</strong><span>→</span><strong>Opportunity / Case</strong><span>→</span><strong>Approval / Action</strong><span>→</span><strong>Outcome / Dashboard</strong>
+        </div>
+        <a data-link class="text-link" href="/map">دیدن مسیر کامل ${icon("arrow", { size: 14 })}</a>
+      </div>
     </section>
 
-    <section class="present-usecases"><div class="container"><header class="present-section-head"><div><small>کاربرد</small><h2>ارزش داده از مسئله‌ای شروع می‌شود که قرار است حل شود.</h2></div><a data-link class="text-link" href="/map">دیدن نقشه کامل اکوسیستم ${icon("arrow")}</a></header><div class="usecase-story-list">${useCaseCards()}</div></div></section>
+    <section class="public-section public-section--modules">
+      <div class="container">
+        <header class="public-section__head">
+          <div><span>محصول امروز</span><h2>Operational Foundation در هفت سطح دیده می‌شود.</h2></div>
+          <p>شش سطح اول باید مستقل از مدل خارجی کار کنند. Think Room سطح آینده است و به‌جای ساخت حافظه جدا، همان Account/Case/Decision/Outcome را مصرف می‌کند.</p>
+        </header>
+        <div class="public-module-grid">${moduleCards()}</div>
+      </div>
+    </section>
 
-    <section class="present-final-cta"><div class="container"><div><span>${icon("lock", { size: 24 })}</span><h2>اول کاربرد و شرایط دسترسی را مشخص کنید؛ بعد اتصال معنا پیدا می‌کند.</h2><p>برای ارائه، می‌توانید مسیر کامل را از Login تا ثبت درخواست و مشاهده آن در داشبورد اجرا کنید.</p></div><div><a data-link class="button button--light" href="/login">ورود به کنسول</a><a data-link class="button button--ghost present-final-cta__secondary" href="/request">شروع درخواست نمونه</a></div></div></section>`;
+    <section class="public-section public-section--split">
+      <div class="container public-two-column">
+        <article class="public-story-card">
+          <span>${icon("api", { size: 22 })}</span>
+          <small>سرویس‌ها و APIها</small>
+          <h2>کاتالوگ باید وضعیت واقعی را نشان دهد، نه وعده مبهم.</h2>
+          <p>هر capability با برچسب‌هایی مثل Demo، Under Review، Pilot Candidate، Evidence Required یا TBD نمایش داده می‌شود. Catalogue به‌تنهایی مجوز عرضه نیست.</p>
+          <a data-link class="button button--secondary" href="/data">مرور سرویس‌ها و وضعیت‌ها</a>
+        </article>
+        <article class="public-story-card public-story-card--dark">
+          <span>${icon("spark", { size: 22 })}</span>
+          <small>AI-Compatible، نه AI-Dependent</small>
+          <h2>Think Room وقتی می‌آید که حافظه و Outcome واقعی وجود داشته باشد.</h2>
+          <p>لایه هوشمندی آینده Context و Evidence را از همان هسته می‌گیرد. فاز اول برای ارزش پایه به LLM وابسته نیست.</p>
+          <a data-link class="button button--light" href="/trust">دیدن مرزها و کنترل‌ها</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="public-final-cta">
+      <div class="container">
+        <div><span>READY TO EXPLORE</span><h2>محصول را از داخل Workspace ببینید، نه فقط از روی وعده.</h2><p>دموی فعلی با داده مصنوعی مسیر Dashboard، CRM، Sales، Services، Automation، Audit و Think Room آینده را نشان می‌دهد.</p></div>
+        <div><a data-link class="button button--light" href="/login">ورود به دمو</a><a data-link class="button button--ghost public-final-cta__secondary" href="/request">درخواست نمونه در Workspace</a></div>
+      </div>
+    </section>`;
 
   return siteShell({ content, activePath: "/" });
 }
 
-export function mountPresentationMarketingPage() {
-  document.querySelectorAll("[data-hero-cluster]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeClusterId = button.getAttribute("data-hero-cluster") ?? dataClusters[0].id;
-      document.querySelectorAll("[data-hero-cluster]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
-      const detail = document.querySelector("#hero-cluster-detail");
-      if (detail instanceof HTMLElement) detail.innerHTML = clusterDetail();
-      mountSelectedClusterLink();
-    });
-  });
-
-  document.querySelectorAll("[data-control-layer]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeControlId = button.getAttribute("data-control-layer") ?? controlLayers[0].id;
-      document.querySelectorAll("[data-control-layer]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
-      const detail = document.querySelector("#control-focus");
-      if (detail instanceof HTMLElement) detail.innerHTML = controlDetail();
-    });
-  });
-
-  mountSelectedClusterLink();
-}
-
-function mountSelectedClusterLink() {
-  document.querySelectorAll("[data-request-selected-cluster]").forEach((link) => {
-    if (!(link instanceof HTMLElement) || link.dataset.bound) return;
-    link.dataset.bound = "true";
-    link.addEventListener("click", () => {
-      const id = link.getAttribute("data-request-selected-cluster");
-      if (id) setPreferredClusterId(id);
-    });
-  });
-}
+export function mountPresentationMarketingPage() {}

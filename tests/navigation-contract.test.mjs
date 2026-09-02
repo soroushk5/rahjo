@@ -56,7 +56,8 @@ test("rendered primary pages contain no orphan internal links", () => {
   }
 });
 
-test("public walkthrough is complete and ordered", () => {
-  assert.deepEqual(publicJourney.map((item) => item.path), ["/", "/data", "/map", "/platform", "/trust", "/login"]);
+test("public walkthrough follows operational product sequencing", () => {
+  assert.deepEqual(publicJourney.map((item) => item.path), ["/", "/platform", "/data", "/map", "/trust", "/login"]);
   assert.equal(new Set(publicJourney.map((item) => item.path)).size, publicJourney.length);
+  assert.deepEqual(publicNavigation.map((item) => item.label), ["خانه", "محصول", "سرویس‌ها", "نحوه کار", "اعتماد و کنترل"]);
 });

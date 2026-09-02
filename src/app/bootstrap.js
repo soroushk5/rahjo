@@ -78,12 +78,12 @@ function loginMount() {
 router = new Router({
   root,
   routes: [
-    { path: "/", title: "دسترسی کنترل‌شده به داده", description: "رهجو؛ زیرساخت دسترسی کنترل‌شده به داده برای کاربردهای سازمانی.", render: renderPresentationMarketingPage, mount: withChrome(mountPresentationMarketingPage) },
-    { path: "/data", title: "اطلس داده", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
-    { path: "/stories", title: "اطلس داده", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
-    { path: "/platform", title: "معماری پلتفرم", render: renderPlatformPage, mount: withChrome(undefined) },
-    { path: "/trust", title: "کنترل دسترسی", render: renderTrustPage, mount: withChrome(mountTrustPage) },
-    { path: "/map", title: "نقشه اکوسیستم", render: renderPresentationMapPage, mount: withChrome(mountPresentationMapPage) },
+    { path: "/", title: "زیرساخت عملیاتی و تجاری", description: "رهجو؛ Operational Foundation برای CRM، فروش، سرویس، اتوماسیون و ممیزی، با مسیر هوشمندی آینده.", render: renderPresentationMarketingPage, mount: withChrome(mountPresentationMarketingPage) },
+    { path: "/data", title: "سرویس‌ها و قابلیت‌ها", description: "خانواده قابلیت‌های رهجو با وضعیت صریح Demo، Review، Pilot، Evidence Required یا TBD.", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
+    { path: "/stories", title: "سرویس‌ها و قابلیت‌ها", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
+    { path: "/platform", title: "محصول و معماری", description: "Website، Commercial Memory، Service، Workflow، Governance و Dashboard روی یک هسته مشترک.", render: renderPlatformPage, mount: withChrome(undefined) },
+    { path: "/trust", title: "اعتماد و کنترل", description: "Human gate، permission، audit، data quality و claim discipline در رهجو.", render: renderTrustPage, mount: withChrome(mountTrustPage) },
+    { path: "/map", title: "نحوه کار", description: "مسیر Website/Channel تا Lead/Account، Case، Service، Approval، Action، Outcome و Dashboard.", render: renderPresentationMapPage, mount: withChrome(mountPresentationMapPage) },
     { path: "/login", title: "ورود به محیط نمایشی", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
     { path: "/dashboard", title: "داشبورد عملیات", render: renderWithSession(renderOperationalDashboardPage, "/dashboard"), mount: mountWithSession(mountOperationalDashboardPage, "/dashboard") },
     { path: "/crm", title: "مشتریان و حافظه تجاری", render: renderWithSession(renderCrmPage, "/crm"), mount: mountWithSession(mountCrmPage, "/crm") },
