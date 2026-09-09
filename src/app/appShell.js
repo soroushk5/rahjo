@@ -111,7 +111,7 @@ export function appShell({ content, activePath, title }) {
           <div class="app-topbar__actions">
             <span class="environment-badge"><i></i>دمو / داده مصنوعی</span>
             <button id="global-search" class="icon-button" type="button" aria-label="جست‌وجوی سریع">${icon("search")}</button>
-            <a data-link class="button button--primary app-topbar__request" href="/services">ورود پرونده جدید ${icon("arrow", { size: 15 })}</a>
+            <a data-link class="button button--primary app-topbar__request" href="/cases/new">ورود پرونده جدید ${icon("arrow", { size: 15 })}</a>
           </div>
         </header>
         <div class="app-context-strip">

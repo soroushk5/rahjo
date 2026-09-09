@@ -9,6 +9,7 @@ import { mountPresentationMapPage, renderPresentationMapPage } from "../features
 import { mountDashboardDataPage, mountDashboardRequestsPage, renderDashboardAuditPage, renderDashboardDataPage, renderDashboardOverviewPage, renderDashboardRequestsPage } from "../features/dashboard/presentationDashboard.js";
 import { mountRequestPage, renderRequestPage } from "../features/requests/requestPage.js";
 import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
+import { mountCaseIntakePage, renderCaseIntakePage } from "../features/operations/caseIntakePage.js";
 import {
   mountAutomationPage,
   mountCrmPage,
@@ -86,6 +87,7 @@ router = new Router({
     { path: "/map", title: "نحوه کار", description: "مسیر Website/Channel تا Lead/Account، Case، Service، Approval، Action، Outcome و Dashboard.", render: renderPresentationMapPage, mount: withChrome(mountPresentationMapPage) },
     { path: "/login", title: "ورود به محیط نمایشی", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
     { path: "/dashboard", title: "داشبورد عملیات", render: renderWithSession(renderOperationalDashboardPage, "/dashboard"), mount: mountWithSession(mountOperationalDashboardPage, "/dashboard") },
+    { path: "/cases/new", title: "ورود هدایت‌شده پرونده", render: renderWithSession(renderCaseIntakePage, "/cases/new"), mount: mountWithSession(mountCaseIntakePage, "/cases/new") },
     { path: "/crm", title: "مشتریان و حافظه تجاری", render: renderWithSession(renderCrmPage, "/crm"), mount: mountWithSession(mountCrmPage, "/crm") },
     { path: "/sales", title: "فروش", render: renderWithSession(renderSalesPage, "/sales"), mount: mountWithSession(mountSalesPage, "/sales") },
     { path: "/services", title: "سرویس‌ها و APIها", render: renderWithSession(renderServicesPage, "/services"), mount: mountWithSession(mountServicesPage, "/services") },

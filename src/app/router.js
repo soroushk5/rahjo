@@ -35,7 +35,7 @@ export class Router {
 
   /** @param {string} pathname */
   routePath(pathname) {
-    let path = pathname || "/";
+    let path = (pathname || "/").split(/[?#]/, 1)[0] || "/";
 
     if (this.basePath && (path === this.basePath || path.startsWith(`${this.basePath}/`))) {
       path = path.slice(this.basePath.length) || "/";
@@ -48,20 +48,22 @@ export class Router {
 
   /** @param {string} routePath */
   browserPath(routePath) {
-    const path = this.routePath(routePath);
+    const match = String(routePath || "/").match(/^([^?#]*)(\?[^#]*)?/);
+    const path = this.routePath(match?.[1] ?? "/");
+    const search = match?.[2] ?? "";
 
     if (this.routingMode === "hash") {
-      return `${window.location.pathname}#${path}`;
+      return `${window.location.pathname}#${path}${search}`;
     }
 
-    if (!this.basePath) return path;
-    return path === "/" ? `${this.basePath}/` : `${this.basePath}${path}`;
+    if (!this.basePath) return `${path}${search}`;
+    return path === "/" ? `${this.basePath}/${search}` : `${this.basePath}${path}${search}`;
   }
 
   /** @param {HTMLAnchorElement} link */
   logicalPathForLink(link) {
     const stored = link.dataset.routePath;
-    if (stored) return this.routePath(stored);
+    if (stored) return stored;
 
     const href = link.getAttribute("href");
     if (!href) return null;
@@ -69,10 +71,12 @@ export class Router {
     if (url.origin !== window.location.origin) return null;
 
     if (this.routingMode === "hash" && url.hash.startsWith("#/")) {
-      return this.routePath(url.hash.slice(1));
+      const hashTarget = url.hash.slice(1);
+      const hashMatch = hashTarget.match(/^([^?]*)(\?.*)?/);
+      return `${this.routePath(hashMatch?.[1] ?? "/")}${hashMatch?.[2] ?? ""}`;
     }
 
-    return this.routePath(url.pathname);
+    return `${this.routePath(url.pathname)}${url.search}`;
   }
 
   rewriteInternalLinks() {
@@ -91,6 +95,9 @@ export class Router {
   start() {
     window.addEventListener("popstate", this.handleNavigation);
     window.addEventListener("hashchange", this.handleNavigation);
+    window.addEventListener("rahjo:navigate", (event) => {
+      if (event instanceof CustomEvent && typeof event.detail === "string") this.navigate(event.detail);
+    });
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target.closest("a[data-link]") : null;
       if (!(target instanceof HTMLAnchorElement) || target.origin !== window.location.origin) return;
