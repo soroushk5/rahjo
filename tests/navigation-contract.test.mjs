@@ -9,11 +9,12 @@ import { renderPresentationMapPage } from "../src/features/map/presentationMap.j
 import { renderDashboardOverviewPage, renderDashboardRequestsPage, renderDashboardDataPage, renderDashboardAuditPage } from "../src/features/dashboard/presentationDashboard.js";
 import { renderRequestPage } from "../src/features/requests/requestPage.js";
 import { renderLoginPage } from "../src/features/auth/loginPage.js";
+import { renderCaseIntakePage } from "../src/features/operations/caseIntakePage.js";
 import { renderAutomationPage, renderCrmPage, renderGovernancePage, renderOperationalDashboardPage, renderSalesPage, renderServicesPage, renderThinkRoomPage } from "../src/features/operations/operationalPages.js";
 
 const knownRoutes = new Set([
   "/", "/data", "/stories", "/map", "/platform", "/trust", "/login",
-  "/dashboard", "/crm", "/sales", "/services", "/automation", "/governance", "/think-room",
+  "/dashboard", "/crm", "/sales", "/services", "/automation", "/governance", "/think-room", "/cases/new",
   "/dashboard/requests", "/dashboard/data", "/dashboard/audit", "/request"
 ]);
 
@@ -29,6 +30,7 @@ const renderers = [
   renderDashboardAuditPage,
   renderRequestPage,
   () => renderLoginPage({ returnTo: "/dashboard" }),
+  renderCaseIntakePage,
   renderOperationalDashboardPage,
   renderCrmPage,
   renderSalesPage,
@@ -51,7 +53,7 @@ test("shared navigation only points at registered routes", () => {
 test("rendered primary pages contain no orphan internal links", () => {
   for (const render of renderers) {
     for (const href of internalHrefs(render())) {
-      assert.ok(knownRoutes.has(href), `Orphan internal href: ${href}`);
+      assert.ok(knownRoutes.has(new URL(href, "https://rahjo.local").pathname), `Orphan internal href: ${href}`);
     }
   }
 });

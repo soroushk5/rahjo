@@ -9,6 +9,7 @@ import {
   resetDemoScenario,
   startDemoScenario
 } from "../src/services/demoScenarioStore.js";
+import { accountMemory, caseContext } from "../src/services/operationalStore.js";
 
 test("golden demo starts from deterministic synthetic seed", () => {
   const reset = resetDemoScenario();
@@ -32,6 +33,7 @@ test("golden demo enforces human approval before deterministic execution", () =>
 
   demoAction("followup");
   demoAction("qualify");
+  assert.ok(accountMemory(demoHero.accountId).tasks.some((item) => item.taskId.startsWith("TASK-LOCAL")));
   demoAction("case");
   const approved = demoAction("approve");
   assert.equal(approved.approvalStatus, "Approved");
@@ -39,6 +41,7 @@ test("golden demo enforces human approval before deterministic execution", () =>
   const executed = demoAction("execute");
   assert.equal(executed.actionStatus, "succeeded");
   assert.equal(executed.receiptStatus, "Verified / Demo");
+  assert.ok(caseContext(demoHero.caseId).runs.some((item) => item.runId.startsWith("RUN-LOCAL") && item.state === "succeeded"));
 });
 
 test("golden demo closes outcome loop and reset restores exact presentation state", () => {
@@ -51,6 +54,8 @@ test("golden demo closes outcome loop and reset restores exact presentation stat
   assert.equal(complete.outcomeStatus, "Recorded");
   assert.equal(presenterNext("/crm", complete).path, "/dashboard");
   assert.equal(presenterAction("/crm", complete), null);
+  assert.equal(caseContext(demoHero.caseId).case.status, "Resolved");
+  assert.ok(accountMemory(demoHero.accountId).outcomes.some((item) => item.outcomeId.startsWith("OUT-LOCAL")));
 
   const reset = resetDemoScenario();
   assert.deepEqual(reset, getDemoScenario());

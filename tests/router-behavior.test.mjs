@@ -23,6 +23,10 @@ test("RawGitHack hash routes remain stable after repeated rewrites", () => {
       router.browserPath("/data"),
       "/soroushk5/rahjo/presentation-v2-connected/index.html#/data"
     );
+    assert.equal(
+      router.browserPath("/crm?account=ACC-DEMO-001"),
+      "/soroushk5/rahjo/presentation-v2-connected/index.html#/crm?account=ACC-DEMO-001"
+    );
 
     const fakeLink = {
       dataset: {},
@@ -40,6 +44,12 @@ test("RawGitHack hash routes remain stable after repeated rewrites", () => {
       : null;
 
     assert.equal(router.logicalPathForLink(/** @type {any} */ (fakeLink)), "/data");
+
+    fakeLink.dataset.routePath = "";
+    fakeLink.getAttribute = (name) => name === "href"
+      ? "/soroushk5/rahjo/presentation-v2-connected/index.html#/crm?account=ACC-DEMO-001"
+      : null;
+    assert.equal(router.logicalPathForLink(/** @type {any} */ (fakeLink)), "/crm?account=ACC-DEMO-001");
   } finally {
     global.window = previousWindow;
   }
