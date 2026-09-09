@@ -17,13 +17,20 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
     const safePath = normalize(decodeURIComponent(url.pathname)).replace(/^([.][.][/\\])+/, "");
     let filePath = join(root, safePath === "/" ? "index.html" : safePath);
+    let spaFallback = false;
     try {
       const info = await stat(filePath);
       if (info.isDirectory()) filePath = join(filePath, "index.html");
     } catch {
       filePath = join(root, "index.html");
+      spaFallback = true;
     }
-    const body = await readFile(filePath);
+    let body = await readFile(filePath);
+    if (spaFallback) {
+      body = Buffer.from(body.toString("utf8")
+        .replace(/href="(assets|styles)\//g, 'href="/$1/')
+        .replace(/src="src\//g, 'src="/src/'));
+    }
     response.writeHead(200, { "content-type": contentTypes[extname(filePath)] ?? "application/octet-stream" });
     response.end(body);
   } catch (error) {
