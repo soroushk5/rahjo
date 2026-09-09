@@ -118,6 +118,7 @@ function persist(next) {
 
 /** @returns {DemoState} */
 export function resetDemoScenario() {
+  resetOperationalState();
   memoryState = null;
   const target = storage();
   if (target) {
@@ -136,6 +137,7 @@ export function resetDemoScenario() {
 
 /** @returns {DemoState} */
 export function startDemoScenario() {
+  resetOperationalState();
   return persist({ ...cloneSeed(), started: true, lastEvent: "دموی مشتری از Dashboard شروع شد", eventCount: 2 });
 }
 
@@ -144,18 +146,26 @@ export function demoAction(action) {
   const state = getDemoScenario();
   switch (action) {
     case "followup":
+      if (!state.followupLogged) logFollowup({ accountId: demoHero.accountId, caseId: demoHero.caseId, title: "پیگیری Golden Demo", owner: "مهدی احمدی", source: "Golden Demo · Local state" });
       return persist({ ...state, started: true, currentStep: Math.max(state.currentStep, 1), followupLogged: true, lastEvent: "پیگیری Account 360 ثبت شد", eventCount: state.eventCount + 1 });
     case "qualify":
+      if (!state.salesQualified) {
+        qualifyLead({ leadId: demoHero.leadId, source: "Golden Demo · Local state" });
+        createHandoffTask({ opportunityId: demoHero.opportunityId, accountId: demoHero.accountId, source: "Golden Demo · Local state" });
+      }
       return persist({ ...state, started: true, currentStep: Math.max(state.currentStep, 2), salesQualified: true, lastEvent: "فرصت فروش برای تحویل انسانی آماده شد", eventCount: state.eventCount + 1 });
     case "case":
       return persist({ ...state, started: true, currentStep: Math.max(state.currentStep, 3), casePrepared: true, lastEvent: "Case سرویس روی حساب نمونه آماده شد", eventCount: state.eventCount + 1 });
     case "approve":
+      if (state.approvalStatus !== "Approved") approveOrReject({ caseId: demoHero.caseId, decision: "Approved", source: "Golden Demo · Human approval" });
       return persist({ ...state, started: true, currentStep: Math.max(state.currentStep, 4), casePrepared: true, approvalStatus: "Approved", lastEvent: "تأیید انسانی برای Case ثبت شد", eventCount: state.eventCount + 1 });
     case "execute":
       if (state.approvalStatus !== "Approved") return state;
+      if (state.actionStatus !== "succeeded") startOrRetryRun({ caseId: demoHero.caseId, source: "Golden Demo · Local deterministic runner" });
       return persist({ ...state, currentStep: Math.max(state.currentStep, 4), actionStatus: "succeeded", receiptStatus: "Verified / Demo", lastEvent: "Workflow قطعی اجرا و Receipt نمایشی ثبت شد", eventCount: state.eventCount + 1 });
     case "outcome":
       if (state.actionStatus !== "succeeded") return state;
+      if (state.outcomeStatus !== "Recorded") recordOutcome({ caseId: demoHero.caseId, reason: "Outcome سناریوی زنده ثبت شد", source: "Golden Demo · Local outcome" });
       return persist({ ...state, currentStep: 6, completed: true, outcomeStatus: "Recorded", lastEvent: "Outcome روی همان Account/Case ثبت و حلقه بسته شد", eventCount: state.eventCount + 1 });
     default:
       return state;
@@ -205,3 +215,12 @@ export function demoStatusSummary(state = getDemoScenario()) {
     lastEvent: state.lastEvent
   };
 }
+import {
+  approveOrReject,
+  createHandoffTask,
+  logFollowup,
+  qualifyLead,
+  recordOutcome,
+  resetOperationalState,
+  startOrRetryRun
+} from "./operationalStore.js";

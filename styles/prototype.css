@@ -98,6 +98,7 @@
 .command-results a:focus-visible { background: #f1f7f8; }
 .command-results a small { grid-column: 1; }
 .command-results a span { grid-column: 2; grid-row: 1 / span 2; }
+.command-results > p { margin: 8px; padding: 18px; border: 1px dashed #cad8df; border-radius: 12px; color: #657483; text-align: center; }
 
 .prototype-toolbar {
   display: flex;
