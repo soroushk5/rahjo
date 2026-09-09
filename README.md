@@ -1,83 +1,79 @@
-# Rahjo — Controlled Data Access Platform
+# Rahjo — Operational Foundation
 
-A presentation-ready, dependency-light frontend prototype for Rahjo.
+Rahjo is a Persian-first, RTL-first operational product prototype that keeps commercial context continuous across Account, Lead, Opportunity, Case, ServiceCapability, Human Approval, Action, Receipt, Audit and Outcome.
 
-## Product direction
+The application is intentionally dependency-light and browser-local. It demonstrates coherent product behavior without claiming a live CRM, provider, API, payment, eligibility, AI/model or customer-data integration.
 
-Rahjo is positioned as a control layer between data sources and organizational use cases. The interface makes five things explicit:
+## Primary product journey
 
-1. data cluster and source
-2. sensitivity level
-3. customer and purpose
-4. controlled delivery
-5. audit and operational ownership
+```text
+Dashboard
+→ Account / Lead context
+→ Opportunity / Case
+→ Service evidence and eligibility summary
+→ Human Approval
+→ deterministic local Action / Run
+→ Receipt / Audit
+→ Outcome
+→ Account and Dashboard
+```
 
-## Presentation build
+Primary routes:
 
-The current build includes:
+- `/login` — local demo entry and one-click Golden Demo
+- `/dashboard` — state-derived action queue
+- `/crm?account=...` — Account 360 and commercial memory
+- `/sales?opportunity=...` — Lead, Opportunity and human handoff
+- `/cases/new` — guided, claim-safe local Case intake
+- `/services?service=...&case=...` — ServiceCapability and Case context
+- `/automation?case=...&run=...` — human-gated local runs and receipts
+- `/governance?case=...` — audit trail, Outcome and Data Quality lifecycle
+- `/think-room?case=...` — read-only future intelligence context; never required for Phase 1
 
-- Persian RTL public landing page
-- Vazirmatn typography across the interface
-- interactive data atlas
-- interactive ecosystem map
-- platform and access-control pages
-- demo login and browser-local session
-- dashboard overview
-- access-request dashboard
-- data portfolio/readiness dashboard
-- audit/control dashboard
-- multi-step access-request flow
-- browser-local draft and request persistence
-- centralized design tokens and 2px Rahjo icon system
-- responsive desktop/mobile layouts
-- Hostinger static package and smoke tests
+Entity context is carried in the URL so Back, Forward and Refresh remain meaningful. All writes go through the versioned local operational repository. Every mutation records actor, source, local deterministic time and state transition semantics. `Reset Demo` restores the exact canonical synthetic seed.
 
-## Demo login
+## Golden Demo
 
-Route: `/login`
+From `/login`, choose **شروع Golden Demo**. The presenter rail remains available across primary screens and proves the full Account → Approval → Action → Audit → Outcome loop. Reset is deterministic and safe to repeat.
+
+Fallback demo credentials:
 
 ```text
 demo@rahjo.ir
 RahjoDemo1405
 ```
 
-This is a static demo credential. It creates a local browser session only and is not connected to a backend account.
-
-Recommended presentation flow:
-
-```text
-/login
-→ /dashboard
-→ /request
-→ submit demo request
-→ /dashboard/requests
-```
+These credentials create only a browser-local session. They are not connected to an account backend.
 
 ## Run locally
 
+Node.js 20 or newer is required.
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 Open `http://localhost:4173`.
 
-## Quality checks
+## Quality commands
 
 ```bash
+npm run check
+npm test
 npm run qa
+npm run build:hostinger
+npm run smoke:hostinger
 ```
 
-The quality pipeline runs strict static checking, automated tests, the Hostinger build and deployment smoke tests.
+Rendered browser QA is required in addition to automated checks. Validate the Golden Demo twice with Reset, the normal product journey, global entity search, URL history/refresh, invalid IDs, canceled intake, desktop and mobile RTL, console health and horizontal overflow.
 
-Runtime code has no third-party dependencies. TypeScript is used only for strict static checking of JavaScript modules.
+## Production and safety
 
-Production is published from the quality-checked `main` branch to the generated `hostinger-production` branch. See `docs/HOSTINGER_PRODUCTION.md` for the source-of-truth and Hostinger connection contract.
+`main` is the canonical source branch. `hostinger-production` is generated only by the quality-checked publication workflow documented in `docs/HOSTINGER_PRODUCTION.md`; do not edit it manually.
 
-## Design reference
+The repository contains synthetic demonstration data only. Local approval and execution states are product-prototype records, not evidence of provider access, legal eligibility, customer consent, delivery, ROI, pricing or autonomous action. Never add secrets or real external side effects to demo flows.
 
-See `docs/PRESENTATION_SYSTEM.md` for design tokens, mock-data rules, routes and the presentation QA contract.
+## Legacy reference surfaces
 
-## Safety boundary
-
-This prototype contains demonstration data only. It does not connect to the claimed portfolio services and must not process real personal data until source, legal, security and product gates are passed.
+The older Controlled Data Access pages remain available only as secondary/reference routes under the console (`/dashboard/requests`, `/dashboard/data`, `/dashboard/audit`, `/request`). They do not define the current primary product story.
