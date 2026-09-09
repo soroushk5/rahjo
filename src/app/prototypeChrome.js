@@ -1,13 +1,19 @@
 import { icon } from "../components/icons.js";
 import { allDestinations } from "./navigation.js";
+import { entityHref } from "./entityRoutes.js";
+import { escapeHtml } from "../lib/html.js";
 import { signOut } from "../services/authStore.js";
 import { demoAction, demoHero, getDemoScenario, resetDemoScenario } from "../services/demoScenarioStore.js";
+import { searchIndex } from "../services/operationalStore.js";
 
 let keyboardBound = false;
 let demoBound = false;
 
 function commandMarkup() {
-  return `<div class="command-backdrop" data-command-close></div><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><header><div><small>Quick navigation</small><h2 id="command-title">کجا می‌خواهید بروید؟</h2></div><button type="button" class="icon-button" data-command-close aria-label="بستن">${icon("close")}</button></header><label class="command-search">${icon("search")}<input id="command-query" autocomplete="off" placeholder="جست‌وجوی صفحه یا مفهوم…" /></label><nav class="command-results" aria-label="نتایج جست‌وجوی سریع">${allDestinations.map((item) => `<a data-link data-command-item data-command-text="${item.label} ${item.meta}" href="${item.path}"><strong>${item.label}</strong><small>${item.meta}</small><span>${icon("arrow")}</span></a>`).join("")}</nav><footer><kbd>Esc</kbd> بستن · <kbd>Ctrl K</kbd> باز کردن</footer></section>`;
+  const destinations = allDestinations.map((item) => ({ ...item, id: "مسیر", type: "route" }));
+  const entities = searchIndex().map((item) => ({ ...item, path: entityHref(item) }));
+  const items = [...entities, ...destinations];
+  return `<div class="command-backdrop" data-command-close></div><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><header><div><small>Quick navigation · local demo memory</small><h2 id="command-title">حساب، پرونده، سرویس یا مسیر را پیدا کنید</h2></div><button type="button" class="icon-button" data-command-close aria-label="بستن">${icon("close")}</button></header><label class="command-search">${icon("search")}<input id="command-query" type="search" autocomplete="off" placeholder="نام یا شناسه…" aria-label="جست‌وجوی موجودیت" /></label><nav class="command-results" aria-label="نتایج جست‌وجوی سریع">${items.map((item) => `<a data-link data-command-item data-command-text="${escapeHtml(`${item.label} ${item.id} ${item.meta}`)}" href="${escapeHtml(item.path)}"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.id)} · ${escapeHtml(item.meta)}</small><span>${icon("arrow")}</span></a>`).join("")}<p data-command-empty hidden>نتیجه‌ای در حافظه دمو پیدا نشد. عبارت دیگری وارد کنید.</p></nav><footer><kbd>Esc</kbd> بستن · <kbd>Ctrl K</kbd> باز کردن</footer></section>`;
 }
 
 function ensureCommandPalette() {
@@ -37,12 +43,14 @@ function openCommandPalette() {
   if (input instanceof HTMLInputElement) {
     input.value = "";
     palette.querySelectorAll("[data-command-item]").forEach((item) => item.removeAttribute("hidden"));
+    palette.querySelector("[data-command-empty]")?.setAttribute("hidden", "");
     requestAnimationFrame(() => input.focus());
   }
 }
 
 function mountCommandPalette() {
   const palette = ensureCommandPalette();
+  palette.innerHTML = commandMarkup();
   document.querySelectorAll("#global-search,[data-open-command]").forEach((button) => button.addEventListener("click", openCommandPalette));
   palette.querySelectorAll("[data-command-close]").forEach((button) => button.addEventListener("click", closeCommandPalette));
   palette.querySelectorAll("[data-command-item]").forEach((item) => {
@@ -52,14 +60,17 @@ function mountCommandPalette() {
   });
 
   const query = palette.querySelector("#command-query");
-  if (query instanceof HTMLInputElement && !query.dataset.bound) {
-    query.dataset.bound = "true";
+  if (query instanceof HTMLInputElement) {
     query.addEventListener("input", () => {
       const needle = query.value.trim().toLocaleLowerCase("fa");
+      let visible = 0;
       palette.querySelectorAll("[data-command-item]").forEach((item) => {
         const text = (item.getAttribute("data-command-text") ?? "").toLocaleLowerCase("fa");
-        item.toggleAttribute("hidden", Boolean(needle) && !text.includes(needle));
+        const matches = !needle || text.includes(needle);
+        item.toggleAttribute("hidden", !matches);
+        if (matches) visible += 1;
       });
+      palette.querySelector("[data-command-empty]")?.toggleAttribute("hidden", visible > 0);
     });
   }
 
@@ -228,20 +239,6 @@ function mountGoldenDemo() {
       return;
     }
 
-    if (target.closest("[data-log-followup]")) {
-      demoAction("followup");
-      window.setTimeout(rerenderCurrentRoute, 20);
-      return;
-    }
-    if (target.closest("#sales-handoff")) {
-      demoAction("qualify");
-      window.setTimeout(rerenderCurrentRoute, 20);
-      return;
-    }
-    if (target.closest("#new-service-request")) {
-      demoAction("case");
-      window.setTimeout(rerenderCurrentRoute, 20);
-    }
   });
 }
 

@@ -4,6 +4,7 @@ import test from "node:test";
 
 const index = fs.readFileSync("index.html", "utf8");
 const router = fs.readFileSync("src/app/router.js", "utf8");
+const devServer = fs.readFileSync("scripts/serve.mjs", "utf8");
 
 test("static entrypoint uses deployment-relative asset paths", () => {
   assert.match(index, /href="assets\/favicon\.svg"/);
@@ -17,6 +18,12 @@ test("router supports a GitHub Pages project base path", () => {
   assert.match(router, /this\.basePath/);
   assert.match(router, /rewriteInternalLinks/);
   assert.match(router, /browserPath/);
+});
+
+test("local SPA fallback keeps nested routes loadable", () => {
+  assert.match(devServer, /spaFallback/);
+  assert.match(devServer, /href=\"\/\$1\//);
+  assert.match(devServer, /src=\"\/src\//);
 });
 
 test("hash preview link rewriting is idempotent", () => {
