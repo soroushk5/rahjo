@@ -30,6 +30,9 @@ const index = await readFile(join(output, 'index.html'), 'utf8');
 const htaccess = await readFile(join(output, '.htaccess'), 'utf8');
 const robots = await readFile(join(output, 'robots.txt'), 'utf8');
 const health = JSON.parse(await readFile(join(output, 'health.json'), 'utf8'));
+const runtimeConfigMatch = index.match(/<script id="rahjo-runtime-config" type="application\/json">([\s\S]*?)<\/script>/);
+if (!runtimeConfigMatch) throw new Error('Runtime configuration is missing from deployment HTML');
+const runtimeConfig = JSON.parse(runtimeConfigMatch[1]);
 
 if (!index.includes('Vazirmatn')) throw new Error('Vazirmatn is missing from deployment');
 if (!index.includes('/assets/site.webmanifest')) throw new Error('Web manifest is not linked');
@@ -37,6 +40,18 @@ if (!index.includes('href="/styles/tokens.css"')) throw new Error('Hostinger sty
 if (!index.includes('src="/src/app/bootstrap.js"')) throw new Error('Hostinger scripts must use root-relative URLs');
 if (!htaccess.includes('RewriteRule . /index.html [L]')) throw new Error('SPA fallback is missing');
 if (health.deploymentMode !== mode) throw new Error(`Health metadata does not report ${mode} mode`);
+if (!['demo', 'server'].includes(runtimeConfig.mode)) throw new Error('Deployment runtime mode must be demo or server');
+if (health.runtimeMode !== runtimeConfig.mode) throw new Error('Health and HTML runtime modes differ');
+if (health.apiBase !== runtimeConfig.apiBase) throw new Error('Health and HTML API bases differ');
+if (health.buildSha !== runtimeConfig.buildSha || health.commit !== runtimeConfig.buildSha) {
+  throw new Error('Health and HTML build SHAs differ');
+}
+if (runtimeConfig.mode === 'demo' && runtimeConfig.apiBase !== '') throw new Error('Demo deployment cannot expose a server API base');
+if (runtimeConfig.mode === 'server') {
+  const apiUrl = new URL(runtimeConfig.apiBase);
+  if (apiUrl.username || apiUrl.password || apiUrl.search || apiUrl.hash) throw new Error('Server API base contains unsafe URL fields');
+  if (mode === 'production' && apiUrl.protocol !== 'https:') throw new Error('Production server API base must use HTTPS');
+}
 
 if (mode === 'preview') {
   if (!index.includes('noindex,nofollow')) throw new Error('Preview deployment must remain noindex');

@@ -9,6 +9,11 @@
     "composeSha256": "6fe20aadb1c2d990b134d61213c0004fac5fbb36",
     "image": "ghcr.io/relaticle/relaticle@sha256:fdc6af98e9e45d85c01d964545ab3c09f85debdb26da47e0abe399308860f9be"
   },
+  "infrastructureImages": {
+    "postgres": "postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73",
+    "redis": "redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+    "node": "node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32"
+  },
   "rahjo": {
     "baselineCommit": "b888b39a6a7f9f710095e295822c2ce3cba59725",
     "integrationMode": "separate-service-clean-adapter",

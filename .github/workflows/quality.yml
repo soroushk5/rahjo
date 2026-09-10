@@ -16,7 +16,11 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run qa
       - run: npm run build:hostinger
+        env:
+          RAHJO_RUNTIME_MODE: demo
       - run: npm run smoke:hostinger
+        env:
+          RAHJO_RUNTIME_MODE: demo
       - uses: actions/upload-artifact@v4
         with:
           name: rahjo-hostinger-preview

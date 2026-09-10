@@ -1,0 +1,203 @@
+x-relaticle-environment: &relaticle-environment
+  APP_NAME: Relaticle for Rahjo
+  APP_ENV: production
+  APP_KEY: ${APP_KEY:?APP_KEY is required}
+  APP_DEBUG: "false"
+  APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Tehran}
+  APP_URL: ${APP_URL:?APP_URL is required}
+  APP_PANEL_DOMAIN: ${APP_PANEL_DOMAIN:-}
+  REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-true}
+  HEALTH_CHECKS_ENABLED: "true"
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: ${LOG_LEVEL:-warning}
+  DB_CONNECTION: pgsql
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_DATABASE: ${DB_DATABASE:-relaticle}
+  DB_USERNAME: ${DB_USERNAME:-relaticle}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+  REDIS_HOST: redis
+  REDIS_PASSWORD: "null"
+  REDIS_PORT: "6379"
+  CACHE_STORE: redis
+  SESSION_DRIVER: redis
+  QUEUE_CONNECTION: redis
+  MAIL_MAILER: ${MAIL_MAILER:-log}
+  MAIL_HOST: ${MAIL_HOST:-}
+  MAIL_PORT: ${MAIL_PORT:-587}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-tls}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-hello@example.invalid}
+  MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Relaticle for Rahjo}
+  MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:?MCP_ALLOWED_ORIGINS is required}
+
+services:
+  relaticle-app:
+    image: ghcr.io/relaticle/relaticle:3.5.7@sha256:fdc6af98e9e45d85c01d964545ab3c09f85debdb26da47e0abe399308860f9be
+    restart: unless-stopped
+    environment:
+      <<: *relaticle-environment
+      AUTORUN_ENABLED: "true"
+      AUTORUN_LARAVEL_MIGRATION: "true"
+      AUTORUN_LARAVEL_MIGRATION_ISOLATION: "true"
+    volumes:
+      - relaticle_storage:/var/www/html/storage
+    ports:
+      - "127.0.0.1:${RELATICLE_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/up"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 90s
+    security_opt:
+      - no-new-privileges:true
+
+  relaticle-horizon:
+    image: ghcr.io/relaticle/relaticle:3.5.7@sha256:fdc6af98e9e45d85c01d964545ab3c09f85debdb26da47e0abe399308860f9be
+    restart: unless-stopped
+    command: ["php", "/var/www/html/artisan", "horizon"]
+    stop_signal: SIGTERM
+    environment:
+      <<: *relaticle-environment
+      AUTORUN_ENABLED: "false"
+    volumes:
+      - relaticle_storage:/var/www/html/storage
+    depends_on:
+      relaticle-app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-horizon"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  relaticle-scheduler:
+    image: ghcr.io/relaticle/relaticle:3.5.7@sha256:fdc6af98e9e45d85c01d964545ab3c09f85debdb26da47e0abe399308860f9be
+    restart: unless-stopped
+    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    stop_signal: SIGTERM
+    environment:
+      <<: *relaticle-environment
+      AUTORUN_ENABLED: "false"
+    volumes:
+      - relaticle_storage:/var/www/html/storage
+    depends_on:
+      relaticle-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-schedule"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  rahjo-migrate:
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+    image: rahjo/crm-bff:${RAHJO_SOURCE_SHA:?RAHJO_SOURCE_SHA is required}
+    command: ["node", "scripts/migrate.mjs"]
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      RAHJO_MIGRATION_DATABASE_URL: ${RAHJO_MIGRATION_DATABASE_URL:?RAHJO_MIGRATION_DATABASE_URL is required}
+      RAHJO_DB_RUNTIME_PASSWORD: ${RAHJO_DB_RUNTIME_PASSWORD:?RAHJO_DB_RUNTIME_PASSWORD is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+
+  rahjo-bff:
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+    image: rahjo/crm-bff:${RAHJO_SOURCE_SHA:?RAHJO_SOURCE_SHA is required}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      RAHJO_API_PORT: "8787"
+      RAHJO_DATABASE_URL: ${RAHJO_DATABASE_URL:?RAHJO_DATABASE_URL is required}
+      RAHJO_PUBLIC_ORIGIN: ${RAHJO_PUBLIC_ORIGIN:?RAHJO_PUBLIC_ORIGIN is required}
+      RAHJO_CORS_ORIGINS: ${RAHJO_CORS_ORIGINS:?RAHJO_CORS_ORIGINS is required}
+      RAHJO_TOKEN_PEPPER: ${RAHJO_TOKEN_PEPPER:?RAHJO_TOKEN_PEPPER is required}
+      RAHJO_ALLOW_INTERNAL_HTTP: "true"
+      RELATICLE_BASE_URL: http://relaticle-app:8080/api/v1
+      RELATICLE_MCP_URL: http://relaticle-app:8080/mcp
+      RELATICLE_TOKEN_FILE: /run/secrets/relaticle_workspace_tokens.json
+    secrets:
+      - relaticle_workspace_tokens
+    ports:
+      - "127.0.0.1:${RAHJO_API_PORT:-8787}:8787"
+    depends_on:
+      rahjo-migrate:
+        condition: service_completed_successfully
+      relaticle-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8787/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  postgres:
+    image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-relaticle}
+      POSTGRES_USER: ${DB_USERNAME:-relaticle}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-relaticle} -d ${DB_DATABASE:-relaticle}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
+  redis_data:
+  relaticle_storage:
+
+secrets:
+  relaticle_workspace_tokens:
+    file: ${RELATICLE_TOKEN_FILE_HOST:?RELATICLE_TOKEN_FILE_HOST is required}

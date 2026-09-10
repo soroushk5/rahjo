@@ -1,0 +1,174 @@
+name: W13 Production CRM Foundation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "server/**"
+      - "ops/relaticle/**"
+      - "src/config/**"
+      - "src/services/runtimeDataFacade.js"
+      - "src/app/runtimeBoundary.js"
+      - "scripts/runtime-metadata.mjs"
+      - ".github/workflows/w13-foundation.yml"
+  push:
+    branches:
+      - w13-production-crm-foundation
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+        env:
+          POSTGRES_DB: relaticle
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d relaticle"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Preserve existing Rahjo quality gates
+        run: |
+          npm ci --ignore-scripts
+          npm run qa
+
+      - name: Install and test BFF unit contracts
+        working-directory: server
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+
+      - name: Apply Rahjo migration twice as database owner
+        working-directory: server
+        env:
+          RAHJO_MIGRATION_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:5432/relaticle
+          RAHJO_DB_RUNTIME_PASSWORD: rahjo-runtime-ci-only-password-00000001
+        run: |
+          npm run migrate
+          npm run migrate
+
+      - name: Run two-workspace isolation and server no-LLM E2E
+        working-directory: server
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:5432/relaticle
+          TEST_RAHJO_DATABASE_URL: postgresql://rahjo_app:rahjo-runtime-ci-only-password-00000001@127.0.0.1:5432/relaticle
+          RAHJO_TOKEN_PEPPER: rahjo-ci-token-pepper-0000000000000001
+        run: node --test --test-isolation=none tests/postgres-no-llm.integration.test.mjs
+
+      - name: Audit runtime role and RLS policy inventory
+        env:
+          PGPASSWORD: postgres-ci-only
+        run: |
+          test "$(docker run --rm --network host -e PGPASSWORD postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 psql -h 127.0.0.1 -U postgres -d relaticle -Atv ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_roles WHERE rolname='rahjo_app' AND NOT rolsuper AND NOT rolbypassrls")" = "1"
+          test "$(docker run --rm --network host -e PGPASSWORD postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 psql -h 127.0.0.1 -U postgres -d relaticle -Atv ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_roles WHERE rolname='rahjo_worker' AND NOT rolsuper AND NOT rolbypassrls")" = "1"
+          test "$(docker run --rm --network host -e PGPASSWORD postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 psql -h 127.0.0.1 -U postgres -d relaticle -Atv ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='rahjo' AND c.relrowsecurity AND c.relforcerowsecurity")" = "19"
+          test "$(docker run --rm --network host -e PGPASSWORD postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 psql -h 127.0.0.1 -U postgres -d relaticle -Atv ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_policies WHERE schemaname='rahjo' AND policyname='workspace_isolation' AND permissive='RESTRICTIVE'")" = "19"
+          test "$(docker run --rm --network host -e PGPASSWORD postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 psql -h 127.0.0.1 -U postgres -d relaticle -Atv ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_policies WHERE schemaname='rahjo' AND policyname='workspace_role_access' AND permissive='PERMISSIVE'")" = "19"
+
+      - name: Verify BFF image and disposable upstream services
+        env:
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          APP_URL: http://localhost:8080
+          APP_PANEL_DOMAIN: ""
+          DB_PASSWORD: relaticle-compose-ci-only
+          RAHJO_SOURCE_SHA: ${{ github.sha }}
+          RAHJO_MIGRATION_DATABASE_URL: postgresql://relaticle:relaticle-compose-ci-only@postgres:5432/relaticle
+          RAHJO_DATABASE_URL: postgresql://rahjo_app:rahjo-compose-runtime-ci-only-00000001@postgres:5432/relaticle
+          RAHJO_DB_RUNTIME_PASSWORD: rahjo-compose-runtime-ci-only-00000001
+          RAHJO_PUBLIC_ORIGIN: https://api.example.test
+          RAHJO_CORS_ORIGINS: https://rahjo.example.test
+          RAHJO_TOKEN_PEPPER: rahjo-compose-pepper-0000000000000001
+          MCP_ALLOWED_ORIGINS: http://localhost:4173
+          RELATICLE_TOKEN_FILE_HOST: ./secrets/relaticle_workspace_tokens.example.json
+        run: |
+          mkdir -p artifacts
+          docker compose -f ops/relaticle/compose.yml config --quiet
+          docker build --file server/Dockerfile --tag rahjo/crm-bff:${GITHUB_SHA} .
+          docker compose -f ops/relaticle/compose.yml up -d postgres redis relaticle-app relaticle-horizon relaticle-scheduler
+          for service in postgres redis relaticle-app relaticle-horizon relaticle-scheduler; do
+            container="$(docker compose -f ops/relaticle/compose.yml ps -q "$service")"
+            test -n "$container"
+            for attempt in $(seq 1 36); do
+              state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container")"
+              if [ "$state" = healthy ]; then break; fi
+              if [ "$state" = unhealthy ] || [ "$state" = exited ]; then docker logs "$container"; exit 1; fi
+              sleep 5
+            done
+            test "$(docker inspect --format '{{.State.Health.Status}}' "$container")" = healthy
+          done
+          curl --fail --silent --show-error http://127.0.0.1:8080/up
+          docker compose -f ops/relaticle/compose.yml ps --format json > artifacts/compose-services.json
+          docker compose -f ops/relaticle/compose.yml logs --no-color > artifacts/relaticle-compose.log
+
+      - name: Stop disposable Compose topology
+        if: always()
+        env:
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          APP_URL: http://localhost:8080
+          DB_PASSWORD: relaticle-compose-ci-only
+          RAHJO_SOURCE_SHA: ${{ github.sha }}
+          RAHJO_MIGRATION_DATABASE_URL: postgresql://relaticle:relaticle-compose-ci-only@postgres:5432/relaticle
+          RAHJO_DATABASE_URL: postgresql://rahjo_app:rahjo-compose-runtime-ci-only-00000001@postgres:5432/relaticle
+          RAHJO_DB_RUNTIME_PASSWORD: rahjo-compose-runtime-ci-only-00000001
+          RAHJO_PUBLIC_ORIGIN: https://api.example.test
+          RAHJO_CORS_ORIGINS: https://rahjo.example.test
+          RAHJO_TOKEN_PEPPER: rahjo-compose-pepper-0000000000000001
+          MCP_ALLOWED_ORIGINS: http://localhost:4173
+          RELATICLE_TOKEN_FILE_HOST: ./secrets/relaticle_workspace_tokens.example.json
+        run: docker compose -f ops/relaticle/compose.yml down --volumes --remove-orphans
+
+      - name: Disposable Rahjo-schema backup and restore drill
+        env:
+          PGPASSWORD: postgres-ci-only
+          RAHJO_TOKEN_PEPPER: rahjo-ci-token-pepper-0000000000000001
+          RAHJO_RESTORE_TEST_TOKEN: rahjo_test_workspace_a_12345678901234567890
+          RAHJO_RESTORE_ADMIN_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:55432/rahjo_restore_drill
+          RAHJO_RESTORE_RUNTIME_DATABASE_URL: postgresql://rahjo_app:rahjo-runtime-ci-only-password-00000001@127.0.0.1:55432/rahjo_restore_drill
+        run: |
+          mkdir -p artifacts
+          restore_container="rahjo-w13-restore-${GITHUB_RUN_ID}"
+          trap 'docker rm -f "$restore_container" >/dev/null 2>&1 || true' EXIT
+          docker run --rm --network host -e PGPASSWORD -v "$PWD/artifacts:/backup" postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 \
+            pg_dump -h 127.0.0.1 -U postgres -d relaticle --format=custom --file=/backup/w13-test.dump
+          docker run -d --name "$restore_container" -e POSTGRES_DB=rahjo_restore_drill -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres-ci-only -p 127.0.0.1:55432:5432 \
+            postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+          for attempt in $(seq 1 24); do
+            if docker exec "$restore_container" pg_isready -U postgres -d rahjo_restore_drill; then break; fi
+            sleep 2
+          done
+          docker exec "$restore_container" psql -U postgres -d rahjo_restore_drill -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE rahjo_app LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER NOBYPASSRLS PASSWORD 'rahjo-runtime-ci-only-password-00000001'" \
+            -c "CREATE ROLE rahjo_worker NOLOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER NOBYPASSRLS"
+          docker run --rm --network host -e PGPASSWORD -v "$PWD/artifacts:/backup" postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 \
+            pg_restore -h 127.0.0.1 -p 55432 -U postgres -d rahjo_restore_drill --exit-on-error /backup/w13-test.dump
+          node server/scripts/restore-smoke.mjs | tee artifacts/restore-smoke.json
+          sha256sum artifacts/w13-test.dump | tee artifacts/backup-sha256.txt
+          rm artifacts/w13-test.dump
+
+      - name: Upload W13 test receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w13-foundation-receipts-${{ github.run_id }}
+          path: artifacts
+          if-no-files-found: warn
+          retention-days: 30

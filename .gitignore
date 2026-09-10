@@ -8,3 +8,5 @@ coverage/
 dist-hostinger/
 rahjo-hostinger-production*.zip
 .deployment-artifacts/
+ops/relaticle/secrets/*
+!ops/relaticle/secrets/*.example.json

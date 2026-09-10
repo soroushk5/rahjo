@@ -33,6 +33,8 @@ jobs:
           DEPLOY_MODE: production
           SITE_ORIGIN: ${{ vars.RAHJO_PRODUCTION_ORIGIN }}
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          RAHJO_RUNTIME_MODE: ${{ vars.RAHJO_RUNTIME_MODE }}
+          RAHJO_API_BASE: ${{ vars.RAHJO_API_BASE }}
         run: |
           node scripts/build-hostinger.mjs
           node scripts/smoke-hostinger.mjs
