@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-10",
+  "upstream": {
+    "repository": "https://github.com/Relaticle/relaticle",
+    "license": "AGPL-3.0",
+    "release": "v3.5.7",
+    "commit": "d563e9eeeebfb3145cee60edcf13929c828b56a5",
+    "composeSha256": "6fe20aadb1c2d990b134d61213c0004fac5fbb36",
+    "image": "ghcr.io/relaticle/relaticle@sha256:fdc6af98e9e45d85c01d964545ab3c09f85debdb26da47e0abe399308860f9be"
+  },
+  "rahjo": {
+    "baselineCommit": "b888b39a6a7f9f710095e295822c2ce3cba59725",
+    "integrationMode": "separate-service-clean-adapter",
+    "copiedUpstreamSource": false
+  },
+  "deepForkApproval": {
+    "required": true,
+    "granted": false
+  }
+}
