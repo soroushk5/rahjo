@@ -72,7 +72,7 @@ jobs:
           TEST_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:5432/relaticle
           TEST_RAHJO_DATABASE_URL: postgresql://rahjo_app:rahjo-runtime-ci-only-password-00000001@127.0.0.1:5432/relaticle
           RAHJO_TOKEN_PEPPER: rahjo-ci-token-pepper-0000000000000001
-        run: node --test --test-isolation=none tests/postgres-no-llm.integration.test.mjs
+        run: node --test tests/postgres-no-llm.integration.test.mjs
 
       - name: Audit runtime role and RLS policy inventory
         env:
