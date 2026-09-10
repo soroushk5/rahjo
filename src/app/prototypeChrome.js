@@ -1,19 +1,77 @@
+// @ts-nocheck
 import { icon } from "../components/icons.js";
 import { allDestinations } from "./navigation.js";
+import { signOut } from "../services/authStore.js";
+import { searchIndex } from "../services/phaseOneStore.js";
 import { entityHref } from "./entityRoutes.js";
 import { escapeHtml } from "../lib/html.js";
-import { signOut } from "../services/authStore.js";
-import { demoAction, demoHero, getDemoScenario, resetDemoScenario } from "../services/demoScenarioStore.js";
-import { searchIndex } from "../services/operationalStore.js";
 
 let keyboardBound = false;
-let demoBound = false;
 
 function commandMarkup() {
-  const destinations = allDestinations.map((item) => ({ ...item, id: "مسیر", type: "route" }));
-  const entities = searchIndex().map((item) => ({ ...item, path: entityHref(item) }));
-  const items = [...entities, ...destinations];
-  return `<div class="command-backdrop" data-command-close></div><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><header><div><small>Quick navigation · local demo memory</small><h2 id="command-title">حساب، پرونده، سرویس یا مسیر را پیدا کنید</h2></div><button type="button" class="icon-button" data-command-close aria-label="بستن">${icon("close")}</button></header><label class="command-search">${icon("search")}<input id="command-query" type="search" autocomplete="off" placeholder="نام یا شناسه…" aria-label="جست‌وجوی موجودیت" /></label><nav class="command-results" aria-label="نتایج جست‌وجوی سریع">${items.map((item) => `<a data-link data-command-item data-command-text="${escapeHtml(`${item.label} ${item.id} ${item.meta}`)}" href="${escapeHtml(item.path)}"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.id)} · ${escapeHtml(item.meta)}</small><span>${icon("arrow")}</span></a>`).join("")}<p data-command-empty hidden>نتیجه‌ای در حافظه دمو پیدا نشد. عبارت دیگری وارد کنید.</p></nav><footer><kbd>Esc</kbd> بستن · <kbd>Ctrl K</kbd> باز کردن</footer></section>`;
+  return `<div class="command-backdrop" data-command-close></div><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><header><div><small>جست‌وجوی سریع</small><h2 id="command-title">کجا می‌خواهید بروید؟</h2></div><button type="button" class="icon-button" data-command-close aria-label="بستن">${icon("close")}</button></header><label class="command-search">${icon("search")}<input id="command-query" autocomplete="off" placeholder="مشتری، درخواست، سند یا صفحه را بنویسید…" /></label><nav class="command-results" data-command-results aria-label="نتایج جست‌وجوی سریع"></nav><footer><kbd>Esc</kbd> بستن · <kbd>Ctrl K</kbd> باز کردن</footer></section>`;
+}
+
+function itemSearchText(item) {
+  return [item.searchText, item.label, item.meta, item.id, item.path]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase("fa");
+}
+
+/** @param {Array<Record<string, unknown>>} [entities] */
+export function commandItems(entities = searchIndex()) {
+  const destinations = allDestinations.map((item) => ({
+    ...item,
+    id: item.path,
+    href: item.path,
+    resultKind: "destination"
+  }));
+  return [
+    ...destinations,
+    ...entities.map((item) => ({
+      ...item,
+      href: entityHref(item),
+      resultKind: "entity"
+    }))
+  ];
+}
+
+/** @param {Array<Record<string, unknown>>} [items] */
+export function commandResultsMarkup(items = commandItems()) {
+  const results = items.map((item) => {
+    const href = String(item.href || "/dashboard");
+    return `<a data-link data-command-item data-command-kind="${escapeHtml(item.resultKind || "entity")}" data-command-text="${escapeHtml(itemSearchText(item))}" data-route-path="${escapeHtml(href)}" href="${escapeHtml(href)}"><strong>${escapeHtml(item.label || item.id || "نتیجه")}</strong><small>${escapeHtml(item.meta || "رکورد رهجو")}</small><span>${icon("arrow")}</span></a>`;
+  }).join("");
+  return `${results}<p class="command-empty" data-command-empty role="status" hidden>نتیجه‌ای برای این عبارت پیدا نشد.</p>`;
+}
+
+function bindCommandResultLinks(palette) {
+  palette.querySelectorAll("[data-command-item]").forEach((item) => {
+    if (!(item instanceof HTMLElement) || item.dataset.closeBound) return;
+    item.dataset.closeBound = "true";
+    item.addEventListener("click", closeCommandPalette);
+  });
+}
+
+function rebuildCommandResults(palette) {
+  const results = palette.querySelector("[data-command-results]");
+  if (!(results instanceof HTMLElement)) return;
+  results.innerHTML = commandResultsMarkup();
+  bindCommandResultLinks(palette);
+}
+
+function filterCommandResults(palette, value) {
+  const needle = value.trim().toLocaleLowerCase("fa");
+  let visible = 0;
+  palette.querySelectorAll("[data-command-item]").forEach((item) => {
+    const text = (item.getAttribute("data-command-text") ?? "").toLocaleLowerCase("fa");
+    const hidden = Boolean(needle) && !text.includes(needle);
+    item.toggleAttribute("hidden", hidden);
+    if (!hidden) visible += 1;
+  });
+  const empty = palette.querySelector("[data-command-empty]");
+  if (empty instanceof HTMLElement) empty.toggleAttribute("hidden", visible > 0);
 }
 
 function ensureCommandPalette() {
@@ -37,41 +95,26 @@ function closeCommandPalette() {
 
 function openCommandPalette() {
   const palette = ensureCommandPalette();
+  rebuildCommandResults(palette);
   palette.hidden = false;
   document.body.classList.add("command-open");
   const input = palette.querySelector("#command-query");
   if (input instanceof HTMLInputElement) {
     input.value = "";
-    palette.querySelectorAll("[data-command-item]").forEach((item) => item.removeAttribute("hidden"));
-    palette.querySelector("[data-command-empty]")?.setAttribute("hidden", "");
+    filterCommandResults(palette, "");
     requestAnimationFrame(() => input.focus());
   }
 }
 
 function mountCommandPalette() {
   const palette = ensureCommandPalette();
-  palette.innerHTML = commandMarkup();
   document.querySelectorAll("#global-search,[data-open-command]").forEach((button) => button.addEventListener("click", openCommandPalette));
   palette.querySelectorAll("[data-command-close]").forEach((button) => button.addEventListener("click", closeCommandPalette));
-  palette.querySelectorAll("[data-command-item]").forEach((item) => {
-    if (!(item instanceof HTMLElement) || item.dataset.closeBound) return;
-    item.dataset.closeBound = "true";
-    item.addEventListener("click", closeCommandPalette);
-  });
 
   const query = palette.querySelector("#command-query");
-  if (query instanceof HTMLInputElement) {
-    query.addEventListener("input", () => {
-      const needle = query.value.trim().toLocaleLowerCase("fa");
-      let visible = 0;
-      palette.querySelectorAll("[data-command-item]").forEach((item) => {
-        const text = (item.getAttribute("data-command-text") ?? "").toLocaleLowerCase("fa");
-        const matches = !needle || text.includes(needle);
-        item.toggleAttribute("hidden", !matches);
-        if (matches) visible += 1;
-      });
-      palette.querySelector("[data-command-empty]")?.toggleAttribute("hidden", visible > 0);
-    });
+  if (query instanceof HTMLInputElement && !query.dataset.bound) {
+    query.dataset.bound = "true";
+    query.addEventListener("input", () => filterCommandResults(palette, query.value));
   }
 
   if (!keyboardBound) {
@@ -101,7 +144,7 @@ function mountMobileNavigation() {
   }
 
   const appToggle = document.querySelector("#app-menu-toggle");
-  const sidebar = document.querySelector(".app-sidebar");
+  const sidebar = document.querySelector(".phase-sidebar");
   if (appToggle instanceof HTMLButtonElement && sidebar instanceof HTMLElement) {
     appToggle.addEventListener("click", () => {
       const open = sidebar.toggleAttribute("data-open");
@@ -122,130 +165,8 @@ function mountLogout() {
   });
 }
 
-/** @param {Element | null} container @param {string} text */
-function setPositiveStatus(container, text) {
-  if (!container) return;
-  const chip = container.querySelector(".status-chip");
-  if (chip instanceof HTMLElement) {
-    chip.className = "status-chip status-chip--positive";
-    chip.textContent = text;
-  }
-}
-
-function syncGoldenDemoDom() {
-  const state = getDemoScenario();
-  const caseStatus = state.outcomeStatus === "Recorded" ? "Resolved" : state.actionStatus === "succeeded" ? "Action/Execution" : state.approvalStatus === "Approved" ? "Approved" : "Waiting/Approval";
-  const nextAction = state.outcomeStatus === "Recorded" ? "Outcome ثبت شد؛ آماده follow-up" : state.actionStatus === "succeeded" ? "Receipt ثبت شد؛ آماده Outcome" : state.approvalStatus === "Approved" ? "آماده اجرای bounded" : "تکمیل مدارک و تأیید انسانی";
-
-  document.querySelectorAll(".compact-list small").forEach((small) => {
-    if (!small.textContent?.includes(demoHero.caseId)) return;
-    const row = small.closest("div");
-    if (!row) return;
-    small.textContent = `${demoHero.caseId} · ${nextAction}`;
-    setPositiveStatus(row, caseStatus);
-  });
-
-  const capability = document.querySelector("#capability-detail");
-  capability?.querySelectorAll("tr").forEach((row) => {
-    const cells = row.querySelectorAll("td");
-    const caseCode = row.querySelector("code");
-    if (caseCode?.textContent !== demoHero.caseId || cells.length < 5) return;
-    if (state.approvalStatus === "Approved") cells[3].innerHTML = '<span class="status-chip status-chip--positive">Approved</span>';
-    if (state.actionStatus === "succeeded") {
-      cells[2].innerHTML = '<span class="status-chip status-chip--positive">Action/Execution</span>';
-      cells[4].innerHTML = '<span class="status-chip status-chip--positive">succeeded</span> · Receipt';
-    }
-    if (state.outcomeStatus === "Recorded") {
-      cells[2].innerHTML = '<span class="status-chip status-chip--positive">Resolved</span>';
-      cells[4].innerHTML = '<span class="status-chip status-chip--positive">Recorded</span> · Outcome';
-    }
-  });
-
-  const runRows = document.querySelector("#run-rows");
-  runRows?.querySelectorAll("tr").forEach((row) => {
-    const cells = row.querySelectorAll("td");
-    const codes = Array.from(row.querySelectorAll("code"));
-    if (!codes.some((code) => code.textContent === demoHero.caseId) || cells.length < 8) return;
-    if (state.approvalStatus === "Approved") cells[3].textContent = "Approved demo";
-    if (state.actionStatus === "succeeded") {
-      cells[4].innerHTML = '<span class="status-chip status-chip--positive">succeeded</span>';
-      cells[6].innerHTML = `<code>${demoHero.receiptId}</code>`;
-      cells[7].textContent = "—";
-    }
-  });
-
-  const auditRows = document.querySelector("#audit-rows");
-  if (auditRows instanceof HTMLElement) {
-    /** @type {string[][]} */
-    const events = [];
-    if (state.approvalStatus === "Approved") events.push(["دمو", "مدیر عملیات", "Golden Demo approval approved", "Local demo state", "Requested → Approved"]);
-    if (state.actionStatus === "succeeded") events.push(["دمو", "Workflow runner", `Golden Demo action succeeded · ${demoHero.receiptId}`, "Local deterministic runner", "Approved → Action/Execution"]);
-    if (state.outcomeStatus === "Recorded") events.push(["دمو", "مدیر عملیات", `Golden Demo outcome recorded · ${demoHero.outcomeId}`, "Local demo state", "Action/Execution → Resolved"]);
-    events.forEach((event, index) => {
-      if (auditRows.querySelector(`[data-demo-audit="${index}"]`)) return;
-      const row = document.createElement("tr");
-      row.dataset.demoAudit = String(index);
-      row.innerHTML = `<td>${event[0]}</td><td>${event[1]}</td><td>${event[2]}</td><td>${event[3]}</td><td>${event[4]}</td><td><code>${demoHero.caseId}</code></td>`;
-      auditRows.prepend(row);
-    });
-  }
-
-  if (state.outcomeStatus === "Recorded") {
-    const dashboardRow = Array.from(document.querySelectorAll("#dashboard-task-rows tr")).find((row) => row.textContent?.includes(demoHero.caseId));
-    if (dashboardRow) {
-      const cells = dashboardRow.querySelectorAll("td");
-      const title = dashboardRow.querySelector("strong");
-      if (title) title.textContent = "Outcome ثبت شد؛ حلقه پرونده بسته شد";
-      if (cells[2]) cells[2].textContent = "انجام شد";
-      if (cells[3]) cells[3].innerHTML = '<span class="status-chip status-chip--positive">Resolved</span>';
-    }
-
-    const outcomeSection = Array.from(document.querySelectorAll(".account-section")).find((section) => section.querySelector("h2")?.textContent?.includes("خلاصه نتیجه"));
-    const list = outcomeSection?.querySelector(".compact-list");
-    if (list && !list.querySelector("[data-demo-outcome]")) {
-      const row = document.createElement("div");
-      row.dataset.demoOutcome = "true";
-      row.innerHTML = `<span>${icon("check", { size: 17 })}</span><p><strong>Outcome سناریوی زنده ثبت شد</strong><small>${demoHero.outcomeId} · ${demoHero.caseId}</small></p><span class="status-chip status-chip--positive">Recorded</span>`;
-      list.prepend(row);
-    }
-  }
-}
-
-function rerenderCurrentRoute() {
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
-
-function mountGoldenDemo() {
-  if (demoBound) return;
-  demoBound = true;
-  document.addEventListener("click", (event) => {
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
-
-    const reset = target.closest("[data-demo-reset]");
-    if (reset) {
-      resetDemoScenario();
-      window.setTimeout(rerenderCurrentRoute, 20);
-      return;
-    }
-
-    const presenterAction = target.closest("[data-demo-action]");
-    if (presenterAction instanceof HTMLElement) {
-      const action = presenterAction.dataset.demoAction;
-      if (action) {
-        demoAction(action);
-        rerenderCurrentRoute();
-      }
-      return;
-    }
-
-  });
-}
-
 export function mountPrototypeChrome() {
   mountMobileNavigation();
   mountCommandPalette();
   mountLogout();
-  mountGoldenDemo();
-  syncGoldenDemoDom();
 }

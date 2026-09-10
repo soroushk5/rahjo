@@ -1,3 +1,5 @@
+import { resolveLegacyTarget } from "./legacyCompatibility.js";
+
 /** @typedef {{path: string, render: () => string, mount?: () => void, title?: string, description?: string}} Route */
 
 /** @param {string} value */
@@ -116,10 +118,27 @@ export class Router {
     this.handleNavigation();
   }
 
+  /** @param {string} path */
+  replace(path) {
+    window.history.replaceState({}, "", this.browserPath(path));
+    this.handleNavigation();
+  }
+
   handleNavigation() {
-    const sourcePath = this.routingMode === "hash" ? window.location.hash.slice(1) || "/" : window.location.pathname;
+    const sourcePath = this.routingMode === "hash"
+      ? window.location.hash.slice(1) || "/"
+      : `${window.location.pathname}${window.location.search}`;
     const currentPath = this.routePath(sourcePath);
-    const route = this.routes.find((candidate) => candidate.path === currentPath) ?? this.routes[0];
+    const queryIndex = sourcePath.indexOf("?");
+    const currentSearch = queryIndex >= 0 ? sourcePath.slice(queryIndex) : "";
+    const legacyTarget = resolveLegacyTarget(currentPath, currentSearch);
+    if (legacyTarget) {
+      this.replace(legacyTarget);
+      return;
+    }
+    const route = this.routes.find((candidate) => candidate.path === currentPath)
+      ?? this.routes.find((candidate) => candidate.path === "*")
+      ?? this.routes[0];
 
     document.title = route.title ? `${route.title} | رهجو` : "رهجو";
     const meta = document.querySelector('meta[name="description"]');

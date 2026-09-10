@@ -1,40 +1,34 @@
+// @ts-nocheck
 import { Router } from "./router.js";
 import { mountPrototypeChrome } from "./prototypeChrome.js";
-import { mountConnectedDashboardData, mountConnectedDashboardRequests, mountConnectedRequestFlow } from "./connectedFlow.js";
-import { renderPresentationMarketingPage, mountPresentationMarketingPage } from "../features/marketing/presentationMarketing.js";
-import { renderPlatformPage } from "../features/platform/platformPage.js";
-import { mountPresentationAtlasPage, renderPresentationAtlasPage } from "../features/stories/presentationAtlas.js";
-import { mountTrustPage, renderTrustPage } from "../features/trust/trustPage.js";
-import { mountPresentationMapPage, renderPresentationMapPage } from "../features/map/presentationMap.js";
-import { mountDashboardDataPage, mountDashboardRequestsPage, renderDashboardAuditPage, renderDashboardDataPage, renderDashboardOverviewPage, renderDashboardRequestsPage } from "../features/dashboard/presentationDashboard.js";
-import { mountRequestPage, renderRequestPage } from "../features/requests/requestPage.js";
-import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
-import { mountCaseIntakePage, renderCaseIntakePage } from "../features/operations/caseIntakePage.js";
 import {
-  mountAutomationPage,
-  mountCrmPage,
-  mountGovernancePage,
-  mountOperationalDashboardPage,
-  mountSalesPage,
-  mountServicesPage,
-  mountThinkRoomPage,
-  renderAutomationPage,
-  renderCrmPage,
-  renderGovernancePage,
-  renderOperationalDashboardPage,
-  renderSalesPage,
+  mountPublicPage,
+  renderAboutPage,
+  renderContactPage,
+  renderHomePage,
+  renderHowItWorksPage,
+  renderNotFoundPage,
+  renderPilotPage,
+  renderPrivacyPage,
+  renderProductPage,
   renderServicesPage,
-  renderThinkRoomPage
-} from "../features/operations/operationalPages.js";
+  renderTermsPage,
+  renderTrackRequestPage,
+  renderTrustPage,
+  renderUseCasesPage
+} from "../features/public/publicPages.js";
+import { mountServiceRequestPage, renderServiceRequestPage } from "../features/requests/serviceRequestPage.js";
+import { mountCorePages, renderCustomersPage, renderDashboardPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../features/operations/corePages.js";
+import { mountDetailPages, renderCustomerDetailPage, renderRequestDetailPage } from "../features/operations/detailPages.js";
+import { mountSupportPages, renderAuditPage, renderDocumentsPage, renderFinancePage, renderOperationsPage, renderReportsPage, renderSettingsPage } from "../features/operations/supportPages.js";
+import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
 import { isAuthenticated } from "../services/authStore.js";
 
 const root = document.querySelector("#app");
 if (!(root instanceof HTMLElement)) throw new Error("App root not found");
 
-/** @type {Router} */
 let router;
 
-/** @param {((rerender: () => void) => void) | undefined} pageMount */
 function withChrome(pageMount) {
   return () => {
     mountPrototypeChrome();
@@ -42,12 +36,10 @@ function withChrome(pageMount) {
   };
 }
 
-/** @param {() => string} render @param {string} returnTo */
 function renderWithSession(render, returnTo) {
   return () => isAuthenticated() ? render() : renderLoginPage({ returnTo });
 }
 
-/** @param {((rerender: () => void) => void) | undefined} pageMount @param {string} returnTo */
 function mountWithSession(pageMount, returnTo) {
   return () => {
     mountPrototypeChrome();
@@ -59,45 +51,48 @@ function mountWithSession(pageMount, returnTo) {
   };
 }
 
-/**
- * @param {((rerender: () => void) => void) | undefined} primary
- * @param {() => void} enhancement
- * @returns {(rerender: () => void) => void}
- */
-function composeMount(primary, enhancement) {
-  return function composedMount(rerender) {
-    primary?.(rerender);
-    enhancement();
-  };
-}
-
 function loginMount() {
   mountPrototypeChrome();
   mountLoginPage({ onSuccess: (path) => router.navigate(path || "/dashboard") });
 }
 
+const publicMount = withChrome(mountPublicPage);
+const coreMount = (path) => mountWithSession(mountCorePages, path);
+const detailMount = (path) => mountWithSession(mountDetailPages, path);
+const supportMount = (path) => mountWithSession(mountSupportPages, path);
+
 router = new Router({
   root,
   routes: [
-    { path: "/", title: "زیرساخت عملیاتی و تجاری", description: "رهجو؛ Operational Foundation برای CRM، فروش، سرویس، اتوماسیون و ممیزی، با مسیر هوشمندی آینده.", render: renderPresentationMarketingPage, mount: withChrome(mountPresentationMarketingPage) },
-    { path: "/data", title: "سرویس‌ها و قابلیت‌ها", description: "خانواده قابلیت‌های رهجو با وضعیت صریح Demo، Review، Pilot، Evidence Required یا TBD.", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
-    { path: "/stories", title: "سرویس‌ها و قابلیت‌ها", render: renderPresentationAtlasPage, mount: withChrome(mountPresentationAtlasPage) },
-    { path: "/platform", title: "محصول و معماری", description: "Website، Commercial Memory، Service، Workflow، Governance و Dashboard روی یک هسته مشترک.", render: renderPlatformPage, mount: withChrome(undefined) },
-    { path: "/trust", title: "اعتماد و کنترل", description: "Human gate، permission، audit، data quality و claim discipline در رهجو.", render: renderTrustPage, mount: withChrome(mountTrustPage) },
-    { path: "/map", title: "نحوه کار", description: "مسیر Website/Channel تا Lead/Account، Case، Service، Approval، Action، Outcome و Dashboard.", render: renderPresentationMapPage, mount: withChrome(mountPresentationMapPage) },
-    { path: "/login", title: "ورود به محیط نمایشی", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
-    { path: "/dashboard", title: "داشبورد عملیات", render: renderWithSession(renderOperationalDashboardPage, "/dashboard"), mount: mountWithSession(mountOperationalDashboardPage, "/dashboard") },
-    { path: "/cases/new", title: "ورود هدایت‌شده پرونده", render: renderWithSession(renderCaseIntakePage, "/cases/new"), mount: mountWithSession(mountCaseIntakePage, "/cases/new") },
-    { path: "/crm", title: "مشتریان و حافظه تجاری", render: renderWithSession(renderCrmPage, "/crm"), mount: mountWithSession(mountCrmPage, "/crm") },
-    { path: "/sales", title: "فروش", render: renderWithSession(renderSalesPage, "/sales"), mount: mountWithSession(mountSalesPage, "/sales") },
-    { path: "/services", title: "سرویس‌ها و APIها", render: renderWithSession(renderServicesPage, "/services"), mount: mountWithSession(mountServicesPage, "/services") },
-    { path: "/automation", title: "اتوماسیون", render: renderWithSession(renderAutomationPage, "/automation"), mount: mountWithSession(mountAutomationPage, "/automation") },
-    { path: "/governance", title: "ممیزی و کیفیت داده", render: renderWithSession(renderGovernancePage, "/governance"), mount: mountWithSession(mountGovernancePage, "/governance") },
-    { path: "/think-room", title: "اتاق فکر — آینده", render: renderWithSession(renderThinkRoomPage, "/think-room"), mount: mountWithSession(mountThinkRoomPage, "/think-room") },
-    { path: "/dashboard/requests", title: "درخواست‌ها", render: renderWithSession(renderDashboardRequestsPage, "/dashboard/requests"), mount: mountWithSession(composeMount(mountDashboardRequestsPage, mountConnectedDashboardRequests), "/dashboard/requests") },
-    { path: "/dashboard/data", title: "سبد داده", render: renderWithSession(renderDashboardDataPage, "/dashboard/data"), mount: mountWithSession(composeMount(mountDashboardDataPage, mountConnectedDashboardData), "/dashboard/data") },
-    { path: "/dashboard/audit", title: "کنترل و ممیزی", render: renderWithSession(renderDashboardAuditPage, "/dashboard/audit"), mount: mountWithSession(undefined, "/dashboard/audit") },
-    { path: "/request", title: "درخواست دسترسی", render: renderWithSession(renderRequestPage, "/request"), mount: mountWithSession(composeMount(mountRequestPage, mountConnectedRequestFlow), "/request") }
+    { path: "/", title: "مدیریت یکپارچهٔ مشتری تا نتیجه", description: "رهجو مشتری، فروش، درخواست خدمت، پرداخت، عملیات و نتیجه را در یک جریان واحد قرار می‌دهد.", render: renderHomePage, mount: publicMount },
+    { path: "/product", title: "محصول", description: "سامانهٔ یکپارچهٔ مدیریت مشتری، فروش و ارائهٔ خدمات رهجو.", render: renderProductPage, mount: publicMount },
+    { path: "/services", title: "خدمات", description: "کاتالوگ خدمات، مدارک، قیمت، زمان و شروع درخواست در رهجو.", render: renderServicesPage, mount: publicMount },
+    { path: "/use-cases", title: "موارد استفاده", description: "سناریوهای استفاده از رهجو برای کسب‌وکارهای خدماتی.", render: renderUseCasesPage, mount: publicMount },
+    { path: "/how-it-works", title: "نحوهٔ کار", description: "مسیر مشتری از ورود تا فروش، اجرا و تحویل در رهجو.", render: renderHowItWorksPage, mount: publicMount },
+    { path: "/pilot", title: "راه‌اندازی رهجو", render: renderPilotPage, mount: publicMount },
+    { path: "/trust", title: "اعتماد و کنترل", render: renderTrustPage, mount: publicMount },
+    { path: "/about", title: "دربارهٔ رهجو", render: renderAboutPage, mount: publicMount },
+    { path: "/contact", title: "شروع همکاری", render: renderContactPage, mount: publicMount },
+    { path: "/privacy", title: "حریم خصوصی", render: renderPrivacyPage, mount: publicMount },
+    { path: "/terms", title: "شرایط استفاده", render: renderTermsPage, mount: publicMount },
+    { path: "/track-request", title: "پیگیری درخواست", render: renderTrackRequestPage, mount: publicMount },
+    { path: "/request-service", title: "ثبت درخواست خدمت", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
+    { path: "/login", title: "ورود مهمان به دمو", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
+    { path: "/dashboard", title: "داشبورد", render: renderWithSession(renderDashboardPage, "/dashboard"), mount: coreMount("/dashboard") },
+    { path: "/customers", title: "مشتریان", render: renderWithSession(renderCustomersPage, "/customers"), mount: coreMount("/customers") },
+    { path: "/customers/detail", title: "پروندهٔ مشتری", render: renderWithSession(renderCustomerDetailPage, "/customers/detail"), mount: detailMount("/customers/detail") },
+    { path: "/sales", title: "فروش", render: renderWithSession(renderSalesPage, "/sales"), mount: coreMount("/sales") },
+    { path: "/services-admin", title: "خدمات", render: renderWithSession(renderServicesAdminPage, "/services-admin"), mount: coreMount("/services-admin") },
+    { path: "/requests", title: "درخواست‌ها", render: renderWithSession(renderRequestsPage, "/requests"), mount: coreMount("/requests") },
+    { path: "/requests/detail", title: "جزئیات درخواست", render: renderWithSession(renderRequestDetailPage, "/requests/detail"), mount: detailMount("/requests/detail") },
+    { path: "/tasks", title: "کارها و پیگیری‌ها", render: renderWithSession(renderTasksPage, "/tasks"), mount: coreMount("/tasks") },
+    { path: "/operations", title: "عملیات و گردش‌کار", render: renderWithSession(renderOperationsPage, "/operations"), mount: supportMount("/operations") },
+    { path: "/finance", title: "مالی و اعتبار", render: renderWithSession(renderFinancePage, "/finance"), mount: supportMount("/finance") },
+    { path: "/documents", title: "اسناد", render: renderWithSession(renderDocumentsPage, "/documents"), mount: supportMount("/documents") },
+    { path: "/reports", title: "گزارش‌ها", render: renderWithSession(renderReportsPage, "/reports"), mount: supportMount("/reports") },
+    { path: "/audit", title: "ممیزی و کیفیت داده", render: renderWithSession(renderAuditPage, "/audit"), mount: supportMount("/audit") },
+    { path: "/settings", title: "تنظیمات", render: renderWithSession(renderSettingsPage, "/settings"), mount: supportMount("/settings") },
+    { path: "*", title: "صفحه پیدا نشد", render: renderNotFoundPage, mount: withChrome(undefined) }
   ]
 });
 

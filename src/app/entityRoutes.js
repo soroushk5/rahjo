@@ -1,7 +1,11 @@
-const knownKeys = ["account", "case", "lead", "opportunity", "service", "run", "issue"];
+const knownKeys = [
+  "customer", "request", "lead", "opportunity", "service", "document", "task", "run", "issue",
+  // Read legacy deep links without making them the canonical links for phase one.
+  "account", "case"
+];
 
-/** @typedef {{path:string, account?:string, case?:string, lead?:string, opportunity?:string, service?:string, run?:string, issue?:string}} RouteContext */
-/** @typedef {{type:string, id?:string, accountId?:string, caseId?:string, leadId?:string, opportunityId?:string, serviceId?:string, runId?:string, issueId?:string}} EntityTarget */
+/** @typedef {{path:string, customer?:string, request?:string, lead?:string, opportunity?:string, service?:string, document?:string, task?:string, run?:string, issue?:string, account?:string, case?:string}} RouteContext */
+/** @typedef {{type:string, id?:string, customerId?:string, requestId?:string, accountId?:string, caseId?:string, leadId?:string, opportunityId?:string, serviceId?:string, documentId?:string, taskId?:string, runId?:string, issueId?:string, auditId?:string}} EntityTarget */
 
 /** @param {string} path @param {Record<string, string | undefined>} [context] */
 export function routeWithContext(path, context = {}) {
@@ -16,12 +20,16 @@ export function routeWithContext(path, context = {}) {
 
 /** @param {string} [source] @returns {RouteContext} */
 export function readRouteContext(source) {
-  const href = source ?? (typeof window !== "undefined" ? window.location.href : "http://rahjo.local/");
-  const url = new URL(href, "http://rahjo.local");
+  const browserHref = typeof window !== "undefined" && window.location?.href
+    ? window.location.href
+    : "http://rahjo.local/";
+  const url = new URL(source ?? browserHref, "http://rahjo.local");
+  const hashRoute = url.hash.startsWith("#/") ? new URL(url.hash.slice(1), "http://rahjo.local") : null;
+  const routeUrl = hashRoute ?? url;
   /** @type {RouteContext} */
-  const context = { path: url.pathname };
+  const context = { path: routeUrl.pathname };
   knownKeys.forEach((key) => {
-    const value = url.searchParams.get(key);
+    const value = routeUrl.searchParams.get(key);
     if (value) /** @type {Record<string, string>} */ (context)[key] = value;
   });
   return context;
@@ -30,20 +38,27 @@ export function readRouteContext(source) {
 /** @param {EntityTarget} entity */
 export function entityHref(entity) {
   switch (entity.type) {
+    case "customer":
     case "account":
-      return routeWithContext("/crm", { account: entity.accountId ?? entity.id });
+      return routeWithContext("/customers/detail", { customer: entity.customerId ?? entity.accountId ?? entity.id });
+    case "request":
     case "case":
-      return routeWithContext("/services", { service: entity.serviceId, case: entity.caseId ?? entity.id });
+      return routeWithContext("/requests/detail", { request: entity.requestId ?? entity.caseId ?? entity.id });
     case "service":
-      return routeWithContext("/services", { service: entity.serviceId ?? entity.id });
+      return routeWithContext("/services-admin", { service: entity.serviceId ?? entity.id });
     case "lead":
-      return routeWithContext("/sales", { account: entity.accountId, lead: entity.leadId ?? entity.id });
+      return routeWithContext("/sales", { lead: entity.leadId ?? entity.id });
     case "opportunity":
-      return routeWithContext("/sales", { account: entity.accountId, opportunity: entity.opportunityId ?? entity.id });
+      return routeWithContext("/sales", { opportunity: entity.opportunityId ?? entity.id });
+    case "document":
+      return routeWithContext("/documents", { document: entity.documentId ?? entity.id });
+    case "task":
+      return routeWithContext("/tasks", { task: entity.taskId ?? entity.id });
     case "run":
-      return routeWithContext("/automation", { case: entity.caseId, run: entity.runId ?? entity.id });
+      return routeWithContext("/operations", { run: entity.runId ?? entity.id });
+    case "issue":
     case "audit":
-      return routeWithContext("/governance", { case: entity.caseId, issue: entity.issueId });
+      return routeWithContext("/audit", { issue: entity.issueId ?? entity.auditId ?? entity.id });
     default:
       return "/dashboard";
   }
