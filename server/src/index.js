@@ -1,18 +1,23 @@
 import { loadConfig, loadWorkspaceTokenMap } from "./config.js";
 import { Database } from "./database.js";
 import { RelaticleClient } from "./relaticleClient.js";
+import { NativeDeferredCrmClient } from "./nativeDeferredCrmClient.js";
 import { RahjoRepository } from "./repository.js";
 import { createRahjoServer } from "./app.js";
 
 const config = loadConfig();
-const workspaceTokens = await loadWorkspaceTokenMap(config.relaticleTokenFile);
+const workspaceTokens = config.crmMode === "relaticle"
+  ? await loadWorkspaceTokenMap(config.relaticleTokenFile)
+  : new Map();
 const database = new Database(config.databaseUrl);
-const relaticle = new RelaticleClient({
-  baseUrl: config.relaticleBaseUrl,
-  mcpUrl: config.relaticleMcpUrl,
-  workspaceTokens,
-  timeoutMs: config.requestTimeoutMs
-});
+const relaticle = config.crmMode === "relaticle"
+  ? new RelaticleClient({
+      baseUrl: config.relaticleBaseUrl,
+      mcpUrl: config.relaticleMcpUrl,
+      workspaceTokens,
+      timeoutMs: config.requestTimeoutMs
+    })
+  : new NativeDeferredCrmClient();
 const repository = new RahjoRepository({ database, relaticle });
 
 await database.ready();
@@ -24,7 +29,7 @@ for (const [workspaceId, mapping] of workspaceTokens) {
 
 const server = createRahjoServer({ config, database, repository, relaticle, workspaceTokens });
 server.listen(config.port, "0.0.0.0", () => {
-  console.log(JSON.stringify({ event: "server.started", port: config.port, dataMode: "server", llmEnabled: false }));
+  console.log(JSON.stringify({ event: "server.started", port: config.port, dataMode: "server", crmMode: config.crmMode, interim: config.interim, llmEnabled: false }));
 });
 
 async function shutdown(signal) {

@@ -31,6 +31,21 @@ test("configuration rejects an enabled model provider and insecure public URLs",
   assert.throws(() => loadConfig({ ...validEnv, RAHJO_CORS_ORIGINS: "*" }));
 });
 
+test("native deferred bridge is explicit and cannot activate accidentally", () => {
+  assert.throws(() => loadConfig({ ...validEnv, RAHJO_CRM_MODE: "native_deferred" }), /INTERIM_ACK/);
+  const config = loadConfig({
+    ...validEnv,
+    RAHJO_CRM_MODE: "native_deferred",
+    RAHJO_INTERIM_ACK: "true",
+    RELATICLE_BASE_URL: "",
+    RELATICLE_MCP_URL: "",
+    RELATICLE_TOKEN_FILE: ""
+  });
+  assert.equal(config.crmMode, "native_deferred");
+  assert.equal(config.interim, true);
+  assert.equal(config.relaticleBaseUrl, "");
+});
+
 test("Persian normalization preserves original meaning while normalizing keys", () => {
   assert.equal(normalizePersianText("  شركت يارا  "), "شرکت یارا");
   assert.equal(asciiDigits("۰۹۱٢"), "0912");

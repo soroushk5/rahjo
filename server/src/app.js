@@ -143,11 +143,25 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
       const url = new URL(request.url ?? "/", config.publicOrigin);
       if (request.method === "GET" && url.pathname === "/healthz") {
         status = 200;
-        json(response, status, { status: "ok", service: "rahjo-crm-bff", dataMode: "server", llmEnabled: false }, requestId, corsHeaders);
+        json(response, status, { status: "ok", service: "rahjo-crm-bff", dataMode: "server", crmMode: config.crmMode, interim: config.interim, llmEnabled: false }, requestId, corsHeaders);
         return;
       }
       if (request.method === "GET" && url.pathname === "/readyz") {
         const databaseState = await database.ready();
+        if (config.crmMode === "native_deferred") {
+          status = 200;
+          json(response, status, {
+            status: "ready-interim",
+            dataMode: "server",
+            crmMode: config.crmMode,
+            interim: true,
+            productionReady: false,
+            llmEnabled: false,
+            database: { status: "ready", role: databaseState.role },
+            relaticle: { status: "deferred-not-deployed", workspaces: 0 }
+          }, requestId, corsHeaders);
+          return;
+        }
         const upstream = [];
         for (const [workspaceId, mapping] of workspaceTokens) {
           await database.verifyWorkspaceBinding(workspaceId, mapping.expectedTeamId);
