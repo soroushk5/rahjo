@@ -34,6 +34,17 @@ export const utilityDestinations = Object.freeze([
   { path: "/requests/detail", label: "جزئیات درخواست", meta: "مدارک، پرداخت، اجرا و نتیجه" }
 ]);
 
+// Compatibility metadata for the retired presentation components. These paths are
+// resolved to their phase-one equivalents by the router and stay out of live nav.
+export const publicJourney = Object.freeze([
+  { path: "/", index: "01", label: "جایگاه", title: "رهجو چه مسئله‌ای را حل می‌کند؟" },
+  { path: "/platform", index: "02", label: "محصول", title: "محصول یکپارچه چگونه کار می‌کند؟" },
+  { path: "/data", index: "03", label: "خدمات", title: "چه خدماتی در دسترس است؟" },
+  { path: "/map", index: "04", label: "جریان", title: "مشتری چگونه به نتیجه می‌رسد؟" },
+  { path: "/trust", index: "05", label: "کنترل", title: "اعتماد و کنترل چگونه حفظ می‌شود؟" },
+  { path: "/login", index: "06", label: "محیط عملیاتی", title: "دموی محصول چگونه آغاز می‌شود؟" }
+]);
+
 export const allDestinations = Object.freeze([
   ...publicNavigation,
   ...utilityDestinations,
@@ -42,4 +53,14 @@ export const allDestinations = Object.freeze([
 
 export function routeLabel(path) {
   return allDestinations.find((item) => item.path === path)?.label ?? "رهجو";
+}
+
+export function journeyNeighbors(path) {
+  const index = publicJourney.findIndex((item) => item.path === path);
+  if (index < 0) return { current: null, previous: null, next: null };
+  return {
+    current: publicJourney[index],
+    previous: index > 0 ? publicJourney[index - 1] : null,
+    next: index < publicJourney.length - 1 ? publicJourney[index + 1] : null
+  };
 }

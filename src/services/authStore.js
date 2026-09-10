@@ -1,3 +1,5 @@
+import { resetDemoState } from "./phaseOneStore.js";
+
 const AUTH_KEY = "rahjo.demo.session.v1";
 
 export const demoCredentials = Object.freeze({
@@ -69,6 +71,7 @@ export function signIn(email, password) {
 }
 
 export function signInAsGuest() {
+  resetDemoState();
   const session = { ...demoSession, signedInAt: new Date().toISOString() };
   const target = storage();
   if (target) {

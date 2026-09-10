@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { icon } from "../../components/icons.js";
 import { serviceCatalog } from "../../data/phaseOneData.js";
+import { entityHref } from "../../app/entityRoutes.js";
+import { escapeHtml } from "../../lib/html.js";
 
 const moneyFormatter = new Intl.NumberFormat("fa-IR");
 
@@ -18,11 +20,13 @@ export function serviceName(id) {
 
 export function customerLink(customer) {
   if (!customer) return "مشتری نامشخص";
-  return `<a data-link data-customer-id="${customer.id}" href="/customers/detail">${customer.name}</a>`;
+  const href = entityHref({ type: "customer", customerId: customer.id });
+  return `<a data-link data-customer-id="${escapeHtml(customer.id)}" href="${escapeHtml(href)}">${escapeHtml(customer.name)}</a>`;
 }
 
 export function requestLink(request) {
-  return `<a data-link data-request-id="${request.id}" href="/requests/detail">${request.referenceId}</a>`;
+  const href = entityHref({ type: "request", requestId: request.id });
+  return `<a data-link data-request-id="${escapeHtml(request.id)}" href="${escapeHtml(href)}">${escapeHtml(request.referenceId)}</a>`;
 }
 
 export function emptyState(title, description) {
@@ -32,7 +36,7 @@ export function emptyState(title, description) {
 export function statusTone(value) {
   if (["تکمیل‌شده", "تحویل‌شده", "پرداخت‌شده", "ثبت‌شده", "معتبر", "تأیید‌شده", "مشتری فعال", "فعال", "موفق"].includes(value)) return "success";
   if (["منتظر اطلاعات", "منتظر پرداخت", "پرداخت ناقص", "در انتظار", "نیازمند اصلاح", "منتظر تصمیم", "پیش‌نویس", "عقب‌افتاده", "بالا"].includes(value)) return "warning";
-  if (["لغوشده", "ناموفق", "فوری", "متوقف", "باز"].includes(value)) return "danger";
+  if (["لغوشده", "ردشده", "ناموفق", "فوری", "متوقف", "باز"].includes(value)) return "danger";
   return "progress";
 }
 

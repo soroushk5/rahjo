@@ -1,6 +1,29 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Router } from "../src/app/router.js";
+import { legacyRoutePaths, resolveLegacyTarget } from "../src/app/legacyCompatibility.js";
+
+test("retired live URLs resolve to safe phase-one destinations", () => {
+  assert.equal(resolveLegacyTarget("/platform"), "/product");
+  assert.equal(resolveLegacyTarget("/data"), "/services");
+  assert.equal(resolveLegacyTarget("/map"), "/how-it-works");
+  assert.equal(resolveLegacyTarget("/dashboard/requests"), "/requests");
+  assert.equal(resolveLegacyTarget("/crm", "?account=ACC-DEMO-001"), "/customers?legacyRef=account%3AACC-DEMO-001");
+  assert.equal(resolveLegacyTarget("/services", "?case=CASE-001&service=SVC-001"), "/requests?legacyRef=case%3ACASE-001");
+  assert.equal(resolveLegacyTarget("/services", "?service=SVC-001"), "/services-admin?legacyRef=service%3ASVC-001");
+  assert.equal(resolveLegacyTarget("/services"), null);
+  assert.equal(resolveLegacyTarget("/dashboard"), null);
+  assert.ok(legacyRoutePaths.includes("/request"));
+});
+
+test("legacy references are bounded and arbitrary query data is discarded", () => {
+  const malicious = `<img src=x onerror=alert(1)>${"x".repeat(200)}`;
+  const target = resolveLegacyTarget("/crm", `?token=secret&account=${encodeURIComponent(malicious)}`);
+  assert.ok(target?.startsWith("/customers?legacyRef=account%3A"));
+  assert.ok(!target?.includes("token"));
+  assert.ok(!target?.includes("secret"));
+  assert.ok((new URL(target, "https://rahjo.local").searchParams.get("legacyRef") ?? "").length <= 128);
+});
 
 test("RawGitHack hash routes remain stable after repeated rewrites", () => {
   const previousWindow = global.window;

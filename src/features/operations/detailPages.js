@@ -1,7 +1,9 @@
 // @ts-nocheck
 import { appShell } from "../../app/appShell.js";
+import { entityHref, readRouteContext } from "../../app/entityRoutes.js";
 import { icon } from "../../components/icons.js";
 import { serviceCatalog } from "../../data/phaseOneData.js";
+import { escapeHtml } from "../../lib/html.js";
 import {
   approveRequest,
   assignAndStartRequest,
@@ -13,6 +15,17 @@ import {
   setSelectedRequestId
 } from "../../services/phaseOneStore.js";
 import { badge, customerLink, customerName, money, panel, requestLink, serviceName } from "./shared.js";
+
+function missingDetailPage({ kind, id, recovery, activePath, title }) {
+  const safeId = escapeHtml(id || "—");
+  const content = `<section class="empty-state empty-state--error" role="status">
+    ${icon("warning", { size: 28 })}
+    <h2>${escapeHtml(kind)} پیدا نشد</h2>
+    <p>شناسهٔ <code>${safeId}</code> در داده‌های فعلی وجود ندارد. هیچ رکورد دیگری جایگزین آن نشد.</p>
+    <a data-link class="button button--primary" href="${escapeHtml(recovery)}">بازگشت به نمای امن</a>
+  </section>`;
+  return appShell({ content, activePath, title });
+}
 
 function relationSummary(customer, requests, opportunities) {
   return `<section class="relation-summary"><h2>خلاصهٔ رابطه</h2><p>${customer.name} از سال ${customer.since} با رهجو همکاری دارد. تمرکز فعلی روی ${requests.filter((item) => !item.closedAt).length} درخواست باز و ${opportunities.length} فرصت فروش است.</p><div><span>مشتری کلیدی</span><span>پتانسیل رشد بالا</span><span>${customer.status}</span></div></section>`;
@@ -28,7 +41,20 @@ function accountTimeline(activities) {
 
 export function renderCustomerDetailPage() {
   const state = readDemoState();
-  const customer = state.customers.find((item) => item.id === state.selectedCustomerId) ?? state.customers[0];
+  const context = readRouteContext();
+  const requestedCustomerId = context.customer ?? context.account;
+  const customerId = requestedCustomerId ?? state.selectedCustomerId;
+  const customer = state.customers.find((item) => item.id === customerId);
+  if (!customer) {
+    return missingDetailPage({
+      kind: "مشتری",
+      id: customerId,
+      recovery: "/customers",
+      activePath: "/customers/detail",
+      title: "پروندهٔ مشتری"
+    });
+  }
+  if (requestedCustomerId && requestedCustomerId !== state.selectedCustomerId) setSelectedCustomerId(requestedCustomerId);
   const requests = state.requests.filter((item) => item.accountId === customer.id);
   const opportunities = state.opportunities.filter((item) => item.accountId === customer.id);
   const tasks = state.tasks.filter((item) => item.accountId === customer.id);
@@ -80,7 +106,20 @@ function executionSteps(service, request) {
 
 export function renderRequestDetailPage() {
   const state = readDemoState();
-  const request = state.requests.find((item) => item.id === state.selectedRequestId) ?? state.requests[0];
+  const context = readRouteContext();
+  const requestedRequestId = context.request ?? context.case;
+  const requestId = requestedRequestId ?? state.selectedRequestId;
+  const request = state.requests.find((item) => item.id === requestId);
+  if (!request) {
+    return missingDetailPage({
+      kind: "درخواست",
+      id: requestId,
+      recovery: "/requests",
+      activePath: "/requests/detail",
+      title: "جزئیات درخواست"
+    });
+  }
+  if (requestedRequestId && requestedRequestId !== state.selectedRequestId) setSelectedRequestId(requestedRequestId);
   const customer = state.customers.find((item) => item.id === request.accountId);
   const service = serviceCatalog.find((item) => item.id === request.serviceId) ?? serviceCatalog[0];
   const tasks = state.tasks.filter((item) => item.requestId === request.id);
@@ -88,9 +127,13 @@ export function renderRequestDetailPage() {
   const approvals = state.approvals.filter((item) => item.requestId === request.id);
   const activities = state.activities.filter((item) => item.requestId === request.id);
   const remaining = Math.max(0, request.price - request.discount - request.paid - request.creditUsed);
+  const matchingApproval = approvals.find((item) => !request.approvalId || item.id === request.approvalId);
+  const pendingApproval = matchingApproval?.decision === "منتظر تصمیم" ? matchingApproval : null;
+  const approvedApproval = matchingApproval?.decision === "تأیید‌شده" ? matchingApproval : null;
+  const rejectedApproval = matchingApproval?.decision === "ردشده" ? matchingApproval : null;
   const paymentDisabled = request.documents.some((item) => item.status !== "دریافت‌شده") || request.price <= 0 || request.paymentStatus === "پرداخت‌شده";
   const assignDisabled = request.paymentStatus !== "پرداخت‌شده" || ["در حال اجرا", "تحویل‌شده"].includes(request.status);
-  const deliveryDisabled = request.status !== "در حال اجرا";
+  const deliveryDisabled = request.status !== "در حال اجرا" || !approvedApproval;
 
   const primaryAction = request.status === "منتظر اطلاعات" || request.status === "منتظر پیشنهاد"
     ? `<button type="button" class="button button--primary" data-request-action="documents">تکمیل مدارک و پیشنهاد</button>`
@@ -99,13 +142,19 @@ export function renderRequestDetailPage() {
       : !["در حال اجرا", "تحویل‌شده"].includes(request.status)
         ? `<button type="button" class="button button--primary" data-request-action="assign">تخصیص و شروع اجرا</button>`
         : request.status === "در حال اجرا"
-          ? `<button type="button" class="button button--primary" data-request-action="deliver">ثبت نتیجه و تحویل</button>`
-          : `<a data-link class="button button--primary" href="/customers/detail">دیدن سابقهٔ مشتری</a>`;
+          ? pendingApproval
+            ? `<button type="button" class="button button--primary" data-request-action="approve">ثبت تأیید انسانی پیش از تحویل</button>`
+            : rejectedApproval
+              ? `<a data-link class="button button--outline" href="/operations">بازبینی تصمیم ردشده</a>`
+              : approvedApproval
+                ? `<button type="button" class="button button--primary" data-request-action="deliver">ثبت نتیجه و تحویل</button>`
+                : `<button type="button" class="button button--primary" disabled>ابتدا تأیید انسانی لازم است</button>`
+          : `<a data-link class="button button--primary" href="${escapeHtml(entityHref({ type: "customer", customerId: request.accountId }))}">دیدن سابقهٔ مشتری</a>`;
 
   const content = `
     <header class="request-detail-header">
       <div><div>${badge(request.status)}<small>${request.referenceId}</small></div><h1>${request.title}</h1><p>${customerLink(customer)}</p></div>
-      <div class="request-detail-header__actions"><button type="button" class="button button--outline" data-request-action="payment" ${paymentDisabled ? "disabled" : ""}>${icon("bank", { size: 16 })} ثبت پرداخت</button><button type="button" class="button button--outline" data-request-action="assign" ${assignDisabled ? "disabled" : ""}>${icon("users", { size: 16 })} تخصیص کار</button><button type="button" class="button button--primary" data-request-action="deliver" ${deliveryDisabled ? "disabled" : ""}>${icon("check", { size: 16 })} ثبت نتیجه</button></div>
+      <div class="request-detail-header__actions"><button type="button" class="button button--outline" data-request-action="payment" ${paymentDisabled ? "disabled" : ""}>${icon("bank", { size: 16 })} ثبت پرداخت</button><button type="button" class="button button--outline" data-request-action="assign" ${assignDisabled ? "disabled" : ""}>${icon("users", { size: 16 })} تخصیص کار</button><button type="button" class="button button--primary" data-request-action="deliver" ${deliveryDisabled ? "disabled" : ""}>${icon("check", { size: 16 })} ${rejectedApproval ? "تأیید رد شده" : pendingApproval ? "در انتظار تأیید انسانی" : approvedApproval ? "ثبت نتیجه" : "نیازمند تأیید"}</button></div>
     </header>
     ${requestStages(request)}
     ${panel("اطلاعات کلی درخواست", `<dl class="request-summary"><div><dt>مشتری</dt><dd>${customer?.name ?? "—"}</dd><small>${request.contact}</small></div><div><dt>خدمت</dt><dd>${service.title}</dd><small>${request.owner}</small></div><div><dt>کانال ثبت</dt><dd>${request.channel}</dd><small>هدف: ${request.targetDate}</small></div><div><dt>SLA</dt><dd>${request.sla}</dd><small>${badge(request.operationsStatus)}</small></div><div><dt>مبلغ خدمت</dt><dd>${money(request.price)}</dd><small>${badge(request.paymentStatus)}</small></div></dl>`)}
@@ -122,13 +171,19 @@ export function renderRequestDetailPage() {
 }
 
 export function mountDetailPages(rerender) {
-  document.querySelectorAll("[data-customer-id]").forEach((link) => link.addEventListener("click", () => setSelectedCustomerId(link.getAttribute("data-customer-id") ?? "arya-sanat")));
+  document.querySelectorAll("[data-customer-id]").forEach((link) => link.addEventListener("click", () => {
+    const customerId = link.getAttribute("data-customer-id");
+    if (customerId) setSelectedCustomerId(customerId);
+  }));
   document.querySelectorAll("[data-account-tab]").forEach((button) => button.addEventListener("click", () => {
     const tab = button.getAttribute("data-account-tab");
     document.querySelectorAll("[data-account-tab]").forEach((item) => item.setAttribute("aria-selected", String(item === button)));
     document.querySelectorAll("[data-account-panel]").forEach((panel) => panel.toggleAttribute("hidden", panel.getAttribute("data-account-panel") !== tab));
   }));
-  document.querySelectorAll("[data-request-id]").forEach((link) => link.addEventListener("click", () => setSelectedRequestId(link.getAttribute("data-request-id") ?? "rah-1405-0284")));
+  document.querySelectorAll("[data-request-id]").forEach((link) => link.addEventListener("click", () => {
+    const requestId = link.getAttribute("data-request-id");
+    if (requestId) setSelectedRequestId(requestId);
+  }));
   document.querySelectorAll("[data-request-action]").forEach((button) => button.addEventListener("click", () => {
     const state = readDemoState();
     const requestId = state.selectedRequestId;
