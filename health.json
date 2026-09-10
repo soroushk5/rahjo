@@ -2,9 +2,12 @@
   "status": "ok",
   "application": "rahjo-web-platform",
   "deploymentMode": "production",
-  "commit": "5ed74a490407f1de62c5e81bca0ec7563d96de90",
-  "assetVersion": "5ed74a490407f1de62c5e81bca0ec7563d96de90",
-  "assetBase": "/releases/5ed74a490407f1de62c5e81bca0ec7563d96de90",
+  "runtimeMode": "demo",
+  "apiBase": "",
+  "buildSha": "614ccd3982ea76fef23d7bfbb5101547326c4a3f",
+  "commit": "614ccd3982ea76fef23d7bfbb5101547326c4a3f",
+  "assetVersion": "614ccd3982ea76fef23d7bfbb5101547326c4a3f",
+  "assetBase": "/releases/614ccd3982ea76fef23d7bfbb5101547326c4a3f",
   "siteBasePath": "",
-  "generatedAt": "2026-09-10T16:01:43.764Z"
+  "generatedAt": "2026-09-10T17:22:19.320Z"
 }

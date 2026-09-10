@@ -23,6 +23,9 @@ import { mountDetailPages, renderCustomerDetailPage, renderRequestDetailPage } f
 import { mountSupportPages, renderAuditPage, renderDocumentsPage, renderFinancePage, renderOperationsPage, renderReportsPage, renderSettingsPage } from "../features/operations/supportPages.js";
 import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
 import { isAuthenticated } from "../services/authStore.js";
+import { applyRuntimeBoundary, initializeRuntimeFromDocument } from "./runtimeBoundary.js";
+
+await initializeRuntimeFromDocument();
 
 const root = document.querySelector("#app");
 if (!(root instanceof HTMLElement)) throw new Error("App root not found");
@@ -93,7 +96,8 @@ router = new Router({
     { path: "/audit", title: "ممیزی و کیفیت داده", render: renderWithSession(renderAuditPage, "/audit"), mount: supportMount("/audit") },
     { path: "/settings", title: "تنظیمات", render: renderWithSession(renderSettingsPage, "/settings"), mount: supportMount("/settings") },
     { path: "*", title: "صفحه پیدا نشد", render: renderNotFoundPage, mount: withChrome(undefined) }
-  ]
+  ].map(applyRuntimeBoundary)
 });
 
+window.addEventListener("rahjo:runtime-data", () => router.handleNavigation());
 router.start();
