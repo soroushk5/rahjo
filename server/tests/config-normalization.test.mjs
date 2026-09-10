@@ -20,15 +20,36 @@ test("production configuration is server-only and no-LLM", () => {
   const config = loadConfig(validEnv);
   assert.equal(config.dataMode, "server");
   assert.equal(config.llmEnabled, false);
+  assert.equal(config.port, 8787);
   assert.deepEqual(config.corsOrigins, ["https://rahjo.ir", "https://app.rahjo.ir"]);
   assert.equal(config.relaticleBaseUrl, "http://relaticle-app:8080/api/v1");
   assert.equal(config.relaticleMcpUrl, "http://relaticle-app:8080/mcp");
+});
+
+test("managed web app PORT takes precedence over the local default", () => {
+  const config = loadConfig({ ...validEnv, PORT: "3100", RAHJO_API_PORT: "8787" });
+  assert.equal(config.port, 3100);
 });
 
 test("configuration rejects an enabled model provider and insecure public URLs", () => {
   assert.throws(() => loadConfig({ ...validEnv, RAHJO_LLM_ENABLED: "true" }), /forbids/);
   assert.throws(() => loadConfig({ ...validEnv, RAHJO_PUBLIC_ORIGIN: "http://api.rahjo.ir" }), /HTTPS/);
   assert.throws(() => loadConfig({ ...validEnv, RAHJO_CORS_ORIGINS: "*" }));
+});
+
+test("native deferred bridge is explicit and cannot activate accidentally", () => {
+  assert.throws(() => loadConfig({ ...validEnv, RAHJO_CRM_MODE: "native_deferred" }), /INTERIM_ACK/);
+  const config = loadConfig({
+    ...validEnv,
+    RAHJO_CRM_MODE: "native_deferred",
+    RAHJO_INTERIM_ACK: "true",
+    RELATICLE_BASE_URL: "",
+    RELATICLE_MCP_URL: "",
+    RELATICLE_TOKEN_FILE: ""
+  });
+  assert.equal(config.crmMode, "native_deferred");
+  assert.equal(config.interim, true);
+  assert.equal(config.relaticleBaseUrl, "");
 });
 
 test("Persian normalization preserves original meaning while normalizing keys", () => {

@@ -26,6 +26,7 @@ export class RahjoRepository {
     requireScope(context, "read");
     const extension = await this.database.withWorkspace(context, async (client) => {
       const queries = await Promise.all([
+        client.query("SELECT entity_type, relaticle_id AS id, snapshot, created_at, updated_at FROM rahjo.crm_entity_refs WHERE workspace_id=$1 AND entity_type IN ('account','contact') ORDER BY updated_at DESC, id DESC LIMIT 400", [context.workspace_id]),
         client.query("SELECT public_id AS id, name, description, capability_status, execution_mode, version, updated_at FROM rahjo.services WHERE workspace_id=$1 ORDER BY updated_at DESC, id DESC LIMIT 200", [context.workspace_id]),
         client.query(`SELECT capability.public_id AS id, service.public_id AS service_id,
                              capability.capability_code, capability.eligibility_status,
@@ -99,16 +100,25 @@ export class RahjoRepository {
                        ORDER BY outcome.recorded_at DESC, outcome.id DESC LIMIT 200`, [context.workspace_id]),
         client.query("SELECT event_type, entity_type, entity_id, source, correlation_id, before_state, after_state, created_at FROM rahjo.audit_events WHERE workspace_id=$1 ORDER BY created_at DESC, id DESC LIMIT 300", [context.workspace_id])
       ]);
-      const [services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents] = queries.map((item) => item.rows);
-      return { services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents };
+      const [crmRefs, services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents] = queries.map((item) => item.rows);
+      return { crmRefs, services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents };
     });
 
-    const [companies, people, opportunities, tasks] = await Promise.all([
-      this.relaticle.list(context.workspace_id, "companies", "?cursor=true&per_page=100"),
-      this.relaticle.list(context.workspace_id, "people", "?cursor=true&per_page=100"),
-      this.relaticle.list(context.workspace_id, "opportunities", "?cursor=true&per_page=100"),
-      this.relaticle.list(context.workspace_id, "tasks", "?cursor=true&per_page=100")
-    ]);
+    const deferred = this.relaticle.mode === "native_deferred";
+    const [companies, people, opportunities, tasks] = deferred
+      ? [
+          extension.crmRefs.filter((item) => item.entity_type === "account").map((item) => ({ id: item.id, type: "companies", attributes: item.snapshot })),
+          extension.crmRefs.filter((item) => item.entity_type === "contact").map((item) => ({ id: item.id, type: "people", attributes: item.snapshot })),
+          [],
+          []
+        ]
+      : await Promise.all([
+          this.relaticle.list(context.workspace_id, "companies", "?cursor=true&per_page=100"),
+          this.relaticle.list(context.workspace_id, "people", "?cursor=true&per_page=100"),
+          this.relaticle.list(context.workspace_id, "opportunities", "?cursor=true&per_page=100"),
+          this.relaticle.list(context.workspace_id, "tasks", "?cursor=true&per_page=100")
+        ]);
+    delete extension.crmRefs;
 
     return {
       version: 1,
@@ -116,8 +126,8 @@ export class RahjoRepository {
       workspace: { id: context.workspace_id, slug: context.workspace_slug, name: context.workspace_name },
       user: { id: context.user_id, email: context.user_email, name: context.display_name, role: context.role },
       projection: {
-        accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
-        contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
+        accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "rahjo-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "rahjo-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
         opportunities: opportunities.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
         tasks: tasks.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
         ...extension

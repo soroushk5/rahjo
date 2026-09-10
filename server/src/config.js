@@ -20,15 +20,22 @@ export function loadConfig(env = process.env) {
   }
   const appEnv = env.NODE_ENV === "production" ? "production" : "development";
   const allowHttpLocalhost = appEnv !== "production" || env.RAHJO_ALLOW_INTERNAL_HTTP === "true";
+  const crmMode = env.RAHJO_CRM_MODE?.trim() || "relaticle";
+  if (!new Set(["relaticle", "native_deferred"]).has(crmMode)) throw new Error("RAHJO_CRM_MODE must be relaticle or native_deferred");
+  if (crmMode === "native_deferred" && env.RAHJO_INTERIM_ACK !== "true") {
+    throw new Error("native_deferred requires explicit RAHJO_INTERIM_ACK=true");
+  }
   const corsOrigins = required(env, "RAHJO_CORS_ORIGINS").split(",").map((item) => absoluteUrl(item.trim(), "RAHJO_CORS_ORIGINS", { allowHttpLocalhost }));
   return Object.freeze({
     appEnv,
-    port: Number(env.RAHJO_API_PORT || 8787),
+    port: Number(env.PORT || env.RAHJO_API_PORT || 8787),
     databaseUrl: required(env, "RAHJO_DATABASE_URL"),
     tokenPepper: required(env, "RAHJO_TOKEN_PEPPER", 32),
-    relaticleBaseUrl: absoluteUrl(required(env, "RELATICLE_BASE_URL"), "RELATICLE_BASE_URL", { allowHttpLocalhost }),
-    relaticleMcpUrl: absoluteUrl(required(env, "RELATICLE_MCP_URL"), "RELATICLE_MCP_URL", { allowHttpLocalhost }),
-    relaticleTokenFile: required(env, "RELATICLE_TOKEN_FILE"),
+    crmMode,
+    interim: crmMode === "native_deferred",
+    relaticleBaseUrl: crmMode === "relaticle" ? absoluteUrl(required(env, "RELATICLE_BASE_URL"), "RELATICLE_BASE_URL", { allowHttpLocalhost }) : "",
+    relaticleMcpUrl: crmMode === "relaticle" ? absoluteUrl(required(env, "RELATICLE_MCP_URL"), "RELATICLE_MCP_URL", { allowHttpLocalhost }) : "",
+    relaticleTokenFile: crmMode === "relaticle" ? required(env, "RELATICLE_TOKEN_FILE") : "",
     corsOrigins,
     publicOrigin: absoluteUrl(required(env, "RAHJO_PUBLIC_ORIGIN"), "RAHJO_PUBLIC_ORIGIN", { allowHttpLocalhost }),
     bodyLimit: 64 * 1024,
