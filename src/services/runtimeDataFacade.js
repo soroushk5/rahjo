@@ -13,6 +13,7 @@ export const RUNTIME_DATA_STATES = Object.freeze({
 
 export const SERVER_RUNTIME_PATH = "/api/v1/runtime";
 export const SERVER_SESSION_PATH = "/api/v1/session";
+export const DEFAULT_SERVER_TIMEOUT_MS = 30000;
 
 /** @type {Readonly<Record<string, string>>} */
 const stateMessages = Object.freeze({
@@ -158,7 +159,7 @@ export function createRuntimeDataFacade() {
 
     publish(makeSnapshot("server", RUNTIME_DATA_STATES.CONNECTING, { buildSha: config.buildSha }));
     const controller = new AbortController();
-    const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(1, Number(options.timeoutMs)) : 10000;
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(1, Number(options.timeoutMs)) : DEFAULT_SERVER_TIMEOUT_MS;
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
@@ -244,7 +245,7 @@ export function createRuntimeDataFacade() {
 
     publish(makeSnapshot("server", RUNTIME_DATA_STATES.CONNECTING, { buildSha: config.buildSha }));
     const controller = new AbortController();
-    const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(1, Number(options.timeoutMs)) : 10000;
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(1, Number(options.timeoutMs)) : DEFAULT_SERVER_TIMEOUT_MS;
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetchImpl(`${config.apiBase}${SERVER_SESSION_PATH}`, {

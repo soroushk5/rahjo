@@ -12,7 +12,9 @@ function baseHeaders(requestId) {
   return {
     "Cache-Control": "no-store",
     "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
-    "Cross-Origin-Resource-Policy": "same-site",
+    // The public UI and API use distinct managed-hosting origins. CORS remains
+    // credentialed and allowlisted below; CORP must permit that intentional API use.
+    "Cross-Origin-Resource-Policy": "cross-origin",
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
