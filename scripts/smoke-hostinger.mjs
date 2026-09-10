@@ -95,6 +95,9 @@ if (runtimeConfig.mode === 'server') {
   const apiUrl = new URL(runtimeConfig.apiBase);
   if (apiUrl.username || apiUrl.password || apiUrl.search || apiUrl.hash) throw new Error('Server API base contains unsafe URL fields');
   if (mode === 'production' && apiUrl.protocol !== 'https:') throw new Error('Production server API base must use HTTPS');
+  if (mode === 'production' && !htaccess.includes(`connect-src 'self' ${apiUrl.origin};`)) {
+    throw new Error('Production CSP does not allow the configured server API origin');
+  }
 }
 
 if (mode === 'preview') {

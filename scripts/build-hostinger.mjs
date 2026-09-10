@@ -98,8 +98,12 @@ await writeFile(join(output, '404.html'), index);
 
 if (mode === 'production') {
   const htaccessPath = join(output, '.htaccess');
-  const htaccess = (await readFile(htaccessPath, 'utf8'))
+  let htaccess = (await readFile(htaccessPath, 'utf8'))
     .replace(/^\s*Header always set X-Robots-Tag .*\r?\n/m, '');
+  if (runtimeMode === 'server') {
+    const apiOrigin = new URL(apiBase).origin;
+    htaccess = htaccess.replace("connect-src 'self';", `connect-src 'self' ${apiOrigin};`);
+  }
   await writeFile(htaccessPath, htaccess);
 }
 
