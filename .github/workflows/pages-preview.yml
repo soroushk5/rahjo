@@ -30,7 +30,14 @@ jobs:
       - name: Run QA
         run: npm run qa
 
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Build static preview
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          SITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build:hostinger
 
       - name: Prepare Pages artifact
@@ -38,9 +45,6 @@ jobs:
           rm -f dist-hostinger/.htaccess
           cp dist-hostinger/index.html dist-hostinger/404.html
           touch dist-hostinger/.nojekyll
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4

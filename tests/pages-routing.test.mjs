@@ -3,12 +3,15 @@ import fs from "node:fs";
 import test from "node:test";
 
 const index = fs.readFileSync("index.html", "utf8");
+const basePath = fs.readFileSync("src/app/basePath.js", "utf8");
 const router = fs.readFileSync("src/app/router.js", "utf8");
 const devServer = fs.readFileSync("scripts/serve.mjs", "utf8");
 
 test("static entrypoint uses deployment-relative asset paths", () => {
   assert.match(index, /<base id="app-base" href="\/"/);
+  assert.match(index, /<script id="base-path-bootstrap">/);
   assert.match(index, /host\.endsWith\("github\.io"\)/);
+  assert.match(basePath, /host\.endsWith\("github\.io"\)/);
   assert.match(index, /href="assets\/favicon\.svg"/);
   assert.match(index, /href="styles\/tokens\.css"/);
   assert.match(index, /src="src\/app\/bootstrap\.js"/);
