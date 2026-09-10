@@ -28,7 +28,7 @@ export function loadConfig(env = process.env) {
   const corsOrigins = required(env, "RAHJO_CORS_ORIGINS").split(",").map((item) => absoluteUrl(item.trim(), "RAHJO_CORS_ORIGINS", { allowHttpLocalhost }));
   return Object.freeze({
     appEnv,
-    port: Number(env.RAHJO_API_PORT || 8787),
+    port: Number(env.PORT || env.RAHJO_API_PORT || 8787),
     databaseUrl: required(env, "RAHJO_DATABASE_URL"),
     tokenPepper: required(env, "RAHJO_TOKEN_PEPPER", 32),
     crmMode,
