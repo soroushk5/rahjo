@@ -7,6 +7,8 @@ const router = fs.readFileSync("src/app/router.js", "utf8");
 const devServer = fs.readFileSync("scripts/serve.mjs", "utf8");
 
 test("static entrypoint uses deployment-relative asset paths", () => {
+  assert.match(index, /<base id="app-base" href="\/"/);
+  assert.match(index, /host\.endsWith\("github\.io"\)/);
   assert.match(index, /href="assets\/favicon\.svg"/);
   assert.match(index, /href="styles\/tokens\.css"/);
   assert.match(index, /src="src\/app\/bootstrap\.js"/);

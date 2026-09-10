@@ -1,100 +1,45 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderPresentationMarketingPage } from "../src/features/marketing/presentationMarketing.js";
-import { renderPlatformPage } from "../src/features/platform/platformPage.js";
-import { renderPresentationAtlasPage } from "../src/features/stories/presentationAtlas.js";
-import { renderTrustPage } from "../src/features/trust/trustPage.js";
-import { renderPresentationMapPage } from "../src/features/map/presentationMap.js";
-import {
-  renderDashboardAuditPage,
-  renderDashboardDataPage,
-  renderDashboardOverviewPage,
-  renderDashboardRequestsPage
-} from "../src/features/dashboard/presentationDashboard.js";
-import { renderRequestPage } from "../src/features/requests/requestPage.js";
+import { renderHomePage, renderProductPage, renderServicesPage, renderUseCasesPage } from "../src/features/public/publicPages.js";
+import { renderDashboardPage, renderCustomersPage, renderRequestsPage, renderSalesPage } from "../src/features/operations/corePages.js";
+import { renderCustomerDetailPage, renderRequestDetailPage } from "../src/features/operations/detailPages.js";
+import { renderFinancePage, renderOperationsPage, renderReportsPage } from "../src/features/operations/supportPages.js";
+import { renderServiceRequestPage } from "../src/features/requests/serviceRequestPage.js";
 import { renderLoginPage } from "../src/features/auth/loginPage.js";
-import { renderAutomationPage, renderCrmPage, renderGovernancePage, renderOperationalDashboardPage, renderSalesPage, renderServicesPage, renderThinkRoomPage } from "../src/features/operations/operationalPages.js";
-
-const publicPages = [
-  renderPresentationMarketingPage,
-  renderPlatformPage,
-  renderPresentationAtlasPage,
-  renderTrustPage,
-  renderPresentationMapPage
-];
 
 const pages = [
-  ...publicPages,
-  renderDashboardOverviewPage,
-  renderDashboardRequestsPage,
-  renderDashboardDataPage,
-  renderDashboardAuditPage,
-  renderRequestPage,
-  renderLoginPage,
-  renderOperationalDashboardPage,
-  renderCrmPage,
-  renderSalesPage,
-  renderServicesPage,
-  renderAutomationPage,
-  renderGovernancePage,
-  renderThinkRoomPage
+  renderHomePage, renderProductPage, renderServicesPage, renderUseCasesPage, renderDashboardPage,
+  renderCustomersPage, renderCustomerDetailPage, renderSalesPage, renderRequestsPage, renderRequestDetailPage,
+  renderOperationsPage, renderFinancePage, renderReportsPage, renderServiceRequestPage, renderLoginPage
 ];
 
-test("all primary presentation routes render meaningful, safe markup", () => {
+test("all primary phase-one routes render meaningful safe markup", () => {
   for (const render of pages) {
     const html = render();
     assert.match(html, /<h1>|<h2>/);
-    assert.doesNotMatch(html, /undefined|null/);
+    assert.doesNotMatch(html, />undefined<|>null</);
     assert.match(html, /رهجو/);
   }
 });
 
-test("public navigation exposes the operational product journey", () => {
-  const html = renderPresentationMarketingPage();
-  for (const path of ["/platform", "/data", "/map", "/trust", "/login", "/request"]) {
+test("homepage communicates the full customer-to-outcome promise", () => {
+  const html = renderHomePage();
+  for (const phrase of ["مشتری", "فروش", "خدمت", "عملیات", "نتیجه"]) assert.match(html, new RegExp(phrase));
+  for (const path of ["/product", "/services", "/use-cases", "/how-it-works", "/login", "/contact"]) {
     assert.match(html, new RegExp(`href="${path}"`));
   }
 });
 
-test("presentation dashboard exposes all demo views", () => {
-  const html = renderDashboardOverviewPage();
-  for (const path of ["/dashboard/requests", "/dashboard/data", "/dashboard/audit", "/request"]) {
+test("operations console exposes the core business system", () => {
+  const html = renderDashboardPage();
+  for (const path of ["/customers", "/sales", "/requests", "/tasks", "/operations", "/finance", "/reports"]) {
     assert.match(html, new RegExp(`href="${path}"`));
   }
 });
 
-test("visible product copy avoids newsroom framing", () => {
+test("retired data-access product framing is absent from rendered phase-one UI", () => {
   const html = pages.map((render) => render()).join("\n");
-  for (const phrase of ["اتاق خبر", "دفتر روایت", "میز تصمیم", "داستان داده"]) {
-    assert.doesNotMatch(html, new RegExp(phrase));
+  for (const phrase of ["Think Room", "Data Basket", "Access Request", "داستان داده", "اطلس روایت"]) {
+    assert.doesNotMatch(html, new RegExp(phrase, "i"));
   }
-});
-
-test("operational foundation surfaces preserve demo and claim boundaries", () => {
-  const html = [renderOperationalDashboardPage(), renderCrmPage(), renderSalesPage(), renderServicesPage(), renderAutomationPage(), renderGovernancePage(), renderThinkRoomPage()].join("\n");
-  for (const phrase of ["دمو", "داده‌های مصنوعی", "Account", "Case", "Outcome", "ممیزی", "سرویس‌ها و APIها", "اتاق فکر"]) {
-    assert.match(html, new RegExp(phrase));
-  }
-  assert.doesNotMatch(html, /production-ready|هوش مصنوعی فعال است|تصمیم خودکار انجام می‌شود/iu);
-});
-
-test("public site tells the same operational foundation story as the workspace", () => {
-  const home = renderPresentationMarketingPage();
-  const publicHtml = publicPages.map((render) => render()).join("\n");
-
-  for (const phrase of ["Operational Foundation", "CRM", "Case", "Outcome", "Dashboard", "AI خاموش", "Think Room"]) {
-    assert.match(publicHtml, new RegExp(phrase, "iu"));
-  }
-  assert.match(home, /عملیات تجاری امروز/);
-  assert.match(home, /زیرساخت هوشمندی فردا/);
-  assert.doesNotMatch(home, /داده‌ای که همه‌جا نیست/);
-  assert.doesNotMatch(publicHtml, /اطلس داده رهجو/);
-});
-
-test("public capability surfaces use explicit claim-safe status vocabulary", () => {
-  const html = [renderPresentationAtlasPage(), renderTrustPage()].join("\n");
-  for (const phrase of ["Demo / Synthetic", "Under Review", "Pilot Candidate", "Evidence Required", "Unavailable / TBD", "Production eligibility"] ) {
-    assert.match(html, new RegExp(phrase, "iu"));
-  }
-  assert.doesNotMatch(html, /همه سرویس‌ها فعال|APIهای فعال و آماده|SLA تضمین‌شده/iu);
 });

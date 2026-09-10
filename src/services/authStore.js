@@ -7,13 +7,13 @@ export const demoCredentials = Object.freeze({
 
 const demoSession = Object.freeze({
   user: {
-    name: "کاربر دمو",
+    name: "نسترن احمدی",
     email: demoCredentials.email,
     role: "مدیر عملیات",
-    organization: "رهجو — محیط نمونه",
-    initials: "ر"
+    organization: "محیط نمایشی رهجو",
+    initials: "ن‌ا"
   },
-  environment: "Demo / Synthetic / No-AI",
+  environment: "Sandbox",
   signedInAt: "demo"
 });
 
@@ -56,6 +56,19 @@ export function signIn(email, password) {
     return { ok: false, message: "ایمیل یا رمز عبور محیط نمایشی درست نیست." };
   }
 
+  const session = { ...demoSession, signedInAt: new Date().toISOString() };
+  const target = storage();
+  if (target) {
+    try {
+      target.setItem(AUTH_KEY, JSON.stringify(session));
+    } catch {
+      // Session persistence is optional for the static demo.
+    }
+  }
+  return { ok: true, session };
+}
+
+export function signInAsGuest() {
   const session = { ...demoSession, signedInAt: new Date().toISOString() };
   const target = storage();
   if (target) {

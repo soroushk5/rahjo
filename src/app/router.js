@@ -119,7 +119,9 @@ export class Router {
   handleNavigation() {
     const sourcePath = this.routingMode === "hash" ? window.location.hash.slice(1) || "/" : window.location.pathname;
     const currentPath = this.routePath(sourcePath);
-    const route = this.routes.find((candidate) => candidate.path === currentPath) ?? this.routes[0];
+    const route = this.routes.find((candidate) => candidate.path === currentPath)
+      ?? this.routes.find((candidate) => candidate.path === "*")
+      ?? this.routes[0];
 
     document.title = route.title ? `${route.title} | رهجو` : "رهجو";
     const meta = document.querySelector('meta[name="description"]');

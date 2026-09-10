@@ -1,65 +1,50 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { allDestinations, consoleNavigation, publicJourney, publicNavigation, secondaryConsoleNavigation } from "../src/app/navigation.js";
-import { renderPresentationMarketingPage } from "../src/features/marketing/presentationMarketing.js";
-import { renderPlatformPage } from "../src/features/platform/platformPage.js";
-import { renderPresentationAtlasPage } from "../src/features/stories/presentationAtlas.js";
-import { renderTrustPage } from "../src/features/trust/trustPage.js";
-import { renderPresentationMapPage } from "../src/features/map/presentationMap.js";
-import { renderDashboardOverviewPage, renderDashboardRequestsPage, renderDashboardDataPage, renderDashboardAuditPage } from "../src/features/dashboard/presentationDashboard.js";
-import { renderRequestPage } from "../src/features/requests/requestPage.js";
+import { allDestinations, consoleNavigation, publicNavigation } from "../src/app/navigation.js";
+import {
+  renderAboutPage, renderContactPage, renderHomePage, renderHowItWorksPage, renderPilotPage,
+  renderPrivacyPage, renderProductPage, renderServicesPage, renderTermsPage, renderTrackRequestPage,
+  renderTrustPage, renderUseCasesPage
+} from "../src/features/public/publicPages.js";
 import { renderLoginPage } from "../src/features/auth/loginPage.js";
-import { renderCaseIntakePage } from "../src/features/operations/caseIntakePage.js";
-import { renderAutomationPage, renderCrmPage, renderGovernancePage, renderOperationalDashboardPage, renderSalesPage, renderServicesPage, renderThinkRoomPage } from "../src/features/operations/operationalPages.js";
+import { renderServiceRequestPage } from "../src/features/requests/serviceRequestPage.js";
+import { renderCustomersPage, renderDashboardPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../src/features/operations/corePages.js";
+import { renderCustomerDetailPage, renderRequestDetailPage } from "../src/features/operations/detailPages.js";
+import { renderAuditPage, renderDocumentsPage, renderFinancePage, renderOperationsPage, renderReportsPage, renderSettingsPage } from "../src/features/operations/supportPages.js";
 
 const knownRoutes = new Set([
-  "/", "/data", "/stories", "/map", "/platform", "/trust", "/login",
-  "/dashboard", "/crm", "/sales", "/services", "/automation", "/governance", "/think-room", "/cases/new",
-  "/dashboard/requests", "/dashboard/data", "/dashboard/audit", "/request"
+  "/", "/product", "/services", "/use-cases", "/how-it-works", "/pilot", "/trust", "/about", "/contact",
+  "/privacy", "/terms", "/track-request", "/request-service", "/login", "/dashboard", "/customers", "/customers/detail",
+  "/sales", "/services-admin", "/requests", "/requests/detail", "/tasks", "/operations", "/finance", "/documents", "/reports", "/audit", "/settings"
 ]);
 
 const renderers = [
-  renderPresentationMarketingPage,
-  renderPlatformPage,
-  renderPresentationAtlasPage,
-  renderTrustPage,
-  renderPresentationMapPage,
-  renderDashboardOverviewPage,
-  renderDashboardRequestsPage,
-  renderDashboardDataPage,
-  renderDashboardAuditPage,
-  renderRequestPage,
-  () => renderLoginPage({ returnTo: "/dashboard" }),
-  renderCaseIntakePage,
-  renderOperationalDashboardPage,
-  renderCrmPage,
-  renderSalesPage,
-  renderServicesPage,
-  renderAutomationPage,
-  renderGovernancePage,
-  renderThinkRoomPage
+  renderHomePage, renderProductPage, renderServicesPage, renderUseCasesPage, renderHowItWorksPage,
+  renderPilotPage, renderTrustPage, renderAboutPage, renderContactPage, renderPrivacyPage, renderTermsPage,
+  renderTrackRequestPage, renderServiceRequestPage, () => renderLoginPage({ returnTo: "/dashboard" }),
+  renderDashboardPage, renderCustomersPage, renderCustomerDetailPage, renderSalesPage, renderServicesAdminPage,
+  renderRequestsPage, renderRequestDetailPage, renderTasksPage, renderOperationsPage, renderFinancePage,
+  renderDocumentsPage, renderReportsPage, renderAuditPage, renderSettingsPage
 ];
 
 function internalHrefs(html) {
-  return [...html.matchAll(/href="(\/[^"]*)"/g)].map((match) => match[1]);
+  return [...html.matchAll(/href="(\/[^"#?]*)/g)].map((match) => match[1]);
 }
 
-test("shared navigation only points at registered routes", () => {
-  for (const item of [...publicNavigation, ...consoleNavigation, ...secondaryConsoleNavigation, ...publicJourney, ...allDestinations]) {
-    assert.ok(knownRoutes.has(item.path), `Unknown navigation route: ${item.path}`);
-  }
+test("shared navigation only points at registered phase-one routes", () => {
+  for (const item of allDestinations) assert.ok(knownRoutes.has(item.path), `Unknown navigation route: ${item.path}`);
 });
 
-test("rendered primary pages contain no orphan internal links", () => {
+test("rendered phase-one pages contain no orphan internal links", () => {
   for (const render of renderers) {
-    for (const href of internalHrefs(render())) {
-      assert.ok(knownRoutes.has(new URL(href, "https://rahjo.local").pathname), `Orphan internal href: ${href}`);
-    }
+    for (const href of internalHrefs(render())) assert.ok(knownRoutes.has(href), `Orphan internal href: ${href}`);
   }
 });
 
-test("public walkthrough follows operational product sequencing", () => {
-  assert.deepEqual(publicJourney.map((item) => item.path), ["/", "/platform", "/data", "/map", "/trust", "/login"]);
-  assert.equal(new Set(publicJourney.map((item) => item.path)).size, publicJourney.length);
-  assert.deepEqual(publicNavigation.map((item) => item.label), ["خانه", "محصول", "سرویس‌ها", "نحوه کار", "اعتماد و کنترل"]);
+test("public and operations navigation expose the intended information architecture", () => {
+  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/services", "/use-cases", "/how-it-works"]);
+  assert.deepEqual(consoleNavigation.map((item) => item.path), [
+    "/dashboard", "/customers", "/sales", "/services-admin", "/requests", "/tasks",
+    "/operations", "/finance", "/documents", "/reports", "/audit", "/settings"
+  ]);
 });

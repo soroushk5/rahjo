@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Rahjo marketing site and product-shell MVP.",
+  "description": "Rahjo phase-one customer, sales, service, and operations platform.",
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "check": "tsc -p jsconfig.json",

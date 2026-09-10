@@ -1,42 +1,46 @@
-# Rahjo frontend architecture
+# معماری فاز اول رهجو
 
-## Product model
+## مدل محصول
 
-Rahjo sits between sensitive data sources and organizational workflows. The UI is organized around four control stages:
+هستهٔ رهجو یک زنجیرهٔ عملیاتی مشترک است:
 
-`source evidence -> access policy -> controlled delivery -> audit`
+`ورودی → مشتری → فروش → درخواست خدمت → مدارک و مالی → اجرا → تأیید → نتیجه → پیگیری`
 
-This model is shared by the landing page, data atlas, ecosystem map, console and access-request flow.
+وب‌سایت عمومی تقاضا را وارد همین مدل می‌کند و کنسول داخلی همان رکوردها را برای تیم فروش، عملیات و مالی قابل اقدام می‌سازد.
 
-## Code boundaries
+## مرزهای کد
 
 ```text
 src/
-  app/          # routing and page shells
-  components/   # shared presentation primitives
-  data/         # immutable content and demo fixtures
-  domain/       # framework-independent state and validation
-  features/     # route-level product capabilities
-  lib/          # small generic helpers
-  services/     # provider and gateway adapters
+  app/                 مسیریابی، پوستهٔ عمومی و پوستهٔ کنسول
+  components/          نشان و آیکون‌های مشترک
+  data/phaseOneData.js کاتالوگ خدمت و داده‌های seed دمو
+  features/public/     صفحات تجاری و پیگیری عمومی
+  features/auth/       ورود مهمان به دمو
+  features/requests/   ثبت چندمرحله‌ای درخواست خدمت
+  features/operations/ داشبورد، جداول، پرونده‌های ۳۶۰ و صفحات پشتیبان
+  services/            نشست و وضعیت محلی دمو
 styles/
-  tokens.css
-  base.css
-  components.css
-  public.css
-  app.css
-  responsive.css
+  tokens.css           رنگ، تایپوگرافی و مقیاس‌های پایه
+  base.css             reset و primitiveهای عمومی
+  phase-one.css        سیستم بصری پاسخ‌گو برای کل فاز اول
 ```
 
-## Dependency rules
+## مدل دادهٔ نمایشی
 
-- feature pages may depend on shared components, immutable data and domain contracts
-- domain code must not depend on the DOM or page rendering
-- UI pages must not call upstream providers directly
-- real providers must implement a service adapter contract
-- access policy and audit boundaries must remain separate from presentation code
-- demo data must be clearly labeled and must contain no real personal information
+موجودیت‌های اصلی عبارت‌اند از Customer، Contact، Opportunity، Service، ServiceRequest، Task، Transaction، Document، Activity و Approval. روابط از شناسهٔ مشتری و درخواست استفاده می‌کنند تا Account 360 و Request Detail از یک منبع مشترک ساخته شوند.
 
-## Deployment model
+`phaseOneStore` تغییرات را به‌صورت مرورگرمحلی نگه می‌دارد و اقدامات اصلی را اتمیک می‌کند: ساخت درخواست، تکمیل مدارک، ثبت پرداخت نمایشی، شروع اجرا، تأیید انسانی و تحویل نتیجه.
 
-The current MVP uses browser-native ES modules and static assets. It can be deployed directly to Hostinger without a runtime server. A future framework migration may replace the rendering layer while retaining domain, data contracts, tokens and service boundaries.
+## قواعد وابستگی
+
+- صفحات فقط از کامپوننت‌های مشترک، دادهٔ immutable و سرویس‌های وضعیت استفاده می‌کنند.
+- مدل داده و منطق گردش‌کار نباید به DOM وابسته باشد.
+- هیچ صفحه‌ای مستقیماً سرویس بیرونی را فراخوانی نمی‌کند.
+- دادهٔ دمو باید ساختگی و با بنر واحد «محیط نمایشی» مشخص باشد.
+- اتصال واقعی بعدی باید پشت adapter و کنترل مجوز مستقل قرار گیرد.
+- هوش مصنوعی جزء مسیر اصلی فاز اول نیست و نبود آن نباید هیچ گردش‌کاری را متوقف کند.
+
+## استقرار
+
+خروجی از ES module و دارایی‌های استاتیک تشکیل شده و برای Hostinger بسته‌بندی می‌شود. مسیرهای مستقیم با قرارداد fallback موجود سازگارند. `noindex` تا تأیید انتشار عمومی فعال می‌ماند.

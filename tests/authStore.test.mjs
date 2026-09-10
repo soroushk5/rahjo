@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { demoCredentials, getSession, isAuthenticated, signIn, signOut } from "../src/services/authStore.js";
+import { demoCredentials, getSession, isAuthenticated, signIn, signInAsGuest, signOut } from "../src/services/authStore.js";
 
 function memoryStorage() {
   const values = new Map();
@@ -28,5 +28,14 @@ test("demo login rejects invalid credentials", () => {
   const result = signIn("wrong@example.com", "wrong");
   assert.equal(result.ok, false);
   assert.equal(isAuthenticated(), false);
+  delete globalThis.window;
+});
+
+test("guest entry creates the same browser-local demo session without exposing credentials", () => {
+  globalThis.window = { localStorage: memoryStorage() };
+  const result = signInAsGuest();
+  assert.equal(result.ok, true);
+  assert.equal(getSession()?.user.name, "نسترن احمدی");
+  assert.equal(isAuthenticated(), true);
   delete globalThis.window;
 });

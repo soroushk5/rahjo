@@ -1,13 +1,15 @@
-# Review checkpoint
+# نقطهٔ بازبینی فاز اول
 
-This branch is the first story-driven review build for Rahjo.
+این نسخه بازطراحی کامل رهجو به‌عنوان زیرساخت عملیاتی «مشتری تا نتیجه» است.
 
-Review focus:
+محورهای بازبینی:
 
-1. Story architecture and editorial voice
-2. Landing page composition and pacing
-3. Decision-room dashboard visual language
-4. Product atlas and public information architecture
-5. Vazirmatn typography and RTL responsiveness
+1. آیا مخاطب در صفحهٔ نخست سریع می‌فهمد رهجو چه مسئله‌ای را حل می‌کند؟
+2. آیا تفاوت سایت عمومی، ورودی مشتری و کنسول عملیات روشن است؟
+3. آیا داشبورد به اقدام روزانه منجر می‌شود؟
+4. آیا Account 360 حافظهٔ تجاری کامل مشتری را نشان می‌دهد؟
+5. آیا Request Detail مدارک، مالی، اجرا، تأیید و نتیجه را یکجا جمع می‌کند؟
+6. آیا مسیر اصلی بدون AI، API یا سرویس بیرونی کامل است؟
+7. آیا فارسی، RTL، کنتراست، موبایل و وضعیت‌های خالی/خطا قابل اتکا هستند؟
 
-All data and metrics are demo-only.
+همهٔ داده‌ها و تراکنش‌ها نمایشی و مرورگرمحلی‌اند.
