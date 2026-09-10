@@ -3,9 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="رهجو؛ زیرساخت عملیاتی و تجاری یکپارچه برای CRM، فروش، سرویس، اتوماسیون و ممیزی — با مسیر هوشمندی آینده." />
+    <meta name="description" content="رهجو؛ زیرساخت یکپارچهٔ مدیریت مشتری، فروش و ارائهٔ خدمات از اولین تماس تا تحویل نتیجه." />
     <meta name="theme-color" content="#0b1d33" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
+    <base id="app-base" href="/" />
+    <script>
+      (() => {
+        const host = window.location.hostname;
+        const path = window.location.pathname;
+        const base = document.querySelector("#app-base");
+        if (!base) return;
+        if (host.endsWith("github.io")) {
+          const project = path.split("/").filter(Boolean)[0];
+          base.href = project ? `/${project}/` : "/";
+        } else if (host === "raw.githack.com" || host === "rawgit.com") {
+          base.href = path.slice(0, path.lastIndexOf("/") + 1);
+        }
+      })();
+    </script>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/assets/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,15 +28,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles/tokens.css" />
     <link rel="stylesheet" href="/styles/base.css" />
-    <link rel="stylesheet" href="/styles/components.css" />
-    <link rel="stylesheet" href="/styles/pages.css" />
-    <link rel="stylesheet" href="/styles/prototype.css" />
-    <link rel="stylesheet" href="/styles/presentation.css" />
-    <link rel="stylesheet" href="/styles/presentation-fixes.css" />
-    <link rel="stylesheet" href="/styles/connected-flow.css" />
-    <link rel="stylesheet" href="/styles/public-operational.css" />
-    <link rel="stylesheet" href="/styles/demo-presentation.css" />
-    <title>رهجو | زیرساخت عملیاتی و تجاری</title>
+    <link rel="stylesheet" href="/styles/phase-one.css" />
+    <title>رهجو | مدیریت مشتری تا نتیجه</title>
       <link rel="canonical" href="https://linen-crocodile-733177.hostingersite.com/" />
   </head>
   <body>

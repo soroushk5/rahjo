@@ -1,125 +1,60 @@
+// @ts-nocheck
 import { brandLogo } from "../components/brandLogo.js";
 import { icon } from "../components/icons.js";
-import { consoleNavigation, routeLabel, secondaryConsoleNavigation } from "./navigation.js";
+import { consoleNavigation, routeLabel } from "./navigation.js";
 import { getSession } from "../services/authStore.js";
-import {
-  demoHero,
-  demoScenarioSteps,
-  demoStatusSummary,
-  demoStepIndex,
-  getDemoScenario,
-  presenterAction,
-  presenterNext
-} from "../services/demoScenarioStore.js";
 
-/** @param {string} activePath */
-function presenterMarkup(activePath) {
-  const state = getDemoScenario();
-  const summary = demoStatusSummary(state);
-  const activeIndex = demoStepIndex(activePath, state);
-  const action = presenterAction(activePath, state);
-  const next = presenterNext(activePath, state);
-  const completed = state.outcomeStatus === "Recorded";
-
-  return `
-    <details class="demo-presenter" open>
-      <summary>
-        <span>${icon("workflow", { size: 16 })}<b>Golden Demo</b><small>${demoHero.accountName} · ${demoHero.caseId}</small></span>
-        <em>${completed ? "سناریو کامل شد" : `مرحله ${(activeIndex + 1).toLocaleString("fa-IR")} از ${demoScenarioSteps.length.toLocaleString("fa-IR")}`}</em>
-      </summary>
-      <div class="demo-presenter__body">
-        <ol class="demo-presenter__steps" aria-label="مسیر ارائه زنده">
-          ${demoScenarioSteps.map((step, index) => `<li data-done="${index < activeIndex || completed}" ${index === activeIndex ? 'aria-current="step"' : ""}><span>${(index + 1).toLocaleString("fa-IR")}</span><div><b>${step.label}</b><small>${step.short}</small></div></li>`).join("")}
-        </ol>
-        <div class="demo-presenter__status">
-          <div><small>Account</small><strong>${summary.account}</strong></div>
-          <div><small>Approval</small><strong>${summary.approval}</strong></div>
-          <div><small>Action</small><strong>${summary.action}</strong></div>
-          <div><small>Outcome</small><strong>${summary.outcome}</strong></div>
-          <p><span>${icon("audit", { size: 15 })}</span>${summary.lastEvent} · ${summary.eventCount.toLocaleString("fa-IR")} رخداد دمو</p>
-        </div>
-        <div class="demo-presenter__actions">
-          ${action ? `<button type="button" class="button button--primary" data-demo-action="${action.action}">${action.label} ${icon("arrow", { size: 14 })}</button>` : `<a data-link class="button button--primary" href="${next.path}">${next.label} ${icon("arrow", { size: 14 })}</a>`}
-          ${action ? `<a data-link class="button button--secondary" href="${next.path}">مرحله بعد</a>` : ""}
-          <a data-link class="text-button" href="/dashboard" data-demo-reset>Reset Demo</a>
-          <a data-link class="text-button demo-fast-path" href="/automation">مسیر ۳ دقیقه‌ای</a>
-        </div>
-      </div>
-    </details>`;
+function activeNavPath(path) {
+  if (path === "/customers/detail") return "/customers";
+  if (path === "/requests/detail") return "/requests";
+  return path;
 }
 
-/** @param {{content: string, activePath: string, title: string}} options */
 export function appShell({ content, activePath, title }) {
   const session = getSession();
-  const user = session?.user ?? { name: "کاربر دمو", role: "مدیر عملیات", organization: "رهجو — محیط نمونه", initials: "ر" };
-
-  /** @param {{path:string, icon:string, label:string}} item */
+  const user = session?.user ?? { name: "نسترن احمدی", role: "مدیر عملیات", organization: "محیط نمایشی رهجو", initials: "ن‌ا" };
+  const active = activeNavPath(activePath);
+  const daily = consoleNavigation.slice(0, 8);
+  const management = consoleNavigation.slice(8);
   const nav = (item) => `
-    <a data-link href="${item.path}" ${activePath === item.path ? 'aria-current="page"' : ""}>
-      <span class="app-nav__icon">${icon(item.icon, { size: 18 })}</span>
+    <a data-link href="${item.path}" ${active === item.path ? 'aria-current="page"' : ""}>
+      <span class="app-nav__icon">${icon(item.icon, { size: 19 })}</span>
       <span>${item.label}</span>
     </a>`;
 
-  const navGroups = [...new Set(consoleNavigation.map((item) => item.group))];
-
   return `
-    <div class="app-shell presentation-app-shell">
-      <aside class="app-sidebar" aria-label="ناوبری کنسول">
-        <div class="app-sidebar__brand">
-          <a data-link href="/">${brandLogo({ inverted: true })}</a>
-          <span>OPERATIONAL FOUNDATION</span>
-        </div>
-
-        <div class="app-sidebar__workspace">
-          <span class="workspace-dot"></span>
-          <div><small>محیط جاری</small><strong>${user.organization}</strong></div>
-          <em>Demo</em>
-        </div>
-
-        <nav class="app-nav" aria-label="ناوبری محصول">
-          ${navGroups.map((group) => `
-            <small class="app-nav__label">${group}</small>
-            ${consoleNavigation.filter((item) => item.group === group).map((item) => `
-              <a data-link href="${item.path}" ${activePath === item.path ? 'aria-current="page"' : ""}>
-                <span class="app-nav__icon">${icon(item.icon, { size: 18 })}</span>
-                <span>${item.label}</span>
-                ${item.path === "/think-room" ? '<b class="nav-future">آینده</b>' : ""}
-              </a>`).join("")}
-          `).join("")}
-          <details class="secondary-nav">
-            <summary>${icon("layers", { size: 17 })}<span>نماهای مرجع / قدیمی</span></summary>
-            <div>${secondaryConsoleNavigation.map(nav).join("")}</div>
-          </details>
+    <div class="phase-app-shell">
+      <aside class="phase-sidebar" aria-label="ناوبری محیط عملیاتی">
+        <a data-link href="/" class="phase-sidebar__brand">${brandLogo({ inverted: true })}<small>سامانهٔ عملیات کسب‌وکار</small></a>
+        <nav class="phase-app-nav" aria-label="ناوبری محصول">
+          <small>کار روزانه</small>
+          ${daily.map(nav).join("")}
+          <small>مدیریت</small>
+          ${management.map(nav).join("")}
         </nav>
-
-        <div class="app-sidebar__bottom">
-          <a data-link class="app-sidebar__public" href="/">${icon("external", { size: 17 })}<span>بازگشت به سایت</span></a>
-          <div class="app-user-card">
-            <span class="app-user-card__avatar">${user.initials}</span>
-            <div><strong>${user.name}</strong><small>مدیر عملیات — دمو</small></div>
-            <a data-link data-logout href="/login" class="icon-button icon-button--dark" aria-label="خروج از محیط نمایشی">${icon("logout", { size: 17 })}</a>
+        <div class="phase-sidebar__bottom">
+          <a data-link href="/" class="phase-sidebar__public">${icon("external", { size: 17 })} بازگشت به سایت</a>
+          <div class="phase-user">
+            <span>${user.initials}</span>
+            <div><strong>${user.name}</strong><small>${user.role}</small></div>
+            <a data-link data-logout href="/login" aria-label="خروج از دمو">${icon("logout", { size: 17 })}</a>
           </div>
         </div>
       </aside>
 
-      <div class="app-main">
-        <header class="app-topbar">
-          <div class="app-topbar__title">
-            <button id="app-menu-toggle" class="icon-button app-menu-toggle" type="button" aria-label="باز کردن منوی کنسول" aria-expanded="false">${icon("menu")}</button>
-            <div><small>رهجو <b>/</b> ${routeLabel(activePath)}</small><strong>${title}</strong></div>
+      <div class="phase-app-main">
+        <div class="demo-strip"><span>${icon("shield", { size: 16 })} نسخهٔ نمایشی — تمام نام‌ها، داده‌ها، پرداخت‌ها و عملیات این محیط ساختگی هستند.</span></div>
+        <header class="phase-topbar">
+          <div class="phase-topbar__title">
+            <button id="app-menu-toggle" class="icon-button app-menu-toggle" type="button" aria-label="باز کردن منوی محیط عملیاتی" aria-expanded="false">${icon("menu")}</button>
+            <div><small>محیط عملیاتی / ${routeLabel(activePath)}</small><strong>${title}</strong></div>
           </div>
-          <div class="app-topbar__actions">
-            <span class="environment-badge"><i></i>دمو / داده مصنوعی</span>
-            <button id="global-search" class="icon-button" type="button" aria-label="جست‌وجوی سریع">${icon("search")}</button>
-            <a data-link class="button button--primary app-topbar__request" href="/cases/new">ورود پرونده جدید ${icon("arrow", { size: 15 })}</a>
+          <div class="phase-topbar__actions">
+            <button id="global-search" class="phase-search" type="button">${icon("search", { size: 17 })}<span>جست‌وجوی مشتری، درخواست، سند…</span><kbd>/</kbd></button>
+            <a data-link class="button button--primary" href="/request-service">درخواست جدید ${icon("arrow", { size: 15 })}</a>
           </div>
         </header>
-        <div class="app-context-strip">
-          <span>${icon("shield", { size: 15 })} محیط دمو؛ هیچ اتصال یا سرویس واقعی ادعا نمی‌شود</span>
-          <a data-link href="/governance">مشاهده ممیزی</a>
-        </div>
-        ${presenterMarkup(activePath)}
-        <main id="main-content" class="app-content">${content}</main>
+        <main id="main-content" class="phase-app-content">${content}</main>
       </div>
     </div>`;
 }
