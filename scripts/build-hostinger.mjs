@@ -82,7 +82,7 @@ const health = {
 await writeFile(join(output, 'health.json'), JSON.stringify(health, null, 2));
 
 if (mode === 'production' && siteOrigin) {
-  const routes = ['/', '/platform', '/data', '/map', '/trust', '/login'];
+  const routes = ['/', '/product', '/services', '/use-cases', '/how-it-works', '/pilot', '/trust', '/about', '/contact', '/privacy', '/terms'];
   const urls = routes.map((route) => `  <url><loc>${siteOrigin}${route}</loc></url>`).join('\n');
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
   await writeFile(join(output, 'sitemap.xml'), sitemap);

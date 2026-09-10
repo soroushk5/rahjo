@@ -34,4 +34,6 @@ Enable Hostinger automatic deployment for pushes to `hostinger-production` when 
 
 ## Acceptance
 
-Verify `/health.json` reports `status: ok`, `deploymentMode: production`, and the intended `main` source commit. Then test direct refreshes for `/`, `/platform`, `/atlas`, `/trust`, `/login`, `/dashboard`, `/request`, and `/map`, plus HTTPS, assets, console, and network requests.
+Verify `/health.json` reports `status: ok`, `deploymentMode: production`, and the intended `main` source commit. Then test direct refreshes for the public routes `/`, `/product`, `/services`, `/use-cases`, `/how-it-works`, `/pilot`, `/trust`, `/about`, and `/contact`; the entry routes `/login`, `/request-service`, and `/track-request`; and the protected product routes `/dashboard`, `/customers/detail`, and `/requests/detail`. Also verify HTTPS, assets, console output, mobile RTL, and network requests.
+
+This release is an interactive phase-one product demonstration. Production hosting does not turn browser-local authentication, synthetic payments, local documents, or demo operations into real backend capabilities.

@@ -49,6 +49,22 @@ if (mode === 'preview') {
   if (!index.includes(`<link rel="canonical" href="${siteOrigin}/" />`)) throw new Error('Production canonical URL is missing');
   if (!robots.includes(`Sitemap: ${siteOrigin}/sitemap.xml`)) throw new Error('Production sitemap URL is missing from robots.txt');
   await access(join(output, 'sitemap.xml'));
+
+  const sitemap = await readFile(join(output, 'sitemap.xml'), 'utf8');
+  const publicRoutes = ['/', '/product', '/services', '/use-cases', '/how-it-works', '/pilot', '/trust', '/about', '/contact', '/privacy', '/terms'];
+  const retiredRoutes = ['/platform', '/data', '/map', '/atlas', '/request'];
+
+  for (const route of publicRoutes) {
+    if (!sitemap.includes(`<loc>${siteOrigin}${route}</loc>`)) {
+      throw new Error(`Production sitemap is missing ${route}`);
+    }
+  }
+
+  for (const route of retiredRoutes) {
+    if (sitemap.includes(`<loc>${siteOrigin}${route}</loc>`)) {
+      throw new Error(`Production sitemap still exposes retired route ${route}`);
+    }
+  }
 }
 
 console.log(`Hostinger ${mode} smoke test passed (${required.length} required files).`);
