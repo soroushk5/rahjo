@@ -31,6 +31,9 @@ const index = await readFile(join(output, 'index.html'), 'utf8');
 const htaccess = await readFile(join(output, '.htaccess'), 'utf8');
 const robots = await readFile(join(output, 'robots.txt'), 'utf8');
 const health = JSON.parse(await readFile(join(output, 'health.json'), 'utf8'));
+const runtimeConfigMatch = index.match(/<script id="rahjo-runtime-config" type="application\/json">([\s\S]*?)<\/script>/);
+if (!runtimeConfigMatch) throw new Error('Runtime configuration is missing from deployment HTML');
+const runtimeConfig = JSON.parse(runtimeConfigMatch[1]);
 const assetBase = health.assetBase;
 const siteBasePath = health.siteBasePath || '';
 
@@ -73,12 +76,26 @@ if (!index.includes(`href="${assetBase}/styles/tokens.css"`)) throw new Error('H
 if (!index.includes(`src="${assetBase}/src/app/basePath.js"`)) throw new Error('Base-path bootstrap must use a release-versioned URL');
 if (!index.includes(`src="${assetBase}/src/app/bootstrap.js"`)) throw new Error('Hostinger scripts must use release-versioned URLs');
 if (index.includes('src="/src/app/bootstrap.js"')) throw new Error('Unversioned production bootstrap URL is unsafe with immutable caching');
-if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(index)) throw new Error('Inline scripts are incompatible with the production CSP');
+if (/<script(?![^>]*\bsrc=)(?![^>]*\btype=["']application\/json["'])[^>]*>/i.test(index)) {
+  throw new Error('Executable inline scripts are incompatible with the production CSP');
+}
 if (!htaccess.includes('RewriteRule . /index.html [L]')) throw new Error('SPA fallback is missing');
 if (!htaccess.includes('max-age=31536000, immutable')) throw new Error('Immutable asset caching policy is missing');
 if (!htaccess.includes('Content-Security-Policy')) throw new Error('Production CSP header is missing');
 if (!htaccess.includes("script-src 'self'")) throw new Error('Production CSP must restrict scripts to same-origin assets');
 if (health.deploymentMode !== mode) throw new Error(`Health metadata does not report ${mode} mode`);
+if (!['demo', 'server'].includes(runtimeConfig.mode)) throw new Error('Deployment runtime mode must be demo or server');
+if (health.runtimeMode !== runtimeConfig.mode) throw new Error('Health and HTML runtime modes differ');
+if (health.apiBase !== runtimeConfig.apiBase) throw new Error('Health and HTML API bases differ');
+if (health.buildSha !== runtimeConfig.buildSha || health.commit !== runtimeConfig.buildSha) {
+  throw new Error('Health and HTML build SHAs differ');
+}
+if (runtimeConfig.mode === 'demo' && runtimeConfig.apiBase !== '') throw new Error('Demo deployment cannot expose a server API base');
+if (runtimeConfig.mode === 'server') {
+  const apiUrl = new URL(runtimeConfig.apiBase);
+  if (apiUrl.username || apiUrl.password || apiUrl.search || apiUrl.hash) throw new Error('Server API base contains unsafe URL fields');
+  if (mode === 'production' && apiUrl.protocol !== 'https:') throw new Error('Production server API base must use HTTPS');
+}
 
 if (mode === 'preview') {
   if (!index.includes('noindex,nofollow')) throw new Error('Preview deployment must remain noindex');

@@ -1,0 +1,40 @@
+import { loadConfig, loadWorkspaceTokenMap } from "./config.js";
+import { Database } from "./database.js";
+import { RelaticleClient } from "./relaticleClient.js";
+import { RahjoRepository } from "./repository.js";
+import { createRahjoServer } from "./app.js";
+
+const config = loadConfig();
+const workspaceTokens = await loadWorkspaceTokenMap(config.relaticleTokenFile);
+const database = new Database(config.databaseUrl);
+const relaticle = new RelaticleClient({
+  baseUrl: config.relaticleBaseUrl,
+  mcpUrl: config.relaticleMcpUrl,
+  workspaceTokens,
+  timeoutMs: config.requestTimeoutMs
+});
+const repository = new RahjoRepository({ database, relaticle });
+
+await database.ready();
+for (const [workspaceId, mapping] of workspaceTokens) {
+  await database.verifyWorkspaceBinding(workspaceId, mapping.expectedTeamId);
+  await relaticle.verifyAuthentication(workspaceId);
+  await relaticle.verifyTeamIdentity(workspaceId);
+}
+
+const server = createRahjoServer({ config, database, repository, relaticle, workspaceTokens });
+server.listen(config.port, "0.0.0.0", () => {
+  console.log(JSON.stringify({ event: "server.started", port: config.port, dataMode: "server", llmEnabled: false }));
+});
+
+async function shutdown(signal) {
+  console.log(JSON.stringify({ event: "server.stopping", signal }));
+  server.close(async () => {
+    await database.close();
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

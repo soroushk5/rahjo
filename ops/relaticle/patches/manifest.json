@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "upstreamRelease": "v3.5.7",
+  "patches": [],
+  "sourceCopies": [],
+  "note": "Relaticle runs as an unmodified separate service. Any non-empty patch or source-copy entry requires a superseding licensing decision."
+}

@@ -28,6 +28,7 @@ jobs:
         env:
           DEPLOY_MODE: preview
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          RAHJO_RUNTIME_MODE: demo
         run: node scripts/build-hostinger.mjs
       - name: Publish generated branch without rewriting history
         env:

@@ -1,5 +1,6 @@
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { injectRuntimeMetadata, runtimeHealthFields } from './runtime-metadata.mjs';
 
 const root = resolve(process.cwd());
 const output = join(root, 'dist-hostinger');
@@ -13,6 +14,33 @@ const releaseBase = `/releases/${assetVersion}`;
 const assetBase = `${siteBasePath}${releaseBase}`;
 const releaseRoot = join(output, 'releases', assetVersion);
 const generatedAt = new Date().toISOString();
+const runtimeMode = process.env.RAHJO_RUNTIME_MODE || (mode === 'preview' ? 'demo' : '');
+const rawApiBase = (process.env.RAHJO_API_BASE || '').trim();
+
+if (!['demo', 'server'].includes(runtimeMode)) {
+  throw new Error('RAHJO_RUNTIME_MODE must be explicitly set to demo or server for production builds');
+}
+
+if (runtimeMode === 'demo' && rawApiBase) {
+  throw new Error('RAHJO_API_BASE must be empty in demo mode');
+}
+
+let apiBase = '';
+if (runtimeMode === 'server') {
+  if (!rawApiBase) throw new Error('RAHJO_API_BASE is required in server mode');
+  const apiUrl = new URL(rawApiBase);
+  if (apiUrl.username || apiUrl.password || apiUrl.search || apiUrl.hash) {
+    throw new Error('RAHJO_API_BASE cannot contain credentials, a query, or a fragment');
+  }
+  const localHttp = apiUrl.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(apiUrl.hostname);
+  if (apiUrl.protocol !== 'https:' && !localHttp) {
+    throw new Error('RAHJO_API_BASE must use HTTPS; HTTP is allowed only for localhost');
+  }
+  if (mode === 'production' && apiUrl.protocol !== 'https:') {
+    throw new Error('Production server mode requires an HTTPS RAHJO_API_BASE');
+  }
+  apiBase = apiUrl.toString().replace(/\/$/, '');
+}
 
 if (siteBasePath.includes('..') || /[?#]/.test(siteBasePath)) {
   throw new Error('SITE_BASE_PATH must be a safe URL path');
@@ -48,11 +76,12 @@ for (const entry of ['assets', 'src', 'styles']) {
 }
 
 let index = await readFile(join(root, 'index.html'), 'utf8');
+const runtimeConfig = { mode: runtimeMode, apiBase, buildSha: commitSha };
 const robotsMeta = mode === 'preview'
   ? '<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />'
   : '<meta name="robots" content="index,follow,max-image-preview:large" />';
 
-index = index
+index = injectRuntimeMetadata(index, runtimeConfig)
   .replace(/<meta name="robots"[^>]*>\s*/g, '')
   .replace('<meta name="theme-color" content="#0b1d33" />', `<meta name="theme-color" content="#0b1d33" />\n    ${robotsMeta}`)
   .replace(/<script id="base-path-bootstrap">[\s\S]*?<\/script>/, '<script src="src/app/basePath.js"></script>')
@@ -99,6 +128,7 @@ const health = {
   status: 'ok',
   application: 'rahjo-web-platform',
   deploymentMode: mode,
+  ...runtimeHealthFields(runtimeConfig),
   commit: commitSha,
   assetVersion,
   assetBase,
