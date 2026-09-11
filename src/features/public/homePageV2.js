@@ -7,7 +7,8 @@ const operatingFlow = Object.freeze([
   ["پرونده", "Opportunity یا Case با مالک و اقدام بعدی", "requests"],
   ["خدمت", "شرایط، مدارک و مسیر اجرا روشن می‌شود", "settings"],
   ["تأیید", "تصمیم حساس پشت گیت انسانی می‌ماند", "shield"],
-  ["اقدام", "اجرای کنترل‌شده با وضعیت و رسید", "workflow"],
+  ["اقدام", "اجرای کنترل‌شده با وضعیت صریح", "workflow"],
+  ["رسید", "Receipt شواهد اجرای واقعی را ثبت می‌کند", "document"],
   ["نتیجه", "Outcome به سابقهٔ مشتری برمی‌گردد", "check"]
 ]);
 
@@ -91,7 +92,7 @@ export function renderHomePageV2() {
             <h1>مشتری را از اولین درخواست تا نتیجه، در یک مسیر نگه دارید.</h1>
             <p>رهجو فروش، پروندهٔ خدمت، تأیید انسانی، اجرا و نتیجه را روی همان سابقهٔ مشتری به هم وصل می‌کند؛ بدون اینکه کار اصلی به AI وابسته باشد.</p>
             <div class="button-row rv-hero__actions">
-              <a data-link class="button button--primary button--large" href="/contact">شروع بررسی فرایند ${icon("arrow")}</a>
+              <a data-link class="button button--primary button--large" href="/contact">بررسی فرایند کسب‌وکار من ${icon("arrow")}</a>
               <a data-link class="button button--outline button--large" href="/how-it-works">دیدن مسیر کار</a>
             </div>
             <div class="rv-hero__facts" aria-label="ویژگی‌های هستهٔ رهجو">
