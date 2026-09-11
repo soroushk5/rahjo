@@ -83,7 +83,7 @@ const robotsMeta = mode === 'preview'
 
 index = injectRuntimeMetadata(index, runtimeConfig)
   .replace(/<meta name="robots"[^>]*>\s*/g, '')
-  .replace('<meta name="theme-color" content="#0b1d33" />', `<meta name="theme-color" content="#0b1d33" />\n    ${robotsMeta}`)
+  .replace(/(<meta name="theme-color"[^>]*>)/, `$1\n    ${robotsMeta}`)
   .replace(/<script id="base-path-bootstrap">[\s\S]*?<\/script>/, '<script src="src/app/basePath.js"></script>')
   .replace(/(<link rel="icon" href="\/?assets\/favicon\.svg" type="image\/svg\+xml" \/>)/, '$1\n    <link rel="manifest" href="assets/site.webmanifest" />')
   .replace(/href="\/?(assets|styles)\//g, `href="${assetBase}/$1/`)
@@ -121,7 +121,7 @@ const manifest = {
   scope: `${siteBasePath || ''}/`,
   display: 'standalone',
   background_color: '#f5f8fb',
-  theme_color: '#0b1d33',
+  theme_color: '#0b1d31',
   icons: [{ src: `${assetBase}/assets/favicon.svg`, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
 };
 const manifestJson = JSON.stringify(manifest, null, 2);
@@ -142,7 +142,7 @@ const health = {
 await writeFile(join(output, 'health.json'), JSON.stringify(health, null, 2));
 
 if (mode === 'production' && siteOrigin) {
-  const routes = ['/', '/product', '/services', '/use-cases', '/how-it-works', '/pilot', '/trust', '/about', '/contact', '/privacy', '/terms'];
+  const routes = ['/', '/product', '/contact', '/privacy', '/terms'];
   const urls = routes.map((route) => `  <url><loc>${siteOrigin}${route}</loc></url>`).join('\n');
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
   await writeFile(join(output, 'sitemap.xml'), sitemap);
