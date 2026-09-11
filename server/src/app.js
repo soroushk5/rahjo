@@ -241,6 +241,18 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
         json(response, status, runtime, requestId, corsHeaders);
         return;
       }
+      if (request.method === "POST" && url.pathname === "/api/v1/session/csrf") {
+        if (context.auth_method !== "cookie") throw problems.forbidden();
+        const csrfToken = opaqueToken("rahjo_csrf");
+        const rotated = await database.rotateSessionCsrf(
+          tokenDigest(context.session_token, config.tokenPepper),
+          tokenDigest(csrfToken, config.tokenPepper)
+        );
+        if (!rotated) throw problems.unauthorized();
+        status = 200;
+        json(response, status, { dataMode: "server", csrfToken }, requestId, corsHeaders);
+        return;
+      }
       if (request.method === "POST" && url.pathname === "/api/v1/session/logout") {
         requireCsrf(request, context);
         if (context.auth_method === "cookie") await database.revokeSession(tokenDigest(context.session_token, config.tokenPepper));

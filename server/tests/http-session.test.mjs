@@ -25,6 +25,7 @@ async function fixture({ appEnv = "development" } = {}) {
     ready: async () => ({ database: "test", role: "rahjo_app" }),
     lookupPassword: async (slug, email) => slug === "alpha" && email === "owner@example.test" ? { membership_id: context.membership_id, password_salt: credential.salt, password_hash: credential.hash } : null,
     createSession: async (_membership, tokenHash, csrfHash) => { storedSession = { tokenHash, csrfHash }; return "session-id"; },
+    rotateSessionCsrf: async (_tokenHash, csrfHash) => { storedSession.csrfHash = csrfHash; return true; },
     authenticateSession: async (tokenHash) => storedSession?.tokenHash === tokenHash ? { ...context, csrf_hash: storedSession.csrfHash } : null,
     authenticate: async () => null,
     revokeSession: async () => true
@@ -76,6 +77,21 @@ test("browser login issues an HttpOnly Rahjo session and runtime uses it with cr
   assert.equal(runtime.status, 200);
   assert.equal(runtime.headers.get("access-control-allow-credentials"), "true");
   assert.deepEqual((await runtime.json()).projection.accounts, []);
+});
+
+test("an authenticated browser session can rotate a non-persistent CSRF token after reload", async (t) => {
+  const { server, base } = await fixture();
+  t.after(() => server.close());
+  const login = await fetch(`${base}/api/v1/session`, {
+    method: "POST", headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "a correct long password" })
+  });
+  const cookie = login.headers.get("set-cookie").split(";")[0];
+  const response = await fetch(`${base}/api/v1/session/csrf`, { method: "POST", headers: { Origin: "https://rahjo.example.test", Cookie: cookie } });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.dataMode, "server");
+  assert.match(body.csrfToken, /^rahjo_csrf_/);
 });
 
 test("production browser session uses the locked __Host cookie boundary", async (t) => {

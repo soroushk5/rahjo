@@ -69,10 +69,10 @@ test("server facade maps authorization, isolation, conflict, and validation fail
 
 test("server facade validates and synchronously caches a workspace projection", async () => {
   const facade = createRuntimeDataFacade();
-  let requestedUrl = "";
+  const requestedUrls = [];
   const state = await facade.initialize(serverConfig, {
     fetchImpl: async (url) => {
-      requestedUrl = String(url);
+      requestedUrls.push(String(url));
       return new Response(JSON.stringify({
         dataMode: "server",
         version: 1,
@@ -81,7 +81,8 @@ test("server facade validates and synchronously caches a workspace projection", 
       }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
   });
-  assert.equal(requestedUrl, serverRuntimeUrl(serverConfig.apiBase));
+  assert.equal(requestedUrls[0], serverRuntimeUrl(serverConfig.apiBase));
+  assert.equal(requestedUrls[1], `${serverConfig.apiBase}/api/v1/session/csrf`);
   assert.equal(state.state, RUNTIME_DATA_STATES.READY);
   assert.equal(facade.read().workspace.id, "workspace-a");
   assert.equal(facade.readProjection().cases[0].id, "case-1");
@@ -144,4 +145,24 @@ test("failed server login remains explicit and has no projection", async () => {
   assert.equal(state.httpStatus, 401);
   assert.equal(state.projection, null);
   assert.equal(facade.readProjection(), null);
+});
+
+test("server commands use the rotated CSRF token, keep workspace scope server-owned, and refresh projection", async () => {
+  const facade = createRuntimeDataFacade();
+  const calls = [];
+  const fetchImpl = async (url, options = {}) => {
+    calls.push({ url: String(url), options });
+    if (String(url).endsWith("/runtime")) return new Response(JSON.stringify({
+      dataMode: "server", version: 1, workspace: { id: "workspace-a", name: "رهجو" }, projection: { cases: [] }
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+    if (String(url).endsWith("/csrf")) return new Response(JSON.stringify({ dataMode: "server", csrfToken: "rahjo_csrf_rotated_abcdefghijklmnopqrstuvwxyz" }), { status: 200 });
+    return new Response(JSON.stringify({ dataMode: "server", data: { status: "approved" } }), { status: 200 });
+  };
+  await facade.initialize(serverConfig, { fetchImpl });
+  await facade.command("/api/v1/approvals/APR-1/decision", { body: { decision: "approved" }, fetchImpl });
+  const command = calls.find((item) => item.url.endsWith("/decision"));
+  assert.equal(command.options.credentials, "include");
+  assert.equal(command.options.headers["X-CSRF-Token"], "rahjo_csrf_rotated_abcdefghijklmnopqrstuvwxyz");
+  assert.equal("workspaceId" in JSON.parse(command.options.body), false);
+  assert.equal(calls.filter((item) => item.url.endsWith("/runtime")).length, 2);
 });
