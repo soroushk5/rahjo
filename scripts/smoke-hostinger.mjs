@@ -113,7 +113,8 @@ if (mode === 'preview') {
   await access(join(output, 'sitemap.xml'));
 
   const sitemap = await readFile(join(output, 'sitemap.xml'), 'utf8');
-  const publicRoutes = ['/', '/product', '/services', '/use-cases', '/how-it-works', '/pilot', '/trust', '/about', '/contact', '/privacy', '/terms'];
+  const publicRoutes = ['/', '/product', '/contact', '/privacy', '/terms'];
+  const nonCanonicalRoutes = ['/services', '/use-cases', '/how-it-works', '/pilot', '/trust', '/about', '/track-request'];
   const retiredRoutes = ['/platform', '/data', '/map', '/atlas', '/request'];
 
   for (const route of publicRoutes) {
@@ -122,9 +123,9 @@ if (mode === 'preview') {
     }
   }
 
-  for (const route of retiredRoutes) {
+  for (const route of [...nonCanonicalRoutes, ...retiredRoutes]) {
     if (sitemap.includes(`<loc>${siteOrigin}${route}</loc>`)) {
-      throw new Error(`Production sitemap still exposes retired route ${route}`);
+      throw new Error(`Production sitemap exposes non-canonical route ${route}`);
     }
   }
 }
