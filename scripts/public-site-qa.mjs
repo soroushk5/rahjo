@@ -16,22 +16,35 @@ const routes = [
     h1: 'CRM را با پیگیری کارهای واقعی تیم در یک مسیر نگه دارید',
     markers: ['.sw-journey', '.sw-pillar-grid', '.sw-product-proof']
   },
-  {
-    path: '/contact',
-    slug: 'contact',
-    h1: 'از یک مسئلهٔ واقعی شروع کنید',
-    markers: ['.sw-start-grid__inner']
-  },
   { path: '/login', slug: 'login', h1: '', markers: [] }
 ];
 const viewports = [
   { name: 'desktop', width: 1365, height: 900 },
   { name: 'mobile', width: 390, height: 844 }
 ];
+const allowedPublicLinks = new Set(['/', '/product', '/login', '/privacy', '/terms']);
 
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const failures = [];
+
+async function waitForPath(page, expected, label) {
+  try {
+    await page.waitForFunction((path) => window.location.pathname === path, expected, { timeout: 2500 });
+  } catch {
+    failures.push(`${label}: expected ${expected}, got ${new URL(page.url()).pathname}`);
+  }
+}
+
+async function clickTo(page, selector, expected, label) {
+  const target = page.locator(selector).first();
+  if (!(await target.count())) {
+    failures.push(`${label}: missing ${selector}`);
+    return;
+  }
+  await target.click();
+  await waitForPath(page, expected, label);
+}
 
 for (const viewport of viewports) {
   const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, locale: 'fa-IR' });
@@ -68,7 +81,11 @@ for (const viewport of viewports) {
       headerActionCount: document.querySelectorAll('.mp-header__actions a').length,
       homeBrandLink: document.querySelector('.mp-header .mp-brand')?.getAttribute('href') || '',
       legacyDarkFlow: Boolean(document.querySelector('.mp-how')),
-      oversizedScreens: document.querySelectorAll('.sw-screen, .sw-showcase').length
+      oversizedScreens: document.querySelectorAll('.sw-screen, .sw-showcase').length,
+      internalLinks: [...document.querySelectorAll('a[href]')]
+        .map((anchor) => new URL(anchor.href, window.location.origin))
+        .filter((url) => url.origin === window.location.origin)
+        .map((url) => url.pathname)
     }));
 
     if (metrics.scrollWidth > metrics.clientWidth + 2) failures.push(`${viewport.name} ${route.path}: horizontal overflow ${metrics.scrollWidth}/${metrics.clientWidth}`);
@@ -77,8 +94,12 @@ for (const viewport of viewports) {
     if (route.path !== '/login') {
       if (metrics.headerNavPresent || metrics.headerNavCount !== 0) failures.push(`${viewport.name} ${route.path}: public header tabs returned`);
       if (metrics.mobileTogglePresent) failures.push(`${viewport.name} ${route.path}: obsolete mobile nav toggle returned`);
-      if (metrics.headerActionCount !== 2) failures.push(`${viewport.name} ${route.path}: expected two header actions, got ${metrics.headerActionCount}`);
+      if (metrics.headerActionCount !== 1) failures.push(`${viewport.name} ${route.path}: expected one header action, got ${metrics.headerActionCount}`);
       if (metrics.homeBrandLink !== '/') failures.push(`${viewport.name} ${route.path}: brand does not link home`);
+      for (const path of metrics.internalLinks) {
+        if (path === '/contact') failures.push(`${viewport.name} ${route.path}: dead-end /contact link returned`);
+        if (!allowedPublicLinks.has(path)) failures.push(`${viewport.name} ${route.path}: unexpected public link ${path}`);
+      }
     }
 
     if (route.path === '/' && metrics.legacyDarkFlow) failures.push(`${viewport.name} /: legacy dark flow section returned`);
@@ -94,6 +115,36 @@ for (const viewport of viewports) {
     await page.screenshot({ path: `${output}/${route.slug}-${viewport.name}.png`, fullPage: true });
   }
 
+  // Behavior audit: click the real controls and verify the resulting SPA route.
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="header-access"]', '/login', `${viewport.name} header access`);
+
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="home-product"]', '/product', `${viewport.name} home product CTA`);
+
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="home-login"]', '/login', `${viewport.name} home login CTA`);
+
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="home-final-login"]', '/login', `${viewport.name} home final login CTA`);
+
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="home-final-product"]', '/product', `${viewport.name} home final product CTA`);
+
+  await page.goto(`${baseUrl}/product`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="product-login"]', '/login', `${viewport.name} product login CTA`);
+
+  await page.goto(`${baseUrl}/product`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="product-home"]', '/', `${viewport.name} product home CTA`);
+
+  await page.goto(`${baseUrl}/product`, { waitUntil: 'networkidle' });
+  await clickTo(page, '.mp-header .mp-brand', '/', `${viewport.name} brand home link`);
+
+  // The old public Start route must fail closed to the real login until a real
+  // public acquisition/intake flow is implemented.
+  await page.goto(`${baseUrl}/contact`, { waitUntil: 'networkidle' });
+  await waitForPath(page, '/login', `${viewport.name} legacy contact redirect`);
+
   await context.close();
 }
 
@@ -105,4 +156,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Navless compact public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);
+console.log(`Public UX audit passed: ${routes.length} canonical surfaces, ${viewports.length} viewports, and click-through CTA routing.`);
