@@ -6,6 +6,7 @@ import { mountServerOperationalRoute, renderServerOperationalRoute } from "../fe
 
 const PUBLIC_SERVER_PATHS = new Set(["/", "/product", "/services", "/use-cases", "/how-it-works", "/pilot", "/trust", "/about", "/contact", "/privacy", "/terms", "/track-request"]);
 
+/** @param {{render:() => string}} route */
 function renderServerPublicRoute(route) {
   return route.render()
     .replaceAll("دیدن دموی رهجو", "ورود به رهجو")
