@@ -1,7 +1,5 @@
 // @ts-nocheck
 import { brandLogo } from "../components/brandLogo.js";
-import { icon } from "../components/icons.js";
-import { publicNavigation } from "./navigation.js";
 import { isAuthenticated } from "../services/authStore.js";
 import { RUNTIME_DATA_STATES, runtimeData } from "../services/runtimeDataFacade.js";
 
@@ -17,13 +15,9 @@ export function siteShell({ content, activePath }) {
   return `
     <div class="page phase-site rv-site mp-site">
       <header class="phase-header rv-header mp-header">
-        <div class="container phase-header__inner rv-header__inner mp-header__inner">
+        <div class="container phase-header__inner rv-header__inner mp-header__inner mp-header__inner--minimal">
           <a data-link href="/" class="site-brand-link rv-brand mp-brand" aria-label="صفحهٔ اصلی رهجو">${brandLogo()}</a>
-          <nav id="site-nav" class="phase-nav rv-nav mp-nav" aria-label="ناوبری اصلی">
-            ${publicNavigation.map((item) => link(item.path, item.label)).join("")}
-          </nav>
           <div class="phase-header__actions rv-header__actions mp-header__actions">
-            <button id="mobile-nav-toggle" class="icon-button mobile-nav-toggle" type="button" aria-label="باز کردن منو" aria-controls="site-nav" aria-expanded="false">${icon("menu")}</button>
             <a data-link class="mp-login" href="${workspaceHref}">${workspaceLabel}</a>
             ${workspaceReady
               ? `<a data-link class="button button--primary mp-header__primary" href="/dashboard">باز کردن رهجو</a>`
