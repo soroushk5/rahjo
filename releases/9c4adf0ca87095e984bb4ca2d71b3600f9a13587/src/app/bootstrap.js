@@ -5,7 +5,6 @@ import {
   mountPublicPage,
   renderAboutPage,
   renderContactPage,
-  renderHomePage,
   renderHowItWorksPage,
   renderNotFoundPage,
   renderPilotPage,
@@ -17,6 +16,7 @@ import {
   renderTrustPage,
   renderUseCasesPage
 } from "../features/public/publicPages.js";
+import { renderHomePageV2 } from "../features/public/homePageV2.js";
 import { mountServiceRequestPage, renderServiceRequestPage } from "../features/requests/serviceRequestPage.js";
 import { mountCorePages, renderCustomersPage, renderDashboardPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../features/operations/corePages.js";
 import { mountDetailPages, renderCustomerDetailPage, renderRequestDetailPage } from "../features/operations/detailPages.js";
@@ -67,7 +67,7 @@ const supportMount = (path) => mountWithSession(mountSupportPages, path);
 router = new Router({
   root,
   routes: [
-    { path: "/", title: "مدیریت یکپارچهٔ مشتری تا نتیجه", description: "رهجو مشتری، فروش، درخواست خدمت، پرداخت، عملیات و نتیجه را در یک جریان واحد قرار می‌دهد.", render: renderHomePage, mount: publicMount },
+    { path: "/", title: "از اولین درخواست تا نتیجه", description: "رهجو ورودی مشتری، حافظهٔ تجاری، پروندهٔ خدمت، تأیید انسانی، اجرا و نتیجه را در یک مسیر عملیاتی قابل پیگیری نگه می‌دارد.", render: renderHomePageV2, mount: publicMount },
     { path: "/product", title: "محصول", description: "سامانهٔ یکپارچهٔ مدیریت مشتری، فروش و ارائهٔ خدمات رهجو.", render: renderProductPage, mount: publicMount },
     { path: "/services", title: "خدمات", description: "کاتالوگ خدمات، مدارک، قیمت، زمان و شروع درخواست در رهجو.", render: renderServicesPage, mount: publicMount },
     { path: "/use-cases", title: "موارد استفاده", description: "سناریوهای استفاده از رهجو برای کسب‌وکارهای خدماتی.", render: renderUseCasesPage, mount: publicMount },
@@ -81,10 +81,10 @@ router = new Router({
     { path: "/track-request", title: "پیگیری درخواست", render: renderTrackRequestPage, mount: publicMount },
     { path: "/request-service", title: "ثبت درخواست خدمت", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/cases/new", title: "ورود پروندهٔ جدید", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
-    { path: "/login", title: "ورود مهمان به دمو", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
+    { path: "/login", title: "ورود به رهجو", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
     { path: "/dashboard", title: "داشبورد", render: renderWithSession(renderDashboardPage, "/dashboard"), mount: coreMount("/dashboard") },
     { path: "/customers", title: "مشتریان", render: renderWithSession(renderCustomersPage, "/customers"), mount: coreMount("/customers") },
-    { path: "/customers/detail", title: "پروندهٔ مشتری", render: renderWithSession(renderCustomerDetailPage, "/customers/detail"), mount: detailMount("/customers/detail") },
+    { path: "/customers/detail", title: "پرونده مشتری", render: renderWithSession(renderCustomerDetailPage, "/customers/detail"), mount: detailMount("/customers/detail") },
     { path: "/sales", title: "فروش", render: renderWithSession(renderSalesPage, "/sales"), mount: coreMount("/sales") },
     { path: "/services-admin", title: "خدمات", render: renderWithSession(renderServicesAdminPage, "/services-admin"), mount: coreMount("/services-admin") },
     { path: "/requests", title: "درخواست‌ها", render: renderWithSession(renderRequestsPage, "/requests"), mount: coreMount("/requests") },
