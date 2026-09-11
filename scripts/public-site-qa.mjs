@@ -23,6 +23,17 @@ const viewports = [
   { name: 'mobile', width: 390, height: 844 }
 ];
 const allowedPublicLinks = new Set(['/', '/product', '/login', '/privacy', '/terms']);
+const legacyRoutes = [
+  ['/contact', '/login'],
+  ['/pilot', '/login'],
+  ['/services', '/product'],
+  ['/use-cases', '/product'],
+  ['/how-it-works', '/'],
+  ['/trust', '/product'],
+  ['/about', '/'],
+  ['/map', '/'],
+  ['/data', '/product']
+];
 
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true });
@@ -115,7 +126,7 @@ for (const viewport of viewports) {
     await page.screenshot({ path: `${output}/${route.slug}-${viewport.name}.png`, fullPage: true });
   }
 
-  // Behavior audit: click the real controls and verify the resulting SPA route.
+  // Primary behavior audit: click the real controls and verify the resulting SPA route.
   await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
   await clickTo(page, '[data-cta="header-access"]', '/login', `${viewport.name} header access`);
 
@@ -140,10 +151,20 @@ for (const viewport of viewports) {
   await page.goto(`${baseUrl}/product`, { waitUntil: 'networkidle' });
   await clickTo(page, '.mp-header .mp-brand', '/', `${viewport.name} brand home link`);
 
-  // The old public Start route must fail closed to the real login until a real
-  // public acquisition/intake flow is implemented.
-  await page.goto(`${baseUrl}/contact`, { waitUntil: 'networkidle' });
-  await waitForPath(page, '/login', `${viewport.name} legacy contact redirect`);
+  // Footer links are part of the public contract too.
+  for (const [path, expected] of [['/product', '/product'], ['/login', '/login'], ['/privacy', '/privacy'], ['/terms', '/terms']]) {
+    await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+    await clickTo(page, `.mp-footer a[data-route-path="${path}"]`, expected, `${viewport.name} footer ${path}`);
+  }
+
+  // Retired marketing routes must consolidate onto the canonical public surfaces.
+  for (const [path, expected] of legacyRoutes) {
+    await page.goto(`${baseUrl}${path}`, { waitUntil: 'networkidle' });
+    await waitForPath(page, expected, `${viewport.name} legacy ${path}`);
+  }
+
+  await page.goto(`${baseUrl}/track-request`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="track-login"]', '/login', `${viewport.name} legacy tracking login`);
 
   await context.close();
 }
@@ -156,4 +177,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Public UX audit passed: ${routes.length} canonical surfaces, ${viewports.length} viewports, and click-through CTA routing.`);
+console.log(`Public UX audit passed: ${routes.length} canonical surfaces, ${viewports.length} viewports, CTA/footer clicks and legacy redirects.`);
