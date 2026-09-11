@@ -1,67 +1,42 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderHomePageV2 } from "../src/features/public/homePageV2.js";
 import {
-  renderAlignedHowItWorksPage,
-  renderAlignedProductPage,
-  renderAlignedServicesPage,
-  renderAlignedUseCasesPage
-} from "../src/features/public/alignedPublicPages.js";
-import { renderAlignedTrustPage } from "../src/features/public/alignedEntryPages.js";
+  renderMinimalContactPage,
+  renderMinimalHomePage,
+  renderMinimalProductPage
+} from "../src/features/public/minimalPublicPages.js";
 import { publicNavigation, utilityDestinations } from "../src/app/navigation.js";
 
-const publicPages = [
-  renderHomePageV2,
-  renderAlignedProductPage,
-  renderAlignedServicesPage,
-  renderAlignedUseCasesPage,
-  renderAlignedHowItWorksPage,
-  renderAlignedTrustPage
-];
+const publicPages = [renderMinimalHomePage, renderMinimalProductPage, renderMinimalContactPage];
 
-test("W14 public surfaces share the rebaselined shell", () => {
+test("minimal public surfaces share one restrained shell", () => {
   for (const render of publicPages) {
     const html = render();
-    assert.match(html, /class="page phase-site rv-site"/);
-    assert.match(html, /class="phase-header rv-header"/);
-    assert.match(html, /class="phase-footer rv-footer"/);
+    assert.match(html, /class="page phase-site rv-site mp-site"/);
+    assert.match(html, /class="phase-header rv-header mp-header"/);
+    assert.match(html, /class="phase-footer rv-footer mp-footer"/);
   }
 });
 
-test("landing is product-led and exposes the operating spine", () => {
-  const html = renderHomePageV2();
-  assert.match(html, /مشتری را از اولین درخواست تا نتیجه/);
-  assert.match(html, /class="rv-product"/);
-  assert.match(html, /class="rv-spine"/);
-  assert.match(html, /Server-backed/);
-  assert.match(html, /Workspace-scoped/);
-  assert.match(html, /Human-gated/);
-  assert.match(html, /AI-optional/);
-  assert.doesNotMatch(html, /class="w14-eyebrow"/);
-  assert.doesNotMatch(html, /دیدن دموی رهجو/);
+test("landing is product-led without marketing clutter", () => {
+  const html = renderMinimalHomePage();
+  assert.match(html, /کار مشتری را از درخواست تا نتیجه/);
+  assert.match(html, /mp-product/);
+  assert.match(html, /mp-benefit-grid/);
+  assert.match(html, /mp-flow/);
+  assert.doesNotMatch(html, /Server-backed|Workspace-scoped|Human-gated|AI-optional/);
+  assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
-test("product family uses one canonical customer-to-outcome map", () => {
-  const product = renderAlignedProductPage();
-  const services = renderAlignedServicesPage();
-  const useCases = renderAlignedUseCasesPage();
-  const how = renderAlignedHowItWorksPage();
-
-  assert.match(product, /rv-layer-table/);
-  assert.match(services, /rv-contract-list/);
-  assert.match(useCases, /rv-scenario-list/);
-  assert.match(how, /rv-gate-list/);
-  for (const html of [product, services, useCases, how]) {
-    assert.match(html, /rv-journey/);
-    for (const stage of ["ورودی", "مشتری", "پرونده", "خدمت", "تأیید", "اقدام", "نتیجه"]) {
-      assert.match(html, new RegExp(stage));
-    }
-  }
-});
-
-test("public navigation no longer presents login as the product demo", () => {
-  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/services", "/use-cases", "/how-it-works"]);
+test("public information architecture has only three primary destinations", () => {
+  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/contact"]);
   const login = utilityDestinations.find((item) => item.path === "/login");
   assert.equal(login?.label, "ورود به رهجو");
   assert.doesNotMatch(login?.meta ?? "", /مهمان|دمو/);
+});
+
+test("product page stays focused on four core capabilities", () => {
+  const html = renderMinimalProductPage();
+  assert.match(html, /چهار بخش کافی است/);
+  for (const phrase of ["مشتری", "پرونده", "تصمیم و اجرا", "نتیجه"]) assert.match(html, new RegExp(phrase));
 });

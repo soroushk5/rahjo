@@ -25,7 +25,7 @@ test("server failure gates existing demo render and mount functions", async () =
   assert.match(html, /دادهٔ Golden Demo.*جایگزین نمایش داده نمی‌شود/);
 });
 
-test("server authentication state renders a distinct login without demo content", async () => {
+test("server authentication state renders a distinct login without demo content or intelligence positioning", async () => {
   const guarded = applyRuntimeBoundary({
     title: "ورود مهمان به دمو",
     render: () => "GOLDEN-DEMO-LOGIN",
@@ -40,6 +40,7 @@ test("server authentication state renders a distinct login without demo content"
   assert.match(html, /workspaceSlug/);
   assert.doesNotMatch(html, /GOLDEN-DEMO-LOGIN/);
   assert.doesNotMatch(html, /ورود مهمان/);
+  assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
 test("explicit demo mode delegates to the unchanged render and mount functions", async () => {
