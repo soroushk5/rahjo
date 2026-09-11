@@ -23,14 +23,16 @@ test("canonical public site is intentionally limited to three destinations", () 
   }
 });
 
-test("public home explains the software category and concrete jobs", () => {
+test("public home explains a broad CRM category without narrowing to one industry", () => {
   const html = renderMinimalHomePage();
-  assert.match(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی/);
-  assert.match(html, /مشتری، فروش و اجرای خدمت/);
-  for (const concreteArea of ["مشتریان", "فروش", "پرونده و عملیات", "اقدام بعدی من"]) {
-    assert.match(html, new RegExp(concreteArea));
+  assert.match(html, /CRM برای مدیریت مشتری، فروش و کارهای جاری/);
+  for (const phrase of ["فروش B2B", "شرکت‌های خدماتی", "بازرگانی", "کسب‌وکارهای پروژه‌ای", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
+    assert.match(html, new RegExp(phrase));
   }
-  assert.doesNotMatch(html, /پنج مرحله؛ از ورودی تا نتیجه|شروع بررسی/);
+  for (const area of ["حافظهٔ مشتری", "فروش و پیگیری", "پرونده و اجرا", "اقدام بعدی"]) {
+    assert.match(html, new RegExp(area));
+  }
+  assert.doesNotMatch(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی|شروع بررسی|sw-showcases/);
 });
 
 test("canonical public copy is concise and avoids intelligence positioning", () => {

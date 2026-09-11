@@ -2,21 +2,26 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { renderMinimalHomePage } from "../src/features/public/minimalPublicPages.js";
 
-test("software-first landing makes category and daily work concrete", () => {
+test("compact landing makes category, audience and flow concrete", () => {
   const html = renderMinimalHomePage();
-  assert.match(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی/);
-  for (const phrase of ["مشتری", "فروش", "پرونده", "کارهای امروز", "اقدام بعدی من"]) assert.match(html, new RegExp(phrase));
-  assert.match(html, /sw-screen/);
-  assert.match(html, /sw-benefit-strip/);
-  assert.match(html, /sw-showcases/);
-  assert.doesNotMatch(html, /mp-how|پنج مرحله؛ از ورودی تا نتیجه/);
+  assert.match(html, /CRM برای مدیریت مشتری، فروش و کارهای جاری/);
+  for (const phrase of ["فروش B2B", "بازرگانی", "کسب‌وکارهای پروژه‌ای", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
+    assert.match(html, new RegExp(phrase));
+  }
+  for (const phrase of ["مشتری", "فرصت", "پرونده", "نتیجه", "اقدام بعدی"]) {
+    assert.match(html, new RegExp(phrase));
+  }
+  assert.match(html, /sw-hero-card/);
+  assert.match(html, /sw-journey-section/);
+  assert.match(html, /sw-pillar-grid/);
+  assert.doesNotMatch(html, /sw-screen|sw-showcases|mp-how/);
 });
 
-test("software-first landing has product-oriented entry actions", () => {
+test("compact landing has product-oriented entry actions", () => {
   const html = renderMinimalHomePage();
   assert.match(html, /href="#product"/);
-  assert.match(html, /href="\/login"/);
-  assert.match(html, /دیدن محیط رهجو/);
+  assert.match(html, /href="\/contact"/);
+  assert.match(html, /محصول را ببینید/);
   assert.match(html, /شروع با رهجو/);
   assert.doesNotMatch(html, /شروع بررسی|دیدن دموی رهجو/);
 });

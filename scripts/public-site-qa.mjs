@@ -4,9 +4,24 @@ import { chromium } from 'playwright';
 const baseUrl = process.env.RAHJO_QA_ORIGIN || 'http://127.0.0.1:4173';
 const output = 'qa-artifacts/public-site';
 const routes = [
-  { path: '/', slug: 'home', h1: 'مشتری، فروش و اجرای خدمت را در یک سیستم پیگیری کنید', markers: ['.sw-screen', '.sw-showcases', '.sw-benefit-strip'] },
-  { path: '/product', slug: 'product', h1: 'CRM را از اجرای کار جدا نکنید', markers: ['.sw-product-grid', '.sw-screen'] },
-  { path: '/contact', slug: 'contact', h1: 'رهجو را با یک فرایند واقعی راه‌اندازی کنید', markers: ['.sw-start__grid', '.sw-screen'] },
+  {
+    path: '/',
+    slug: 'home',
+    h1: 'مشتری‌ها و فرصت‌ها را منظم جلو ببرید',
+    markers: ['.sw-hero-card', '.sw-journey-section', '.sw-pillar-grid']
+  },
+  {
+    path: '/product',
+    slug: 'product',
+    h1: 'CRM را با پیگیری کارهای واقعی تیم در یک مسیر نگه دارید',
+    markers: ['.sw-journey', '.sw-pillar-grid', '.sw-product-proof']
+  },
+  {
+    path: '/contact',
+    slug: 'contact',
+    h1: 'از یک مسئلهٔ واقعی شروع کنید',
+    markers: ['.sw-start-grid__inner']
+  },
   { path: '/login', slug: 'login', h1: '', markers: [] }
 ];
 const viewports = [
@@ -48,13 +63,15 @@ for (const viewport of viewports) {
       clientWidth: document.documentElement.clientWidth,
       text: document.body.innerText,
       canonicalNavCount: document.querySelectorAll('.mp-nav a').length,
-      legacyDarkFlow: Boolean(document.querySelector('.mp-how'))
+      legacyDarkFlow: Boolean(document.querySelector('.mp-how')),
+      oversizedScreens: document.querySelectorAll('.sw-screen, .sw-showcase').length
     }));
 
     if (metrics.scrollWidth > metrics.clientWidth + 2) failures.push(`${viewport.name} ${route.path}: horizontal overflow ${metrics.scrollWidth}/${metrics.clientWidth}`);
     if (/\bAI\b|هوش[‌\s-]*مصنوعی/i.test(metrics.text)) failures.push(`${viewport.name} ${route.path}: public copy mentions excluded intelligence framing`);
     if (route.path !== '/login' && metrics.canonicalNavCount !== 3) failures.push(`${viewport.name} ${route.path}: public nav count ${metrics.canonicalNavCount}`);
     if (route.path === '/' && metrics.legacyDarkFlow) failures.push(`${viewport.name} /: legacy dark flow section returned`);
+    if (route.path === '/' && metrics.oversizedScreens !== 0) failures.push(`${viewport.name} /: oversized screenshot-era layout returned`);
 
     for (const marker of route.markers) {
       if (!(await page.locator(marker).first().count())) failures.push(`${viewport.name} ${route.path}: missing ${marker}`);
@@ -89,4 +106,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Software-first public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);
+console.log(`Compact public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);
