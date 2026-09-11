@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderHomePage, renderProductPage, renderServicesPage, renderUseCasesPage } from "../src/features/public/publicPages.js";
+import { renderProductPage, renderServicesPage, renderUseCasesPage } from "../src/features/public/publicPages.js";
+import { renderMinimalHomePage } from "../src/features/public/minimalPublicPages.js";
 import { renderDashboardPage, renderCustomersPage, renderRequestsPage, renderSalesPage } from "../src/features/operations/corePages.js";
 import { renderCustomerDetailPage, renderRequestDetailPage } from "../src/features/operations/detailPages.js";
 import { renderFinancePage, renderOperationsPage, renderReportsPage } from "../src/features/operations/supportPages.js";
@@ -8,7 +9,7 @@ import { renderServiceRequestPage } from "../src/features/requests/serviceReques
 import { renderLoginPage } from "../src/features/auth/loginPage.js";
 
 const pages = [
-  renderHomePage, renderProductPage, renderServicesPage, renderUseCasesPage, renderDashboardPage,
+  renderMinimalHomePage, renderProductPage, renderServicesPage, renderUseCasesPage, renderDashboardPage,
   renderCustomersPage, renderCustomerDetailPage, renderSalesPage, renderRequestsPage, renderRequestDetailPage,
   renderOperationsPage, renderFinancePage, renderReportsPage, renderServiceRequestPage, renderLoginPage
 ];
@@ -22,12 +23,16 @@ test("all primary phase-one routes render meaningful safe markup", () => {
   }
 });
 
-test("homepage communicates the full customer-to-outcome promise", () => {
-  const html = renderHomePage();
-  for (const phrase of ["مشتری", "فروش", "خدمت", "عملیات", "نتیجه"]) assert.match(html, new RegExp(phrase));
-  for (const path of ["/product", "/services", "/use-cases", "/how-it-works", "/login", "/contact"]) {
+test("homepage communicates the concise customer-to-outcome promise", () => {
+  const html = renderMinimalHomePage();
+  for (const phrase of ["مشتری", "پرونده", "تأیید", "اقدام", "نتیجه"]) assert.match(html, new RegExp(phrase));
+  for (const path of ["/product", "/login", "/contact"]) {
     assert.match(html, new RegExp(`href="${path}"`));
   }
+  for (const retiredPath of ["/services", "/use-cases", "/how-it-works", "/trust", "/pilot"]) {
+    assert.doesNotMatch(html, new RegExp(`href="${retiredPath}"`));
+  }
+  assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
 test("operations console exposes the core business system", () => {
