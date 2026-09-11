@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { HttpProblem, problems, toProblem } from "./errors.js";
 import { normalizeEmail, normalizePersianText } from "./normalization.js";
+import { createFixedWindowLimiter, publicIntakeInput, resolvePublicIntakeContext, safePublicIntakeResponse } from "./publicIntake.js";
 import { opaqueToken, passwordCredential, safeEqual, tokenDigest, verifyPassword } from "./security.js";
 
 function routeMatch(pathname, expression) {
@@ -80,6 +81,10 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
   const sessionCookie = config.appEnv === "production" ? "__Host-rahjo_session" : "rahjo_session";
   const dummyCredential = passwordCredential("not-a-real-password-value");
   const loginWindows = new Map();
+  const publicIntakeLimit = createFixedWindowLimiter({
+    maxRequests: config.publicIntakeMaxRequests ?? 20,
+    windowMs: config.publicIntakeWindowMs ?? 10 * 60_000
+  });
 
   function checkLoginRate(request) {
     const now = Date.now();
@@ -145,7 +150,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
       const url = new URL(request.url ?? "/", config.publicOrigin);
       if (request.method === "GET" && url.pathname === "/healthz") {
         status = 200;
-        json(response, status, { status: "ok", service: "rahjo-crm-bff", dataMode: "server", crmMode: config.crmMode, interim: config.interim, llmEnabled: false }, requestId, corsHeaders);
+        json(response, status, { status: "ok", service: "rahjo-crm-bff", dataMode: "server", crmMode: config.crmMode, interim: config.interim, publicIntake: config.publicIntakeEnabled === true ? "enabled" : "disabled", llmEnabled: false }, requestId, corsHeaders);
         return;
       }
       if (request.method === "GET" && url.pathname === "/readyz") {
@@ -158,6 +163,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
             crmMode: config.crmMode,
             interim: true,
             productionReady: false,
+            publicIntake: config.publicIntakeEnabled === true ? "enabled" : "disabled",
             llmEnabled: false,
             database: { status: "ready", role: databaseState.role },
             relaticle: { status: "deferred-not-deployed", workspaces: 0 }
@@ -175,6 +181,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
         json(response, status, {
           status: "ready",
           dataMode: "server",
+          publicIntake: config.publicIntakeEnabled === true ? "enabled" : "disabled",
           llmEnabled: false,
           database: { status: "ready", role: databaseState.role },
           relaticle: { status: "authenticated-and-team-verified", workspaces: upstream.length }
@@ -243,6 +250,24 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
           ...corsHeaders,
           "Set-Cookie": `${sessionCookie}=${encodeURIComponent(rawSession)}; Path=/; HttpOnly; ${config.appEnv === "production" ? "Secure; " : ""}SameSite=Lax; Max-Age=${config.sessionHours * 3600}`
         });
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/public/intakes") {
+        if (!origin || !config.corsOrigins.includes(origin.replace(/\/$/, ""))) throw problems.forbidden();
+        const limited = publicIntakeLimit(`${request.socket?.remoteAddress ?? "unknown"}|${origin}`);
+        if (limited) throw limited;
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const publicContext = await resolvePublicIntakeContext(config, database);
+        const result = await repository.createIntake(
+          publicContext,
+          publicIntakeInput(body, `${config.publicOrigin}${url.pathname}`),
+          request.headers["idempotency-key"],
+          requestId
+        );
+        status = result.status;
+        json(response, status, safePublicIntakeResponse(result), requestId, corsHeaders);
         return;
       }
 
