@@ -1,24 +1,46 @@
 # چک‌لیست انتشار رهجو
 
-## پیش‌نمایش فاز اول
+## Live operational foundation
 
-- [ ] بررسی نوع‌ها و همهٔ آزمون‌ها گذرانده شده‌اند.
-- [ ] بستهٔ Hostinger ساخته و smoke test شده است.
-- [ ] مسیرهای عمومی، ورود، داشبورد، Account 360 و Request Detail مستقیم باز می‌شوند.
-- [ ] سناریوی «ثبت درخواست تا تحویل» در مرورگر کامل می‌شود.
-- [ ] دسکتاپ و موبایل overflow افقی ندارند.
-- [ ] Sidebar در RTL سمت راست و منوی موبایل قابل بستن است.
-- [ ] خطای JavaScript یا درخواست دارایی ناموفق در Console وجود ندارد.
-- [ ] بنر واحد محیط نمایشی دیده می‌شود.
-- [ ] دادهٔ واقعی یا credential نمایشی در UI افشا نشده است.
-- [ ] `noindex,nofollow,noarchive` فعال است.
+- [x] بررسی typeها و تست‌های frontend سبز است.
+- [x] build و smoke بستهٔ Hostinger پاس می‌شود.
+- [x] Frontend و Node BFF روی محیط زنده publish شده‌اند.
+- [x] Server mode به PostgreSQL واقعی متصل است.
+- [x] session امن، CSRF و server-derived workspace scope فعال‌اند.
+- [x] دو Workspace در API isolation پاس شده‌اند.
+- [x] مسیر no-LLM `Case → Approval → Action → Run → Receipt → Outcome` روی live API پاس شده است.
+- [x] failure در Server mode با Golden Demo/localStorage پنهان نمی‌شود.
+- [x] cold-browser bootstrap و reload-safe rehydration پاس شده است.
+- [x] `noindex,nofollow,noarchive` تا تصمیم انتشار عمومی نهایی فعال است.
 
-## پیش از Production عمومی
+## Public/Product alignment
 
-- [ ] دامنه، canonical، sitemap و Open Graph نهایی شده‌اند.
-- [ ] متن حقوقی و حریم خصوصی با مدل دادهٔ واقعی تأیید شده‌اند.
-- [ ] احراز هویت، نقش‌ها، ثبت رویداد و سیاست نگه‌داری داده پیاده‌سازی شده‌اند.
-- [ ] پرداخت، پیام‌رسانی، آپلود و اتصال‌های واقعی تست پذیرش دارند.
-- [ ] accessibility و سازگاری مرورگر با گزارش ثبت‌شده پذیرفته شده‌اند.
-- [ ] دادهٔ seed از محیط Production جدا شده است.
-- [ ] حذف `noindex` و انتشار عمومی تأیید انسانی صریح گرفته است.
+- [x] Landing از demo-first framing جدا شده و با ontology محصول زنده هماهنگ است.
+- [ ] Product / Services / Use Cases / How It Works با همان ontology و claims واقعی منتشر شوند.
+- [ ] Workspace entry و Golden Demo برای کاربر نهایی کاملاً قابل تشخیص باشند.
+- [ ] Website/RFQ عمومی به intake واقعی BFF با provenance/idempotency وصل شود.
+- [ ] Desktop/mobile RTL، keyboard/focus/contrast و overflow با گزارش زنده پذیرفته شوند.
+- [ ] README/Architecture/marketing claims با runtime واقعی همگام بمانند.
+
+## Production-ready کامل
+
+موارد زیر باید پیش از تغییر `productionReady=false` به `true` پاس شوند:
+
+- [ ] Relaticle جداگانه deploy و provenance آن pin شده است.
+- [ ] حداقل دو Relaticle Team و credentialهای least-privilege team-pinned provision شده‌اند.
+- [ ] Account/Contact/Opportunity/Task روی Relaticle واقعی create/read/reload و tenant-isolation پاس شده‌اند.
+- [ ] custom fieldهای مورد نیاز با machine-stable semantics روی Relaticle واقعی provision شده‌اند.
+- [ ] MCP live شامل auth/team identity/schema/search/fetch/revoke evidence پاس شده است.
+- [ ] REST abuse/rate-limit و HTTP 429 acceptance evidence ثبت شده است.
+- [ ] backup production با retention/encryption مناسب خارج از همان database نگه‌داری می‌شود.
+- [ ] dataset واقعی production در محیط fresh restore شده و login/read/write/audit smoke پاس شده است.
+- [ ] Website/RFQ re-entry صفر و duplicate-safe retry روی production evidence دارد.
+- [ ] accessibility و browser compatibility با گزارش ثبت‌شده پذیرفته شده‌اند.
+- [ ] متن حقوقی، privacy و data retention با مدل واقعی production تأیید شده‌اند.
+- [ ] domain/canonical/sitemap/Open Graph نهایی و انتشار عمومی توسط انسان تأیید شده است.
+- [ ] seed/demo data از production data جدا و قابل تشخیص است.
+- [ ] حذف `noindex` فقط بعد از تأیید صریح go-live انجام می‌شود.
+
+## Claim rule
+
+تا قبل از پاس شدن همهٔ gateهای Production-ready، از عبارت‌های `production-ready`, `live Relaticle`, `live MCP`, `verified disaster recovery` یا معادل فارسی آن‌ها استفاده نشود. وضعیت درست فعلی: **Live operational foundation / interim CRM**.
