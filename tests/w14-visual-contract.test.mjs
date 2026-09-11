@@ -9,7 +9,7 @@ import { publicNavigation, utilityDestinations } from "../src/app/navigation.js"
 
 const publicPages = [renderMinimalHomePage, renderMinimalProductPage, renderMinimalContactPage];
 
-test("minimal public surfaces share one restrained shell", () => {
+test("public surfaces share one restrained shell", () => {
   for (const render of publicPages) {
     const html = render();
     assert.match(html, /class="page phase-site rv-site mp-site"/);
@@ -18,13 +18,14 @@ test("minimal public surfaces share one restrained shell", () => {
   }
 });
 
-test("landing is product-led without marketing clutter", () => {
+test("landing is software-led instead of abstract marketing", () => {
   const html = renderMinimalHomePage();
-  assert.match(html, /کار مشتری را از درخواست تا نتیجه/);
-  assert.match(html, /mp-product/);
-  assert.match(html, /mp-benefit-grid/);
-  assert.match(html, /mp-flow/);
-  assert.doesNotMatch(html, /Server-backed|Workspace-scoped|Human-gated|AI-optional/);
+  assert.match(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی/);
+  assert.match(html, /مشتری، فروش و اجرای خدمت را در یک سیستم پیگیری کنید/);
+  assert.match(html, /sw-screen/);
+  assert.match(html, /sw-showcases/);
+  assert.match(html, /sw-benefit-strip/);
+  assert.doesNotMatch(html, /mp-how|Server-backed|Workspace-scoped|Human-gated|AI-optional/);
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
@@ -35,8 +36,10 @@ test("public information architecture has only three primary destinations", () =
   assert.doesNotMatch(login?.meta ?? "", /مهمان|دمو/);
 });
 
-test("product page stays focused on four core capabilities", () => {
+test("product page focuses on three concrete software areas", () => {
   const html = renderMinimalProductPage();
-  assert.match(html, /چهار بخش کافی است/);
-  for (const phrase of ["مشتری", "پرونده", "تصمیم و اجرا", "نتیجه"]) assert.match(html, new RegExp(phrase));
+  assert.match(html, /CRM را از اجرای کار جدا نکنید/);
+  for (const phrase of ["مشتریان", "فروش", "عملیات", "فرصت", "پرونده"]) assert.match(html, new RegExp(phrase));
+  assert.match(html, /sw-product-grid/);
+  assert.doesNotMatch(html, /چهار بخش کافی است/);
 });
