@@ -2,122 +2,164 @@
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
 
-const coreFlow = Object.freeze([
-  ["درخواست", "نیاز وارد می‌شود", "requests"],
-  ["پرونده", "مالک و وضعیت روشن می‌شود", "identity"],
-  ["تأیید", "تصمیم مهم ثبت می‌شود", "shield"],
-  ["اقدام", "کار اجرا و پیگیری می‌شود", "workflow"],
-  ["نتیجه", "خروجی به سابقه برمی‌گردد", "check"]
+const softwareBenefits = Object.freeze([
+  ["مشتری و فروش", "حساب مشتری، افراد مرتبط و فرصت‌های فروش کنار هم می‌مانند.", "users"],
+  ["پرونده و کارها", "هر درخواست مالک، وضعیت، موعد و اقدام بعدی مشخص دارد.", "requests"],
+  ["اجرا و تاریخچه", "تصمیم‌ها، کار انجام‌شده و نتیجه در سابقهٔ همان مشتری ثبت می‌شوند.", "check"]
 ]);
 
-const benefits = Object.freeze([
-  ["یک سابقهٔ مشترک", "مشتری، پرونده و کارهای مرتبط در یک مسیر می‌مانند.", "users"],
-  ["اقدام بعدی روشن", "هر پرونده مالک، وضعیت و قدم بعدی مشخص دارد.", "check"],
-  ["کنترل قابل پیگیری", "تأییدها، اجرا و نتیجه با تاریخچهٔ روشن ثبت می‌شوند.", "shield"]
+const productAreas = Object.freeze([
+  ["مشتریان", "اطلاعات مشتری فقط یک دفترچه تلفن نیست؛ فروش، پرونده‌ها و پیگیری‌ها به همان سابقه وصل‌اند.", "users"],
+  ["فروش", "فرصت‌ها بر اساس مرحله، ارزش و اقدام بعدی دیده می‌شوند تا پیگیری از دست نرود.", "reports"],
+  ["پرونده و عملیات", "از ثبت درخواست تا تأیید، اقدام و نتیجه، تیم روی یک مسیر مشترک کار می‌کند.", "workflow"]
 ]);
 
-function productPreview() {
-  return `
-    <div class="mp-product" aria-label="پیش‌نمایش محیط رهجو">
-      <div class="mp-product__top"><div><i></i><strong>رهجو</strong></div><span>آریا صنعت</span></div>
-      <div class="mp-product__body">
-        <aside>
-          <span class="is-active">${icon("dashboard", { size: 16 })} داشبورد</span>
-          <span>${icon("users", { size: 16 })} مشتریان</span>
-          <span>${icon("requests", { size: 16 })} پرونده‌ها</span>
-          <span>${icon("workflow", { size: 16 })} عملیات</span>
-        </aside>
-        <section class="mp-product__content">
-          <header><div><small>اقدام بعدی</small><h3>تأیید شروع اجرای خدمت</h3></div><b>نیازمند تصمیم</b></header>
-          <article class="mp-case">
-            <div><small>پرونده فعال</small><strong>راه‌اندازی عملیات فروش</strong><span>مالک: نسترن احمدی</span></div>
-            <em>CASE-1028</em>
-          </article>
-          <ol class="mp-progress">
-            <li class="is-done"><i></i><span>ثبت</span></li>
-            <li class="is-done"><i></i><span>پرونده</span></li>
-            <li class="is-current"><i></i><span>تأیید</span></li>
-            <li><i></i><span>اقدام</span></li>
-            <li><i></i><span>نتیجه</span></li>
-          </ol>
-          <div class="mp-product__mini"><span><small>مشتری</small><strong>آریا صنعت</strong></span><span><small>وضعیت</small><strong>در جریان</strong></span><span><small>آخرین رویداد</small><strong>مدارک تکمیل شد</strong></span></div>
-        </section>
-      </div>
-    </div>`;
+function frameNav(active = "dashboard") {
+  const items = [
+    ["dashboard", "داشبورد", "dashboard"],
+    ["customers", "مشتریان", "users"],
+    ["sales", "فروش", "reports"],
+    ["requests", "پرونده‌ها", "requests"],
+    ["tasks", "کارها", "check"]
+  ];
+  return `<aside class="sw-app-nav">${items.map(([key, label, glyph]) => `<span class="${key === active ? "is-active" : ""}">${icon(glyph, { size: 15 })}<b>${label}</b></span>`).join("")}</aside>`;
 }
 
-function flowStrip() {
-  return `<ol class="mp-flow">${coreFlow.map(([title, desc, glyph], index) => `
-    <li><b>۰${index + 1}</b><span>${icon(glyph, { size: 19 })}</span><div><strong>${title}</strong><small>${desc}</small></div></li>`).join("")}</ol>`;
+function softwareFrame({ active = "dashboard", label, content }) {
+  return `<div class="sw-screen" aria-label="${label}">
+    <div class="sw-screen__bar"><div><i></i><strong>رهجو</strong></div><span>آریا صنعت</span></div>
+    <div class="sw-screen__body">${frameNav(active)}<div class="sw-screen__main">${content}</div></div>
+  </div>`;
+}
+
+function dashboardPreview() {
+  return softwareFrame({
+    active: "dashboard",
+    label: "نمای داشبورد رهجو",
+    content: `
+      <div class="sw-app-head"><div><small>امروز</small><h3>صبح بخیر، نسترن</h3><p>اقدام‌های مهم و وضعیت عملیات در یک نگاه.</p></div><span class="sw-role">مدیر عملیات</span></div>
+      <div class="sw-metrics">
+        <article><small>پرونده‌های باز</small><strong>۱۲</strong><span>۳ نیازمند توجه</span></article>
+        <article><small>کارهای امروز</small><strong>۷</strong><span>۲ با اولویت بالا</span></article>
+        <article><small>فرصت‌های فعال</small><strong>۵</strong><span>۱ پیگیری امروز</span></article>
+      </div>
+      <div class="sw-panel">
+        <div class="sw-panel__head"><div><strong>اقدام بعدی من</strong><small>بر اساس موعد و اولویت</small></div><span>همه کارها</span></div>
+        <div class="sw-task-row"><b class="is-high">فوری</b><div><strong>تأیید شروع اجرای خدمت</strong><small>آریا صنعت · CASE-1028</small></div><time>امروز</time><em>در انتظار</em></div>
+        <div class="sw-task-row"><b>عادی</b><div><strong>پیگیری پیشنهاد فروش</strong><small>پارس تجهیز · OPP-204</small></div><time>امروز</time><em>باز</em></div>
+        <div class="sw-task-row"><b>عادی</b><div><strong>تکمیل مدارک پرونده</strong><small>راهکار نو · CASE-1031</small></div><time>فردا</time><em>باز</em></div>
+      </div>`
+  });
+}
+
+function customersPreview() {
+  return softwareFrame({
+    active: "customers",
+    label: "نمای مشتریان رهجو",
+    content: `
+      <div class="sw-app-head"><div><small>مشتریان</small><h3>سابقهٔ رابطه در یک مکان</h3><p>حساب، شخص تماس، فروش و پرونده‌های جاری.</p></div><span class="sw-add">+ مشتری جدید</span></div>
+      <div class="sw-search">${icon("search", { size: 15 })}<span>جست‌وجوی نام، صنعت یا مسئول…</span></div>
+      <div class="sw-table">
+        <div class="sw-table__head"><span>مشتری</span><span>مسئول</span><span>فرصت جاری</span><span>پرونده</span><span>وضعیت</span></div>
+        <div class="sw-table__row"><span><i>آ</i><b>آریا صنعت</b><small>تجهیزات صنعتی</small></span><span>نسترن احمدی</span><span>پیشنهاد</span><span>۲ باز</span><em class="is-ok">فعال</em></div>
+        <div class="sw-table__row"><span><i>پ</i><b>پارس تجهیز</b><small>خدمات سازمانی</small></span><span>سارا زمانی</span><span>نیازسنجی</span><span>۱ باز</span><em class="is-ok">فعال</em></div>
+        <div class="sw-table__row"><span><i>ر</i><b>راهکار نو</b><small>فناوری</small></span><span>علی رضایی</span><span>—</span><span>۱ باز</span><em>بالقوه</em></div>
+      </div>`
+  });
+}
+
+function salesPreview() {
+  return softwareFrame({
+    active: "sales",
+    label: "نمای فروش رهجو",
+    content: `
+      <div class="sw-app-head"><div><small>فروش</small><h3>فرصت‌ها و اقدام بعدی</h3><p>هیچ فرصت بازی بدون مالک و پیگیری بعدی نمی‌ماند.</p></div><span class="sw-add">+ فرصت جدید</span></div>
+      <div class="sw-pipeline">
+        <section><header><strong>نیازسنجی</strong><span>۲</span></header><article><small>OPP-204</small><b>راه‌اندازی CRM خدمات</b><p>پارس تجهیز</p><footer><span>۱۸۰ م.ت</span><time>پیگیری امروز</time></footer></article><article><small>OPP-209</small><b>بازطراحی فرایند فروش</b><p>آتیه ساز</p><footer><span>۹۵ م.ت</span><time>فردا</time></footer></article></section>
+        <section><header><strong>پیشنهاد</strong><span>۱</span></header><article><small>OPP-198</small><b>عملیات فروش سازمانی</b><p>آریا صنعت</p><footer><span>۲۴۰ م.ت</span><time>منتظر پاسخ</time></footer></article></section>
+        <section><header><strong>مذاکره</strong><span>۱</span></header><article><small>OPP-191</small><b>پشتیبانی و عملیات مشتری</b><p>مهراز</p><footer><span>۱۳۰ م.ت</span><time>جلسه شنبه</time></footer></article></section>
+      </div>`
+  });
+}
+
+function casePreview() {
+  return softwareFrame({
+    active: "requests",
+    label: "نمای پرونده در رهجو",
+    content: `
+      <div class="sw-case-head"><div><small>CASE-1028 · آریا صنعت</small><h3>راه‌اندازی عملیات فروش</h3><p>مالک پرونده: نسترن احمدی</p></div><em>در حال اجرا</em></div>
+      <div class="sw-case-grid">
+        <section class="sw-panel"><div class="sw-panel__head"><div><strong>اقدام بعدی</strong><small>پیش از شروع مرحلهٔ اجرا</small></div></div><div class="sw-next-action"><span>${icon("shield", { size: 18 })}</span><div><strong>تأیید شروع اجرای خدمت</strong><p>تصمیم ثبت می‌شود و بعد از تأیید، اقدام اجرایی آزاد می‌شود.</p></div><b>نیازمند تصمیم</b></div></section>
+        <section class="sw-panel sw-timeline"><div class="sw-panel__head"><div><strong>آخرین رویدادها</strong><small>تاریخچهٔ پرونده</small></div></div><div><i class="is-done"></i><span><b>مدارک تکمیل شد</b><small>امروز · نسترن احمدی</small></span></div><div><i class="is-done"></i><span><b>نیازسنجی ثبت شد</b><small>دیروز · سارا زمانی</small></span></div><div><i></i><span><b>شروع اجرا</b><small>پس از تأیید</small></span></div></section>
+      </div>`
+  });
+}
+
+function benefitStrip() {
+  return `<div class="sw-benefit-strip">${softwareBenefits.map(([title, desc, glyph]) => `<article><span>${icon(glyph, { size: 19 })}</span><div><strong>${title}</strong><p>${desc}</p></div></article>`).join("")}</div>`;
 }
 
 export function renderMinimalHomePage() {
   return siteShell({
     activePath: "/",
     content: `
-      <section class="mp-hero">
-        <div class="container mp-hero__grid">
-          <div class="mp-hero__copy">
-            <p class="mp-kicker">عملیات مشتری، ساده و روشن</p>
-            <h1>کار مشتری را از درخواست تا نتیجه، یک‌جا پیش ببرید.</h1>
-            <p class="mp-lead">رهجو مشتری، پرونده، تصمیم و اجرای کار را در یک مسیر قابل پیگیری نگه می‌دارد.</p>
-            <div class="button-row mp-actions"><a data-link class="button button--primary button--large" href="/contact">شروع بررسی ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/login">ورود</a></div>
-          </div>
-          ${productPreview()}
+      <section class="sw-hero">
+        <div class="container sw-hero__copy">
+          <p class="sw-kicker">CRM و عملیات مشتری برای کسب‌وکارهای خدماتی</p>
+          <h1>مشتری، فروش و اجرای خدمت را در یک سیستم پیگیری کنید.</h1>
+          <p class="sw-lead">رهجو اطلاعات مشتری، فرصت فروش، پرونده، کارهای امروز و نتیجه را کنار هم نگه می‌دارد؛ تا تیم بداند چه چیزی باز است و قدم بعدی چیست.</p>
+          <div class="sw-actions"><a class="button button--primary button--large" href="#product">دیدن محیط رهجو ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/login">ورود</a></div>
+        </div>
+        <div class="container sw-hero__screen">${dashboardPreview()}</div>
+      </section>
+
+      <section class="sw-benefits"><div class="container">${benefitStrip()}</div></section>
+
+      <section class="sw-product-story" id="product">
+        <div class="container sw-section-head"><p class="sw-kicker">محصول در عمل</p><h2>چیزی که تیم هر روز با آن کار می‌کند.</h2><p>به‌جای توضیح‌های کلی، سه بخش اصلی رهجو را ببینید.</p></div>
+        <div class="container sw-showcases">
+          <article class="sw-showcase"><div class="sw-showcase__copy"><span>۰۱</span><h3>${productAreas[0][0]}</h3><p>${productAreas[0][1]}</p><a data-link href="/product">جزئیات محصول ${icon("arrow", { size: 15 })}</a></div><div>${customersPreview()}</div></article>
+          <article class="sw-showcase sw-showcase--reverse"><div class="sw-showcase__copy"><span>۰۲</span><h3>${productAreas[1][0]}</h3><p>${productAreas[1][1]}</p><a data-link href="/product">جزئیات محصول ${icon("arrow", { size: 15 })}</a></div><div>${salesPreview()}</div></article>
+          <article class="sw-showcase"><div class="sw-showcase__copy"><span>۰۳</span><h3>${productAreas[2][0]}</h3><p>${productAreas[2][1]}</p><a data-link href="/product">جزئیات محصول ${icon("arrow", { size: 15 })}</a></div><div>${casePreview()}</div></article>
         </div>
       </section>
 
-      <section class="mp-benefits"><div class="container mp-benefit-grid">${benefits.map(([title, desc, glyph]) => `
-        <article><span>${icon(glyph, { size: 21 })}</span><h2>${title}</h2><p>${desc}</p></article>`).join("")}</div></section>
-
-      <section class="mp-how" id="how-it-works"><div class="container">
-        <div class="mp-section-head"><p>نحوهٔ کار</p><h2>پنج مرحله؛ از ورودی تا نتیجه.</h2></div>
-        ${flowStrip()}
-      </div></section>
-
-      <section class="mp-product-note"><div class="container mp-product-note__grid">
-        <div><p class="mp-kicker">خود محصول، نه یک ویترین جدا</p><h2>اطلاعات مشتری وقتی ارزش دارد که به کار روزانه وصل باشد.</h2></div>
-        <div><p>رهجو سابقهٔ مشتری را کنار پرونده‌های باز، تصمیم‌های لازم و اقدام‌های بعدی نگه می‌دارد؛ تا تیم بداند الآن چه چیزی باید جلو برود.</p><a data-link class="text-link" href="/product">دیدن محصول ${icon("arrow", { size: 16 })}</a></div>
-      </div></section>
-
-      <section class="mp-final"><div class="container mp-final__inner"><div><h2>از یک جریان واقعی شروع کنید.</h2><p>یک مسیر مشتری را انتخاب کنید و ببینید رهجو چطور آن را ساده و قابل پیگیری می‌کند.</p></div><a data-link class="button button--light button--large" href="/contact">شروع بررسی</a></div></section>`
+      <section class="sw-final"><div class="container sw-final__inner"><div><p class="sw-kicker">شروع با رهجو</p><h2>از یک فرایند واقعی شروع کنید.</h2><p>یک مسیر مشتری یا خدمت را انتخاب کنید و همان را در رهجو راه‌اندازی کنید.</p></div><div class="sw-actions"><a data-link class="button button--primary button--large" href="/contact">شروع با رهجو</a><a data-link class="button button--outline button--large" href="/login">ورود</a></div></div></section>`
   });
 }
 
 export function renderMinimalProductPage() {
-  const capabilities = [
-    ["مشتری", "یک سابقه برای حساب، افراد و تعامل‌های مهم.", "users"],
-    ["پرونده", "وضعیت، مالک، مدارک و اقدام بعدی در یک جا.", "requests"],
-    ["تصمیم و اجرا", "تأییدهای لازم قبل از اقدام و اجرای قابل پیگیری.", "workflow"],
-    ["نتیجه", "ثبت خروجی و بازگشت آن به سابقهٔ مشتری.", "signal"]
-  ];
   return siteShell({
     activePath: "/product",
     content: `
-      <section class="mp-page-hero"><div class="container mp-page-hero__grid"><div><p class="mp-kicker">محصول</p><h1>یک فضای کاری برای مشتری، پرونده و اجرای کار.</h1><p>به‌جای چند ابزار جدا، تیم روی یک سابقهٔ مشترک کار می‌کند و اقدام بعدی همیشه معلوم است.</p><div class="button-row mp-actions"><a data-link class="button button--primary button--large" href="/contact">شروع بررسی ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/login">ورود</a></div></div>${productPreview()}</div></section>
-      <section class="mp-capabilities"><div class="container"><div class="mp-section-head"><p>هستهٔ محصول</p><h2>چهار بخش کافی است.</h2></div><div class="mp-capability-grid">${capabilities.map(([title, desc, glyph]) => `<article><span>${icon(glyph, { size: 21 })}</span><h3>${title}</h3><p>${desc}</p></article>`).join("")}</div></div></section>
-      <section class="mp-control"><div class="container mp-control__inner"><div><h2>کنترل و سابقه، جزئی از جریان کار است.</h2><p>فضای کاری، سطح دسترسی، تأییدهای مهم و تاریخچهٔ تغییرات در همان مسیر عملیاتی نگه داشته می‌شوند.</p></div><div class="mp-control__facts"><span>${icon("shield", { size: 18 })} مرز فضای کاری</span><span>${icon("check", { size: 18 })} تأیید انسانی</span><span>${icon("signal", { size: 18 })} تاریخچهٔ قابل بازبینی</span></div></div></section>
-      <section class="mp-final"><div class="container mp-final__inner"><div><h2>رهجو را روی کار واقعی خودتان ببینید.</h2><p>از یک نوع مشتری و یک پروندهٔ مشخص شروع کنید.</p></div><a data-link class="button button--light button--large" href="/contact">شروع</a></div></section>`
+      <section class="sw-page-hero"><div class="container sw-page-hero__inner"><p class="sw-kicker">محصول</p><h1>CRM را از اجرای کار جدا نکنید.</h1><p>مشتری، فروش، پرونده و کارهای تیم در یک محیط قرار می‌گیرند تا سابقهٔ رابطه و کار جاری از هم جدا نباشند.</p><div class="sw-actions"><a data-link class="button button--primary button--large" href="/contact">شروع با رهجو ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/login">ورود</a></div></div></section>
+      <section class="sw-product-page"><div class="container sw-product-grid">
+        <div class="sw-product-copy"><span>مشتریان</span><h2>سابقهٔ مشتری، فروش و پرونده‌های باز کنار هم.</h2><p>کاربر برای فهمیدن وضعیت مشتری بین فایل‌ها و ابزارهای مختلف جابه‌جا نمی‌شود.</p></div><div>${customersPreview()}</div>
+        <div class="sw-product-copy"><span>فروش</span><h2>هر فرصت یک مرحله، مالک و اقدام بعدی دارد.</h2><p>تیم فروش دقیقاً می‌بیند چه چیزی باید امروز پیگیری شود و چه چیزی منتظر پاسخ است.</p></div><div>${salesPreview()}</div>
+        <div class="sw-product-copy"><span>عملیات</span><h2>پرونده تا نتیجه، قابل پیگیری می‌ماند.</h2><p>تصمیم، اقدام، رویداد و خروجی در همان سابقه ثبت می‌شود و از دید تیم گم نمی‌شود.</p></div><div>${casePreview()}</div>
+      </div></section>
+      <section class="sw-plain-facts"><div class="container">${benefitStrip()}</div></section>
+      <section class="sw-final"><div class="container sw-final__inner"><div><p class="sw-kicker">راه‌اندازی</p><h2>رهجو را روی جریان واقعی خودتان ببینید.</h2><p>از یک مشتری، یک نوع پرونده و یک تیم کوچک شروع کنید.</p></div><a data-link class="button button--primary button--large" href="/contact">شروع</a></div></section>`
   });
 }
 
 export function renderMinimalContactPage() {
   const steps = [
-    ["۱", "یک جریان را انتخاب می‌کنیم", "مثلاً فروش یک خدمت، دریافت درخواست یا یک فرایند چندمرحله‌ای."],
-    ["۲", "مسیر فعلی را کوتاه می‌کنیم", "ورودی، مسئول، تصمیم‌ها و نتیجهٔ مورد انتظار را روشن می‌کنیم."],
-    ["۳", "همان جریان را در رهجو می‌سازیم", "با یک پروندهٔ واقعی و معیار پذیرش مشخص شروع می‌کنیم."]
+    ["۱", "یک جریان واقعی انتخاب کنید", "مثلاً فروش یک خدمت یا رسیدگی به درخواست مشتری."],
+    ["۲", "مسئول و مراحل را مشخص کنید", "چه کسی مالک است، چه تصمیمی لازم است و نتیجه چیست."],
+    ["۳", "همان جریان را در رهجو اجرا کنید", "با یک پروندهٔ واقعی و معیار پذیرش روشن شروع کنید."]
   ];
   return siteShell({
     activePath: "/contact",
     content: `
-      <section class="mp-contact-hero"><div class="container mp-contact-hero__inner"><p class="mp-kicker">شروع</p><h1>از یک فرایند واقعی شروع کنیم.</h1><p>نه فهرست قابلیت‌ها؛ فقط یک مسیر مشخص که باید از درخواست تا نتیجه بهتر پیش برود.</p><div class="button-row mp-actions"><a data-link class="button button--primary button--large" href="/cases/new">شروع ثبت پرونده ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/login">ورود به رهجو</a></div></div></section>
-      <section class="mp-start"><div class="container mp-start__grid">${steps.map(([index, title, desc]) => `<article><b>${index}</b><h2>${title}</h2><p>${desc}</p></article>`).join("")}</div></section>`
+      <section class="sw-contact"><div class="container sw-contact__inner"><div><p class="sw-kicker">شروع</p><h1>رهجو را با یک فرایند واقعی راه‌اندازی کنید.</h1><p>برای شروع لازم نیست همه‌چیز را یک‌باره منتقل کنید. یک مسیر مشخص را انتخاب کنید و همان را وارد محیط کار کنید.</p><div class="sw-actions"><a data-link class="button button--primary button--large" href="/cases/new">ثبت اولین پرونده ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/login">ورود به رهجو</a></div></div>${casePreview()}</div></section>
+      <section class="sw-start"><div class="container sw-start__grid">${steps.map(([index, title, desc]) => `<article><b>${index}</b><h2>${title}</h2><p>${desc}</p></article>`).join("")}</div></section>`
   });
 }
 
 export function renderMinimalTrackPage() {
   return siteShell({
     activePath: "/contact",
-    content: `<section class="mp-contact-hero"><div class="container mp-contact-hero__inner"><p class="mp-kicker">پیگیری</p><h1>پیگیری پرونده داخل محیط امن رهجو انجام می‌شود.</h1><p>برای دیدن وضعیت پرونده، وارد فضای کاری خود شوید.</p><div class="button-row mp-actions"><a data-link class="button button--primary button--large" href="/login">ورود ${icon("arrow")}</a></div></div></section>`
+    content: `<section class="sw-page-hero"><div class="container sw-page-hero__inner"><p class="sw-kicker">پیگیری</p><h1>وضعیت پرونده را داخل فضای کاری رهجو ببینید.</h1><p>برای دیدن پرونده، اقدام‌های باز و آخرین رویدادها وارد محیط کار شوید.</p><div class="sw-actions"><a data-link class="button button--primary button--large" href="/login">ورود ${icon("arrow")}</a></div></div></section>`
   });
 }
