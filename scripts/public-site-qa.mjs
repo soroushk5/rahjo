@@ -4,11 +4,12 @@ import { chromium } from 'playwright';
 const baseUrl = process.env.RAHJO_QA_ORIGIN || 'http://127.0.0.1:4173';
 const output = 'qa-artifacts/public-site';
 const routes = [
-  { path: '/', slug: 'home', h1: 'عملیات تجاری امروز' },
-  { path: '/platform', slug: 'product', h1: 'رهجو یک Dashboard نیست' },
-  { path: '/data', slug: 'services', h1: 'سرویس را از وضعیتش جدا نکنیم' },
-  { path: '/map', slug: 'journey', h1: 'Context باید از ورودی تا نتیجه زنده بماند' },
-  { path: '/trust', slug: 'trust', h1: 'اعتماد از' }
+  { path: '/', slug: 'home', h1: 'مشتری را از اولین درخواست تا نتیجه', markers: ['.rv-product', '.rv-spine'] },
+  { path: '/product', slug: 'product', h1: 'یک سیستم برای حافظهٔ مشتری و اجرای کار', markers: ['.rv-layer-table', '.rv-journey'] },
+  { path: '/services', slug: 'services', h1: 'خدمت در رهجو یک قرارداد اجرایی', markers: ['.rv-contract-list', '.rv-journey'] },
+  { path: '/use-cases', slug: 'use-cases', h1: 'برای جایی که فروش و ارائهٔ خدمت', markers: ['.rv-scenario-list', '.rv-journey'] },
+  { path: '/how-it-works', slug: 'how-it-works', h1: 'هر مرحله، context را به مرحلهٔ بعد', markers: ['.rv-journey', '.rv-gate-list'] },
+  { path: '/trust', slug: 'trust', h1: 'اعتماد از محدودکردن اختیار سیستم', markers: ['.w14-trust-grid'] }
 ];
 const viewports = [
   { name: 'desktop', width: 1365, height: 900 },
@@ -45,33 +46,35 @@ for (const viewport of viewports) {
     const metrics = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
-      hasOperationalSite: Boolean(document.querySelector('.public-operational-site')),
-      hasClaimBoundary: Boolean(document.querySelector('.public-context-strip')),
-      navVisible: Boolean(document.querySelector('#site-nav'))
+      hasSite: Boolean(document.querySelector('.rv-site')),
+      hasHeader: Boolean(document.querySelector('.rv-header')),
+      hasNav: Boolean(document.querySelector('#site-nav')),
+      oldEyebrowAboveHero: Boolean(document.querySelector('.rv-hero .w14-eyebrow'))
     }));
 
     if (metrics.scrollWidth > metrics.clientWidth + 2) failures.push(`${viewport.name} ${route.path}: horizontal overflow ${metrics.scrollWidth}/${metrics.clientWidth}`);
-    if (!metrics.hasOperationalSite) failures.push(`${viewport.name} ${route.path}: missing public-operational-site shell`);
-    if (!metrics.hasClaimBoundary) failures.push(`${viewport.name} ${route.path}: missing claim boundary strip`);
-    if (!metrics.navVisible) failures.push(`${viewport.name} ${route.path}: missing site navigation`);
+    if (!metrics.hasSite) failures.push(`${viewport.name} ${route.path}: missing rv-site shell`);
+    if (!metrics.hasHeader) failures.push(`${viewport.name} ${route.path}: missing rv-header`);
+    if (!metrics.hasNav) failures.push(`${viewport.name} ${route.path}: missing site navigation`);
+    if (route.path === '/' && metrics.oldEyebrowAboveHero) failures.push(`${viewport.name} /: decorative hero eyebrow returned`);
+
+    for (const marker of route.markers) {
+      if (!(await page.locator(marker).first().count())) failures.push(`${viewport.name} ${route.path}: missing ${marker}`);
+    }
 
     if (consoleErrors.length) failures.push(`${viewport.name} ${route.path}: console errors: ${consoleErrors.join(' | ')}`);
     if (pageErrors.length) failures.push(`${viewport.name} ${route.path}: page errors: ${pageErrors.join(' | ')}`);
 
     if (viewport.name === 'mobile') {
       const toggle = page.locator('#mobile-nav-toggle');
-      if (await toggle.isVisible()) {
+      if (!(await toggle.isVisible())) failures.push(`mobile ${route.path}: mobile nav toggle is not visible`);
+      else {
         await toggle.click();
         const expanded = await toggle.getAttribute('aria-expanded');
-        if (expanded !== 'true') failures.push(`mobile ${route.path}: mobile nav did not expand`);
+        const navOpen = await page.locator('#site-nav').getAttribute('data-open');
+        if (expanded !== 'true' || navOpen === null) failures.push(`mobile ${route.path}: mobile nav did not expand`);
         await toggle.click();
       }
-    }
-
-    if (route.path === '/trust') {
-      const firstGate = page.locator('[data-public-gate]').first();
-      await firstGate.click();
-      if ((await firstGate.getAttribute('aria-pressed')) !== 'true') failures.push(`${viewport.name} /trust: gate interaction did not update`);
     }
 
     await page.screenshot({ path: `${output}/${route.slug}-${viewport.name}.png`, fullPage: true });
@@ -88,4 +91,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Public-site rendered QA passed for ${routes.length} routes across ${viewports.length} viewports.`);
+console.log(`Public-site rendered QA passed for ${routes.length} canonical routes across ${viewports.length} viewports.`);
