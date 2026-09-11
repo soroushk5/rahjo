@@ -1,4 +1,4 @@
-name: Publish Hostinger Production Branch
+name: Publish Hostinger Production Branch + Verify Live
 
 on:
   workflow_run:
@@ -61,7 +61,34 @@ jobs:
           git add -A
           if git diff --cached --quiet; then
             echo "Generated production branch is already current."
-            exit 0
+          else
+            git commit -m "deploy: Hostinger production ${SOURCE_SHA::7}"
+            git push origin "$TARGET_BRANCH"
           fi
-          git commit -m "deploy: Hostinger production ${SOURCE_SHA::7}"
-          git push origin "$TARGET_BRANCH"
+      - name: Verify the public Hostinger origin actually deployed this source SHA
+        env:
+          SITE_ORIGIN: ${{ vars.RAHJO_PRODUCTION_ORIGIN }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          origin="${SITE_ORIGIN%/}"
+          for attempt in $(seq 1 24); do
+            cache_bust="${SOURCE_SHA}-${GITHUB_RUN_ID}-${attempt}"
+            health="$(curl --fail --silent --show-error --location \
+              --connect-timeout 10 --max-time 20 \
+              -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
+              "${origin}/health.json?deploy=${cache_bust}" || true)"
+            if HEALTH="$health" SOURCE_SHA="$SOURCE_SHA" node --input-type=module -e '
+              const health = JSON.parse(process.env.HEALTH || "{}");
+              const expected = process.env.SOURCE_SHA;
+              if (health.buildSha === expected || health.commit === expected) process.exit(0);
+              process.exit(1);
+            '; then
+              echo "Live Hostinger origin verified at ${SOURCE_SHA}."
+              exit 0
+            fi
+            echo "Live origin has not converged to ${SOURCE_SHA} yet (attempt ${attempt}/24)."
+            sleep 10
+          done
+          echo "::error::Generated branch was published, but the live Hostinger origin does not report source SHA ${SOURCE_SHA}. Check hPanel Git deployment branch=hostinger-production and Auto Deployment/webhook configuration."
+          exit 1
