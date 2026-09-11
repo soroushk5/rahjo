@@ -2,6 +2,18 @@
  * Keep the minimal public header usable on small screens even though the legacy
  * phase-one stylesheet still contains old mobile rules for a demo-era CTA. */
 
+/* The Product page already shows three micro-UI examples. Repeating the whole
+ * dashboard again in the proof section made the page feel like a screenshot
+ * gallery, so keep that section copy-led instead. */
+.sw-product-proof__grid {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
+.sw-product-proof__card {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .mp-header .mp-header__actions {
     display: flex !important;
