@@ -166,3 +166,25 @@ test("browser bootstrap redirects only to an allowlisted Rahjo UI origin", async
   const invalid = await fetch(`${base}/browser-bootstrap?return=not-a-url`, { redirect: "manual" });
   assert.equal(invalid.status, 422);
 });
+
+test("repeated login abuse is rate limited with a Retry-After contract", async (t) => {
+  const { server, base } = await fixture();
+  t.after(() => server.close());
+
+  let response;
+  for (let attempt = 1; attempt <= 11; attempt += 1) {
+    response = await fetch(`${base}/api/v1/session`, {
+      method: "POST",
+      headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+      body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "wrong password" })
+    });
+    if (attempt <= 10) assert.equal(response.status, 401);
+  }
+
+  assert.equal(response.status, 429);
+  assert.match(response.headers.get("retry-after") ?? "", /^\d+$/);
+  const problem = await response.json();
+  assert.equal(problem.code, "RATE_LIMITED");
+  assert.equal(problem.dataMode, "server");
+  assert.equal(Object.hasOwn(problem, "projection"), false);
+});
