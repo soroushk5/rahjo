@@ -4,51 +4,170 @@
 
 هستهٔ رهجو یک زنجیرهٔ عملیاتی مشترک است:
 
-`ورودی → مشتری → فروش → درخواست خدمت → مدارک و مالی → اجرا → تأیید → نتیجه → پیگیری`
+`ورودی → Account/Contact → Opportunity/Case → Service → Approval → Action/Run → Receipt → Outcome`
 
-وب‌سایت عمومی تقاضا را وارد همین مدل می‌کند و کنسول داخلی همان رکوردها را برای تیم فروش، عملیات و مالی قابل اقدام می‌سازد.
+وب‌سایت عمومی، ورودی و محیط عملیاتی باید همین ontology را ادامه دهند. سایت نباید یک مدل بازاریابی جدا از مدل دادهٔ محصول داشته باشد.
+
+## اصل‌های معماری
+
+- deterministic core + optional intelligence
+- workspace isolation و authorization در سمت server
+- explicit runtime mode: `demo | server`
+- هیچ fallback پنهان از Server mode به Golden Demo
+- یک contract پایدار Rahjo-native بین frontend و backend
+- Relaticle به‌عنوان سرویس/adapter جدا، نه vocabulary مستقیم frontend
+- audit/provenance به‌عنوان قابلیت محصول
+- عملیات حساس پشت human approval
+
+## توپولوژی فعلی
+
+```text
+Rahjo Web (Hostinger)
+    |
+    | HTTPS / credentialed CORS
+    v
+Rahjo Node BFF (Hostinger Web App)
+    |
+    +-- session / CSRF / workspace scope
+    +-- versioned Rahjo API
+    +-- operational projection
+    +-- idempotency / audit / provenance
+    |
+    v
+PostgreSQL (Supabase)
+    |
+    +-- forced workspace policies
+    +-- Rahjo domain tables
+    +-- web sessions / API state
+    +-- crm_entity_refs
+    |
+    +--> native_deferred CRM bridge   [CURRENT LIVE]
+    |
+    +--> Relaticle adapter            [IMPLEMENTED, NOT LIVE]
+```
+
+وضعیت فعلی عمداً `native_deferred` است. این حالت برای جلوگیری از ادعای غلط، رکوردهای CRM را با `pending_relaticle` مشخص می‌کند و خود را Relaticle معرفی نمی‌کند.
+
+## توپولوژی هدف
+
+```text
+Rahjo Web
+  → Rahjo BFF/API
+  → Relaticle service
+      → PostgreSQL
+      → Redis
+      → worker / scheduler
+      → storage
+      → REST / MCP
+
+Rahjo BFF/PostgreSQL
+  → Case / Service / Approval / Action / Run / Receipt / Outcome / Audit
+```
+
+Relaticle Company/People/Opportunity/Task می‌توانند پایهٔ Account/Contact/Opportunity/Task باشند، اما مفاهیم Rahjo مثل Case، Approval، Action، Receipt و Outcome نباید داخل custom fieldها پنهان شوند.
 
 ## مرزهای کد
 
 ```text
 src/
-  app/                 مسیریابی، پوستهٔ عمومی و پوستهٔ کنسول
-  components/          نشان و آیکون‌های مشترک
-  data/phaseOneData.js کاتالوگ خدمت و داده‌های seed دمو
-  features/public/     صفحات تجاری و پیگیری عمومی
-  features/auth/       ورود مهمان به دمو
-  features/requests/   ثبت چندمرحله‌ای درخواست خدمت
-  features/operations/ داشبورد، جداول، پرونده‌های ۳۶۰ و صفحات پشتیبان
-  services/            نشست و وضعیت محلی دمو
+  app/                    routing, runtime boundary, shells
+  components/             shared visual primitives
+  features/public/        public product experience
+  features/auth/          demo entry renderer; server login is runtime-owned
+  features/requests/      request/case intake experience
+  features/operations/    demo + server operational presentations
+  services/
+    runtimeDataFacade.js  server projection/session client
+    phaseOneStore.js      Golden Demo only
+server/
+  src/
+    app.js                Rahjo BFF routes
+    repository.js         tenant-scoped persistence
+    relaticleClient.js    real Relaticle REST/MCP adapter
+    nativeDeferredCrmClient.js explicit interim bridge
+    security.js           request/security controls
+    normalization.js      deterministic normalization
+  migrations/             PostgreSQL schema and workspace policies
+  tests/                  BFF/security/domain contract tests
 styles/
-  tokens.css           رنگ، تایپوگرافی و مقیاس‌های پایه
-  base.css             reset و primitiveهای عمومی
-  phase-one.css        سیستم بصری پاسخ‌گو برای کل فاز اول
+  tokens.css
+  base.css
+  phase-one.css
+  w14-public.css
 ```
 
-## مدل دادهٔ نمایشی
+## Runtime boundary
 
-موجودیت‌های اصلی عبارت‌اند از Customer، Contact، Opportunity، Service، ServiceRequest، Task، Transaction، Document، Activity و Approval. روابط از شناسهٔ مشتری و درخواست استفاده می‌کنند تا Account 360 و Request Detail از یک منبع مشترک ساخته شوند.
+### Demo mode
 
-`phaseOneStore` تغییرات را به‌صورت مرورگرمحلی نگه می‌دارد و اقدامات اصلی را اتمیک می‌کند: ساخت درخواست، تکمیل مدارک، ثبت پرداخت نمایشی، شروع اجرا، تأیید انسانی و تحویل نتیجه.
+Golden Demo اجازه دارد از browser-local synthetic state استفاده کند. هیچ side effect بیرونی و هیچ دادهٔ واقعی نباید وارد آن شود.
 
-پیش از تحویل، وجود تأیید انسانی معتبر اجباری است. دادهٔ خوانده‌شده از `localStorage` نیز با schema محدود، طول‌های کران‌دار و حذف markup فعال عادی‌سازی می‌شود؛ بنابراین حافظهٔ مرورگر منبع HTML قابل اعتماد نیست.
+### Server mode
 
-## سازگاری نسخهٔ قبلی
+Server mode از projection و commandهای BFF استفاده می‌کند. اگر session، backend یا قرارداد پاسخ خراب شود، UI باید حالت خطا/ورود/ممنوعیت را نشان دهد و نباید seed یا localStorage را جایگزین دادهٔ سرور کند.
 
-`legacyCompatibility` آدرس‌های عمومی و عملیاتی قبلی را با `replaceState` به نزدیک‌ترین مقصد امن فاز اول هدایت می‌کند. اگر URL قدیمی شناسه‌ای داشته باشد، آن شناسه تنها به‌صورت یک `legacyRef` غیرفعال حفظ می‌شود و به اولین مشتری یا درخواست موجود نگاشت نمی‌شود. deep-linkهای جدید فقط شناسهٔ معتبر Customer، ServiceRequest، Opportunity، Service، Document، Task یا Issue را می‌پذیرند و شناسهٔ ناشناخته باید حالت بازیابی امن نشان دهد.
+`runtimeDataFacade` مسئول این مرز است و پاسخ server را با `dataMode=server` و workspace identity معتبر می‌پذیرد.
 
-فایل‌های منبع رابط قبلی برای rollback و مقایسهٔ مهاجرت در تاریخچه/درخت منبع حفظ شده‌اند، اما bootstrap فاز اول آن‌ها را import نمی‌کند و منبع دادهٔ زندهٔ دوم ایجاد نمی‌شود.
+## هویت و Workspace
 
-## قواعد وابستگی
+- session از cookie امن HttpOnly/Secure/SameSite استفاده می‌کند.
+- mutationها CSRF-protected هستند.
+- workspace از session/server context مشتق می‌شود، نه header آزاد client.
+- PostgreSQL دارای policyهای workspace-scoped است.
+- دو-workspace isolation بخشی از acceptance اجباری است.
 
-- صفحات فقط از کامپوننت‌های مشترک، دادهٔ immutable و سرویس‌های وضعیت استفاده می‌کنند.
-- مدل داده و منطق گردش‌کار نباید به DOM وابسته باشد.
-- هیچ صفحه‌ای مستقیماً سرویس بیرونی را فراخوانی نمی‌کند.
-- دادهٔ دمو باید ساختگی و با بنر واحد «محیط نمایشی» مشخص باشد.
-- اتصال واقعی بعدی باید پشت adapter و کنترل مجوز مستقل قرار گیرد.
-- هوش مصنوعی جزء مسیر اصلی فاز اول نیست و نبود آن نباید هیچ گردش‌کاری را متوقف کند.
+## دامنهٔ Rahjo
 
-## استقرار
+مفاهیم اصلی:
 
-خروجی از ES module و دارایی‌های استاتیک تشکیل شده و برای Hostinger بسته‌بندی می‌شود. مسیرهای مستقیم با قرارداد fallback موجود سازگارند. `noindex` تا تأیید انتشار عمومی فعال می‌ماند.
+- Workspace / Membership
+- Account / Contact
+- Lead / Opportunity
+- Case
+- Service / Capability
+- Interaction / Task
+- Approval
+- Action / Run
+- Execution Receipt
+- Outcome
+- Document / Provenance
+- Audit / Outbox / Idempotency
+
+هر mutation مهم باید actor/source/correlation/workspace و نتیجهٔ قابل بازسازی داشته باشد.
+
+## Relaticle boundary
+
+Integration مورد نظر:
+
+- سرویس جدا و تا حد ممکن نزدیک upstream
+- team-pinned least-privilege credentials per workspace
+- REST برای CRM CRUD
+- MCP برای schema/search/fetch/tool access در آینده
+- validation و authorization همچنان در مرز Rahjo حفظ می‌شود
+
+Relaticle تحت AGPL-3.0 است. کپی یا deep fork قابل‌توجه بدون ADR/تصمیم صریح مجوز انجام نمی‌شود.
+
+## هوش مصنوعی
+
+AI در critical path فاز اول نیست. با خاموش بودن Model Gateway باید این مسیر کار کند:
+
+`Intake → Account → Case → Service → Approval → Action → Receipt → Outcome → Dashboard`
+
+مدل نباید مالک authorization، canonical pricing، قرارداد، execution confirmation یا human approval باشد.
+
+## سازگاری نسخه‌های قبل
+
+`legacyCompatibility` برای deep-linkهای قدیمی باقی می‌ماند، اما مسیرهای legacy و storeهای قدیمی مرجع معماری جدید نیستند. Golden Demo برای presentation/QA حفظ می‌شود و Server mode منبع دادهٔ عملیاتی مستقل و صریح دارد.
+
+## استقرار و production-readiness
+
+Frontend و Node BFF روی Hostinger و PostgreSQL روی Supabase در وضعیت interim live هستند.
+
+مواردی که هنوز production-ready کامل را مسدود می‌کنند:
+
+- Relaticle service واقعی + team/PAT/custom-field provisioning
+- MCP live acceptance
+- backup retention خارج از production database و restore واقعی dataset زنده
+- باقی‌مانده‌های API abuse/429 و website intake acceptance
+
+بنابراین «live» و «production-ready» دو وضعیت جدا هستند و مستندات/UX باید همین تفاوت را حفظ کنند.
