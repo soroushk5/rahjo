@@ -148,3 +148,21 @@ test("untrusted browser origins are denied before authentication", async (t) => 
   assert.equal(response.status, 403);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
 });
+
+test("browser bootstrap redirects only to an allowlisted Rahjo UI origin", async (t) => {
+  const { server, base } = await fixture();
+  t.after(() => server.close());
+
+  const trustedReturn = "https://rahjo.example.test/dashboard?rahjoApiBootstrap=1";
+  const trusted = await fetch(`${base}/browser-bootstrap?return=${encodeURIComponent(trustedReturn)}`, { redirect: "manual" });
+  assert.equal(trusted.status, 302);
+  assert.equal(trusted.headers.get("location"), trustedReturn);
+  assert.equal(await trusted.text(), "");
+
+  const external = await fetch(`${base}/browser-bootstrap?return=${encodeURIComponent("https://evil.example/dashboard")}`, { redirect: "manual" });
+  assert.equal(external.status, 403);
+  assert.equal(external.headers.get("location"), null);
+
+  const invalid = await fetch(`${base}/browser-bootstrap?return=not-a-url`, { redirect: "manual" });
+  assert.equal(invalid.status, 422);
+});

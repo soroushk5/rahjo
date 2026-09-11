@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyRuntimeBoundary } from "../src/app/runtimeBoundary.js";
+import { applyRuntimeBoundary, maybeStartBrowserBootstrap } from "../src/app/runtimeBoundary.js";
 import { runtimeData } from "../src/services/runtimeDataFacade.js";
 
 test("server failure gates existing demo render and mount functions", async () => {
@@ -86,4 +86,31 @@ test("authenticated server routes render the server projection and never call de
   assert.match(html, /CASE-SERVER-001/);
   assert.match(html, /محیط زنده/);
   assert.doesNotMatch(html, /CASE-DEMO/);
+});
+
+test("a cold Hostinger browser performs one safe API bootstrap hop without looping", () => {
+  let replacedWith = "";
+  const browserWindow = {
+    location: {
+      href: "https://rahjo.example.test/login?returnTo=%2Fdashboard",
+      replace(value) { replacedWith = value; }
+    }
+  };
+  const config = { mode: "server", apiBase: "https://api.rahjo.example" };
+
+  assert.equal(maybeStartBrowserBootstrap(config, { state: "unavailable", reason: "request-failed" }, browserWindow), true);
+  const bootstrap = new URL(replacedWith);
+  assert.equal(bootstrap.origin, "https://api.rahjo.example");
+  assert.equal(bootstrap.pathname, "/browser-bootstrap");
+  const returnUrl = new URL(bootstrap.searchParams.get("return"));
+  assert.equal(returnUrl.origin, "https://rahjo.example.test");
+  assert.equal(returnUrl.searchParams.get("rahjoApiBootstrap"), "1");
+
+  browserWindow.location.href = returnUrl.toString();
+  replacedWith = "";
+  assert.equal(maybeStartBrowserBootstrap(config, { state: "unavailable", reason: "request-failed" }, browserWindow), false);
+  assert.equal(replacedWith, "");
+
+  browserWindow.location.href = "https://rahjo.example.test/";
+  assert.equal(maybeStartBrowserBootstrap(config, { state: "unavailable", reason: "request-failed" }, browserWindow), false);
 });
