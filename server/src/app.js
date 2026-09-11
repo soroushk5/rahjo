@@ -182,6 +182,30 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
         return;
       }
 
+      // Hostinger's edge may require a one-time top-level JavaScript challenge
+      // before credentialed API calls are allowed. This endpoint is deliberately
+      // data-free: after the edge has established its browser cookie, it redirects
+      // only to an explicitly allowlisted Rahjo UI origin.
+      if (request.method === "GET" && url.pathname === "/browser-bootstrap") {
+        const rawReturn = url.searchParams.get("return");
+        let returnUrl;
+        try {
+          returnUrl = new URL(rawReturn ?? "");
+        } catch {
+          throw problems.validation("A valid browser bootstrap return URL is required");
+        }
+        if (returnUrl.protocol !== "https:" || !config.corsOrigins.includes(returnUrl.origin)) {
+          throw problems.forbidden();
+        }
+        status = 302;
+        response.writeHead(status, {
+          ...baseHeaders(requestId),
+          Location: returnUrl.toString()
+        });
+        response.end();
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/api/v1/session") {
         checkLoginRate(request);
         const body = await readJson(request, config.bodyLimit);
