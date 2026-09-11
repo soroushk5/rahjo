@@ -4,9 +4,9 @@ import { chromium } from 'playwright';
 const baseUrl = process.env.RAHJO_QA_ORIGIN || 'http://127.0.0.1:4173';
 const output = 'qa-artifacts/public-site';
 const routes = [
-  { path: '/', slug: 'home', h1: 'کار مشتری را از درخواست تا نتیجه', markers: ['.mp-product', '.mp-flow', '.mp-benefit-grid'] },
-  { path: '/product', slug: 'product', h1: 'یک فضای کاری برای مشتری، پرونده و اجرای کار', markers: ['.mp-product', '.mp-capability-grid'] },
-  { path: '/contact', slug: 'contact', h1: 'از یک فرایند واقعی شروع کنیم', markers: ['.mp-start__grid'] },
+  { path: '/', slug: 'home', h1: 'مشتری، فروش و اجرای خدمت را در یک سیستم پیگیری کنید', markers: ['.sw-screen', '.sw-showcases', '.sw-benefit-strip'] },
+  { path: '/product', slug: 'product', h1: 'CRM را از اجرای کار جدا نکنید', markers: ['.sw-product-grid', '.sw-screen'] },
+  { path: '/contact', slug: 'contact', h1: 'رهجو را با یک فرایند واقعی راه‌اندازی کنید', markers: ['.sw-start__grid', '.sw-screen'] },
   { path: '/login', slug: 'login', h1: '', markers: [] }
 ];
 const viewports = [
@@ -47,12 +47,14 @@ for (const viewport of viewports) {
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
       text: document.body.innerText,
-      canonicalNavCount: document.querySelectorAll('.mp-nav a').length
+      canonicalNavCount: document.querySelectorAll('.mp-nav a').length,
+      legacyDarkFlow: Boolean(document.querySelector('.mp-how'))
     }));
 
     if (metrics.scrollWidth > metrics.clientWidth + 2) failures.push(`${viewport.name} ${route.path}: horizontal overflow ${metrics.scrollWidth}/${metrics.clientWidth}`);
     if (/\bAI\b|هوش[‌\s-]*مصنوعی/i.test(metrics.text)) failures.push(`${viewport.name} ${route.path}: public copy mentions excluded intelligence framing`);
     if (route.path !== '/login' && metrics.canonicalNavCount !== 3) failures.push(`${viewport.name} ${route.path}: public nav count ${metrics.canonicalNavCount}`);
+    if (route.path === '/' && metrics.legacyDarkFlow) failures.push(`${viewport.name} /: legacy dark flow section returned`);
 
     for (const marker of route.markers) {
       if (!(await page.locator(marker).first().count())) failures.push(`${viewport.name} ${route.path}: missing ${marker}`);
@@ -87,4 +89,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Minimal public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);
+console.log(`Software-first public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);

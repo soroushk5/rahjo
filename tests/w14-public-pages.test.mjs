@@ -6,15 +6,31 @@ import {
   renderMinimalProductPage,
   renderMinimalTrackPage
 } from "../src/features/public/minimalPublicPages.js";
+import { publicNavigation } from "../src/app/navigation.js";
 
 const canonicalPages = [renderMinimalHomePage, renderMinimalProductPage, renderMinimalContactPage];
 
 test("canonical public site is intentionally limited to three destinations", () => {
+  assert.deepEqual(publicNavigation.map((item) => [item.path, item.label]), [
+    ["/", "خانه"],
+    ["/product", "محصول"],
+    ["/contact", "شروع"]
+  ]);
   const html = canonicalPages.map((render) => render()).join("\n");
   for (const path of ["/", "/product", "/contact", "/login"]) assert.match(html, new RegExp(`href="${path}"`));
-  for (const label of ["خدمات", "موارد استفاده", "اعتماد و کنترل", "راه‌اندازی"]) {
-    assert.doesNotMatch(html, new RegExp(`>${label}<`));
+  for (const path of ["/services", "/use-cases", "/how-it-works", "/trust", "/pilot", "/about"]) {
+    assert.doesNotMatch(html, new RegExp(`<a[^>]+href="${path}"`));
   }
+});
+
+test("public home explains the software category and concrete jobs", () => {
+  const html = renderMinimalHomePage();
+  assert.match(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی/);
+  assert.match(html, /مشتری، فروش و اجرای خدمت/);
+  for (const concreteArea of ["مشتریان", "فروش", "پرونده و عملیات", "اقدام بعدی من"]) {
+    assert.match(html, new RegExp(concreteArea));
+  }
+  assert.doesNotMatch(html, /پنج مرحله؛ از ورودی تا نتیجه|شروع بررسی/);
 });
 
 test("canonical public copy is concise and avoids intelligence positioning", () => {
