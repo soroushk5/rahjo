@@ -19,6 +19,18 @@ test("public surfaces share one restrained shell", () => {
   }
 });
 
+test("public header is intentionally tabless", () => {
+  for (const render of publicPages) {
+    const html = render();
+    assert.match(html, /class="site-brand-link rv-brand mp-brand"/);
+    assert.match(html, /href="\/" class="site-brand-link/);
+    assert.match(html, /class="mp-login"/);
+    assert.match(html, /class="button button--primary mp-header__primary"/);
+    assert.doesNotMatch(html, /class="phase-nav rv-nav mp-nav"/);
+    assert.doesNotMatch(html, /id="mobile-nav-toggle"/);
+  }
+});
+
 test("landing uses compact product storytelling instead of stacked screenshots", () => {
   const html = renderMinimalHomePage();
   assert.match(html, /CRM برای مدیریت مشتری، فروش و کارهای جاری/);
@@ -31,7 +43,7 @@ test("landing uses compact product storytelling instead of stacked screenshots",
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
-test("public information architecture has only three primary destinations", () => {
+test("canonical public routes stay available without becoming header tabs", () => {
   assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/contact"]);
   const login = utilityDestinations.find((item) => item.path === "/login");
   assert.equal(login?.label, "ورود به رهجو");
