@@ -1,0 +1,32 @@
+/* W14 public UX audit overrides.
+ * Keep the minimal public header usable on small screens even though the legacy
+ * phase-one stylesheet still contains old mobile rules for a demo-era CTA. */
+
+@media (max-width: 760px) {
+  .mp-header .mp-header__actions {
+    display: flex !important;
+    align-items: center;
+    justify-self: end;
+    min-width: max-content;
+  }
+
+  .mp-header .mp-header__actions .mp-header__primary {
+    display: inline-flex !important;
+    min-width: max-content;
+    min-height: 38px;
+    padding-inline: 12px;
+    font-size: .76rem !important;
+    line-height: 1.2;
+  }
+
+  .mp-header .mp-header__actions .mp-header__primary::after {
+    content: none !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .mp-header .mp-header__actions .mp-header__primary {
+    padding-inline: 10px;
+    font-size: .72rem !important;
+  }
+}
