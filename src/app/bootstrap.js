@@ -5,18 +5,20 @@ import {
   mountPublicPage,
   renderAboutPage,
   renderContactPage,
-  renderHowItWorksPage,
   renderNotFoundPage,
   renderPilotPage,
   renderPrivacyPage,
-  renderProductPage,
-  renderServicesPage,
   renderTermsPage,
   renderTrackRequestPage,
-  renderTrustPage,
-  renderUseCasesPage
+  renderTrustPage
 } from "../features/public/publicPages.js";
 import { renderHomePageV2 } from "../features/public/homePageV2.js";
+import {
+  renderAlignedHowItWorksPage,
+  renderAlignedProductPage,
+  renderAlignedServicesPage,
+  renderAlignedUseCasesPage
+} from "../features/public/alignedPublicPages.js";
 import { mountServiceRequestPage, renderServiceRequestPage } from "../features/requests/serviceRequestPage.js";
 import { mountCorePages, renderCustomersPage, renderDashboardPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../features/operations/corePages.js";
 import { mountDetailPages, renderCustomerDetailPage, renderRequestDetailPage } from "../features/operations/detailPages.js";
@@ -68,10 +70,10 @@ router = new Router({
   root,
   routes: [
     { path: "/", title: "از اولین درخواست تا نتیجه", description: "رهجو ورودی مشتری، حافظهٔ تجاری، پروندهٔ خدمت، تأیید انسانی، اجرا و نتیجه را در یک مسیر عملیاتی قابل پیگیری نگه می‌دارد.", render: renderHomePageV2, mount: publicMount },
-    { path: "/product", title: "محصول", description: "سامانهٔ یکپارچهٔ مدیریت مشتری، فروش و ارائهٔ خدمات رهجو.", render: renderProductPage, mount: publicMount },
-    { path: "/services", title: "خدمات", description: "کاتالوگ خدمات، مدارک، قیمت، زمان و شروع درخواست در رهجو.", render: renderServicesPage, mount: publicMount },
-    { path: "/use-cases", title: "موارد استفاده", description: "سناریوهای استفاده از رهجو برای کسب‌وکارهای خدماتی.", render: renderUseCasesPage, mount: publicMount },
-    { path: "/how-it-works", title: "نحوهٔ کار", description: "مسیر مشتری از ورود تا فروش، اجرا و تحویل در رهجو.", render: renderHowItWorksPage, mount: publicMount },
+    { path: "/product", title: "محصول", description: "رهجو حافظهٔ تجاری مشتری را به Case، خدمت، تأیید، اجرا، رسید و نتیجه وصل می‌کند.", render: renderAlignedProductPage, mount: publicMount },
+    { path: "/services", title: "خدمات", description: "خدمت در رهجو یک قرارداد اجرایی با ورودی، مسئول، تأیید، اقدام، رسید و نتیجه است.", render: renderAlignedServicesPage, mount: publicMount },
+    { path: "/use-cases", title: "موارد استفاده", description: "رهجو برای کسب‌وکارهای خدماتی که فروش و ارائهٔ خدمت باید یک مسیر مشترک داشته باشند.", render: renderAlignedUseCasesPage, mount: publicMount },
+    { path: "/how-it-works", title: "نحوهٔ کار", description: "مسیر رهجو از ورودی و مشتری تا پرونده، خدمت، تأیید، اقدام، رسید و نتیجه.", render: renderAlignedHowItWorksPage, mount: publicMount },
     { path: "/pilot", title: "راه‌اندازی رهجو", render: renderPilotPage, mount: publicMount },
     { path: "/trust", title: "اعتماد و کنترل", render: renderTrustPage, mount: publicMount },
     { path: "/about", title: "دربارهٔ رهجو", render: renderAboutPage, mount: publicMount },
