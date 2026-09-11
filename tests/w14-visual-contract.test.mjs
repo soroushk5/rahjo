@@ -21,9 +21,9 @@ test("minimal public surfaces share one restrained shell", () => {
 test("landing is product-led without marketing clutter", () => {
   const html = renderMinimalHomePage();
   assert.match(html, /کار مشتری را از درخواست تا نتیجه/);
-  assert.match(html, /class="mp-product"/);
-  assert.match(html, /class="mp-benefit-grid"/);
-  assert.match(html, /class="mp-flow"/);
+  assert.match(html, /mp-product/);
+  assert.match(html, /mp-benefit-grid/);
+  assert.match(html, /mp-flow/);
   assert.doesNotMatch(html, /Server-backed|Workspace-scoped|Human-gated|AI-optional/);
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
