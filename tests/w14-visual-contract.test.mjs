@@ -21,13 +21,13 @@ test("public surfaces share one restrained shell", () => {
 
 test("landing uses compact product storytelling instead of stacked screenshots", () => {
   const html = renderMinimalHomePage();
-  assert.match(html, /CRM ساده برای پیگیری رابطه با مشتری، فروش و اجرای کار/);
-  assert.match(html, /همه‌چیز را خلاصه، روشن و قابل پیگیری نگه دارید/);
-  assert.match(html, /sw-journey/);
+  assert.match(html, /CRM برای مدیریت مشتری، فروش و کارهای جاری/);
+  assert.match(html, /مشتری‌ها و فرصت‌ها را منظم جلو ببرید/);
   assert.match(html, /sw-hero-card/);
+  assert.match(html, /sw-journey-section/);
   assert.match(html, /sw-pillar-grid/);
   assert.doesNotMatch(html, /sw-screen|sw-showcases|sw-benefit-strip/);
-  assert.doesNotMatch(html, /کسب‌وکارهای خدماتی/);
+  assert.doesNotMatch(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی/);
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
@@ -40,7 +40,7 @@ test("public information architecture has only three primary destinations", () =
 
 test("product page explains three connected product pillars", () => {
   const html = renderMinimalProductPage();
-  assert.match(html, /سه لایه‌ای که CRM را از اجرای کار جدا نمی‌کنند/);
+  assert.match(html, /CRM را با پیگیری کارهای واقعی تیم در یک مسیر نگه دارید/);
   for (const phrase of ["حافظهٔ مشتری", "فروش و پیگیری", "پرونده و اجرا", "اقدام بعدی"]) {
     assert.match(html, new RegExp(phrase));
   }
