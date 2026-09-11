@@ -17,6 +17,16 @@ test("canonical public site is intentionally limited to three destinations", () 
   }
 });
 
+test("public home explains the software category and concrete jobs", () => {
+  const html = renderMinimalHomePage();
+  assert.match(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی/);
+  assert.match(html, /مشتری، فروش و اجرای خدمت/);
+  for (const concreteArea of ["مشتریان", "فروش", "پرونده و عملیات", "اقدام بعدی من"]) {
+    assert.match(html, new RegExp(concreteArea));
+  }
+  assert.doesNotMatch(html, /پنج مرحله؛ از ورودی تا نتیجه|شروع بررسی/);
+});
+
 test("canonical public copy is concise and avoids intelligence positioning", () => {
   const html = canonicalPages.map((render) => render()).join("\n");
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
