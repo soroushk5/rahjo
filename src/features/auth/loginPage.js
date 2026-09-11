@@ -6,24 +6,41 @@ import { isAuthenticated, signInAsGuest } from "../../services/authStore.js";
 export function renderLoginPage(options = {}) {
   const returnTo = options.returnTo ?? "/dashboard";
   return `
-    <main id="main-content" class="guest-login">
-      <section class="guest-login__story">
+    <main id="main-content" class="guest-login rv-demo-entry">
+      <section class="guest-login__story rv-demo-entry__story">
         <a data-link href="/" class="guest-login__brand" aria-label="بازگشت به رهجو">${brandLogo({ inverted: true })}</a>
-        <div class="guest-login__copy">
-          <h1>یک مشتری را از اولین درخواست تا تحویل نتیجه دنبال کنید.</h1>
-          <p>در دموی رهجو، فروش، مدارک، پرداخت، عملیات، تأیید و سابقهٔ مشتری در یک مسیر به هم متصل‌اند.</p>
+        <div class="guest-login__copy rv-demo-entry__copy">
+          <span class="rv-demo-entry__mode">Golden Demo · دادهٔ ساختگی</span>
+          <h1>همان مسیر مشتری تا نتیجه، در یک محیط جدا و قابل بازنشانی.</h1>
+          <p>Golden Demo برای دیدن تجربهٔ محصول است؛ نه جایگزین Workspace واقعی. همهٔ نام‌ها، پرونده‌ها و عملیات ساختگی‌اند.</p>
         </div>
-        <ol class="guest-login__flow"><li><span>${icon("users")}</span><strong>مشتری</strong></li><li><span>${icon("requests")}</span><strong>درخواست</strong></li><li><span>${icon("bank")}</span><strong>پرداخت</strong></li><li><span>${icon("workflow")}</span><strong>اجرا</strong></li><li><span>${icon("check")}</span><strong>نتیجه</strong></li></ol>
-        <div class="guest-login__sample"><span class="status status--progress">در حال اجرا</span><div><small>درخواست نمونه</small><strong>راه‌اندازی و کنترل فرایند فروش</strong><p>شرکت آریا صنعت · رهـ-۱۴۰۵-۰۲۸۴</p></div></div>
+        <ol class="guest-login__flow rv-demo-entry__flow">
+          <li><span>${icon("users")}</span><strong>مشتری</strong></li>
+          <li><span>${icon("requests")}</span><strong>پرونده</strong></li>
+          <li><span>${icon("shield")}</span><strong>تأیید</strong></li>
+          <li><span>${icon("workflow")}</span><strong>اقدام</strong></li>
+          <li><span>${icon("document")}</span><strong>رسید</strong></li>
+          <li><span>${icon("check")}</span><strong>نتیجه</strong></li>
+        </ol>
+        <div class="guest-login__sample rv-demo-entry__case">
+          <span class="status status--progress">نیازمند تأیید</span>
+          <div><small>پروندهٔ نمونه</small><strong>راه‌اندازی عملیات فروش</strong><p>آریا صنعت · CASE-DEMO-1028</p></div>
+        </div>
       </section>
-      <section class="guest-login__panel">
+      <section class="guest-login__panel rv-demo-entry__panel">
         <div class="guest-login__panel-inner">
           <div class="guest-login__mobile-brand">${brandLogo()}</div>
-          <h2>ورود مهمان به دموی رهجو</h2>
-          <p>بدون ساخت حساب وارد شوید و سناریوی کامل فاز اول را در چند دقیقه اجرا کنید.</p>
-          <ul class="check-list"><li>${icon("check", { size: 17 })} مشاهدهٔ داشبورد روزانه</li><li>${icon("check", { size: 17 })} ثبت درخواست خدمت</li><li>${icon("check", { size: 17 })} پرداخت و عملیات نمایشی</li><li>${icon("check", { size: 17 })} مشاهدهٔ Account 360</li></ul>
-          <button id="guest-login-button" class="button button--primary button--large guest-login__button" type="button" data-return-to="${returnTo}">شروع دموی تعاملی ${icon("arrow")}</button>
-          <p class="guest-login__note">این محیط به سرویس یا پرداخت واقعی متصل نیست. تمام نام‌ها و عملیات ساختگی‌اند و اطلاعات فقط در همین مرورگر می‌ماند.</p>
+          <span class="rv-demo-entry__eyebrow">محیط ارزیابی</span>
+          <h2>ورود به Golden Demo</h2>
+          <p>بدون ساخت حساب، حلقهٔ اصلی رهجو را با دادهٔ ساختگی اجرا کنید و هر زمان به حالت اولیه برگردانید.</p>
+          <ul class="check-list rv-demo-entry__checks">
+            <li>${icon("check", { size: 17 })} Dashboard و اقدام بعدی</li>
+            <li>${icon("check", { size: 17 })} Case و Approval انسانی</li>
+            <li>${icon("check", { size: 17 })} Action، Receipt و Outcome</li>
+            <li>${icon("check", { size: 17 })} Account 360 و Audit trail</li>
+          </ul>
+          <button id="guest-login-button" class="button button--primary button--large guest-login__button" type="button" data-return-to="${returnTo}">شروع Golden Demo ${icon("arrow")}</button>
+          <div class="rv-demo-entry__boundary">${icon("shield", { size: 17 })}<p>این حالت به Workspace یا رکورد واقعی متصل نیست. داده فقط برای همین تجربهٔ نمایشی در مرورگر نگه‌داری می‌شود.</p></div>
           <a data-link class="text-link" href="/">بازگشت به سایت ${icon("arrow", { size: 16 })}</a>
         </div>
       </section>
@@ -40,7 +57,7 @@ export function mountLoginPage({ onSuccess }) {
   if (!(button instanceof HTMLButtonElement)) return;
   button.addEventListener("click", () => {
     button.disabled = true;
-    button.innerHTML = `در حال آماده‌سازی دمو…`;
+    button.innerHTML = `در حال آماده‌سازی Golden Demo…`;
     window.setTimeout(() => {
       signInAsGuest();
       onSuccess(returnTo);
