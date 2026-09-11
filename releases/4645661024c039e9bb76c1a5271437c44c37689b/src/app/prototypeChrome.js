@@ -5,6 +5,7 @@ import { signOut } from "../services/authStore.js";
 import { searchIndex } from "../services/phaseOneStore.js";
 import { entityHref } from "./entityRoutes.js";
 import { escapeHtml } from "../lib/html.js";
+import { runtimeData, RUNTIME_DATA_STATES } from "../services/runtimeDataFacade.js";
 
 let keyboardBound = false;
 
@@ -27,13 +28,16 @@ export function commandItems(entities = searchIndex()) {
     href: item.path,
     resultKind: "destination"
   }));
+  const runtime = runtimeData.read();
+  const serverEntities = runtime.mode === "server" && runtime.state === RUNTIME_DATA_STATES.READY
+    ? [
+        ...(runtime.projection?.accounts || []).map((item) => ({ id: item.id, label: item.name || item.id, meta: "مشتری سرور", href: `/customers/detail?account=${encodeURIComponent(item.id)}`, resultKind: "entity" })),
+        ...(runtime.projection?.cases || []).map((item) => ({ id: item.id, label: item.purpose || item.id, meta: `Case · ${item.status}`, href: `/requests/detail?case=${encodeURIComponent(item.id)}`, resultKind: "entity" }))
+      ]
+    : entities.map((item) => ({ ...item, href: entityHref(item), resultKind: "entity" }));
   return [
     ...destinations,
-    ...entities.map((item) => ({
-      ...item,
-      href: entityHref(item),
-      resultKind: "entity"
-    }))
+    ...serverEntities
   ];
 }
 
@@ -162,6 +166,16 @@ function mountLogout() {
     if (!(control instanceof HTMLElement) || control.dataset.logoutBound) return;
     control.dataset.logoutBound = "true";
     control.addEventListener("click", () => signOut());
+  });
+  document.querySelectorAll("[data-server-logout]").forEach((control) => {
+    if (!(control instanceof HTMLElement) || control.dataset.logoutBound) return;
+    control.dataset.logoutBound = "true";
+    control.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await runtimeData.logout();
+      history.replaceState({}, "", "/login");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
   });
 }
 

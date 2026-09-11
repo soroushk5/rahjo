@@ -80,6 +80,7 @@ router = new Router({
     { path: "/terms", title: "شرایط استفاده", render: renderTermsPage, mount: publicMount },
     { path: "/track-request", title: "پیگیری درخواست", render: renderTrackRequestPage, mount: publicMount },
     { path: "/request-service", title: "ثبت درخواست خدمت", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
+    { path: "/cases/new", title: "ورود پروندهٔ جدید", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/login", title: "ورود مهمان به دمو", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
     { path: "/dashboard", title: "داشبورد", render: renderWithSession(renderDashboardPage, "/dashboard"), mount: coreMount("/dashboard") },
     { path: "/customers", title: "مشتریان", render: renderWithSession(renderCustomersPage, "/customers"), mount: coreMount("/customers") },

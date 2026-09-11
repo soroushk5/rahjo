@@ -13,6 +13,7 @@ export const RUNTIME_DATA_STATES = Object.freeze({
 
 export const SERVER_RUNTIME_PATH = "/api/v1/runtime";
 export const SERVER_SESSION_PATH = "/api/v1/session";
+export const SERVER_CSRF_PATH = "/api/v1/session/csrf";
 export const DEFAULT_SERVER_TIMEOUT_MS = 30000;
 
 /** @type {Readonly<Record<string, string>>} */
@@ -47,7 +48,7 @@ function immutableJson(value) {
 
 /**
  * @param {unknown} payload
- * @returns {{version:number, workspace:Record<string, any>, projection:Record<string, any>}}
+ * @returns {{version:number, workspace:Record<string, any>, user:Record<string, any>|null, projection:Record<string, any>}}
  */
 function validateServerEnvelope(payload) {
   if (!isPlainObject(payload)) throw new Error("Response envelope must be an object.");
@@ -59,9 +60,10 @@ function validateServerEnvelope(payload) {
   }
   if (!isPlainObject(envelope.projection)) throw new Error("Runtime projection is missing.");
 
-  return /** @type {{version:number, workspace:Record<string, any>, projection:Record<string, any>}} */ (immutableJson({
+  return /** @type {{version:number, workspace:Record<string, any>, user:Record<string, any>|null, projection:Record<string, any>}} */ (immutableJson({
     version: envelope.version,
     workspace: { ...envelope.workspace, id: envelope.workspace.id.trim() },
+    user: isPlainObject(envelope.user) ? { ...envelope.user } : null,
     projection: { ...envelope.projection }
   }));
 }
@@ -121,6 +123,24 @@ export function createRuntimeDataFacade() {
    */
   function readProjection() {
     return current.state === RUNTIME_DATA_STATES.READY ? current.projection : null;
+  }
+
+  /** @param {typeof fetch} fetchImpl */
+  async function acquireCsrf(fetchImpl) {
+    if (sessionCsrfToken) return true;
+    if (!activeConfig || activeConfig.mode !== "server") return false;
+    const response = await fetchImpl(`${activeConfig.apiBase}${SERVER_CSRF_PATH}`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) return false;
+    const payload = await response.json().catch(() => null);
+    if (!isPlainObject(payload) || payload.dataMode !== "server"
+      || typeof payload.csrfToken !== "string" || payload.csrfToken.length < 24) return false;
+    sessionCsrfToken = payload.csrfToken;
+    return true;
   }
 
   /** @param {unknown} error */
@@ -198,8 +218,10 @@ export function createRuntimeDataFacade() {
         buildSha: config.buildSha,
         httpStatus: response.status,
         workspace: envelope.workspace,
+        user: envelope.user,
         projection: envelope.projection,
-        version: envelope.version
+        version: envelope.version,
+        canMutate: await acquireCsrf(fetchImpl).catch(() => false)
       }));
     } catch {
       return publish(makeSnapshot("server", RUNTIME_DATA_STATES.UNAVAILABLE, {
@@ -302,7 +324,57 @@ export function createRuntimeDataFacade() {
     return initialize(config, options);
   }
 
-  return Object.freeze({ initialize, authenticate, read, readProjection, configurationFailure });
+  /** @param {string} path @param {{body?:Record<string, unknown>, idempotencyKey?:string, fetchImpl?:typeof fetch}} [options] */
+  async function command(path, { body = {}, idempotencyKey = "", fetchImpl = globalThis.fetch } = {}) {
+    const config = activeConfig;
+    if (!config || config.mode !== "server" || current.state !== RUNTIME_DATA_STATES.READY) {
+      throw new Error("نشست عملیاتی آماده نیست.");
+    }
+    if (typeof fetchImpl !== "function" || !await acquireCsrf(fetchImpl)) {
+      throw new Error("توکن امن عملیات در دسترس نیست؛ صفحه را تازه کنید.");
+    }
+    const response = await fetchImpl(`${config.apiBase}${path}`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRF-Token": sessionCsrfToken,
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {})
+      },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      const problem = await response.json().catch(() => null);
+      const error = Object.assign(new Error(problem?.detail || problem?.title || `عملیات سرور ناموفق بود (${response.status}).`), {
+        status: response.status,
+        code: problem?.code || `HTTP_${response.status}`
+      });
+      throw error;
+    }
+    const result = response.status === 204 ? null : await response.json();
+    await initialize(config, { fetchImpl });
+    return result;
+  }
+
+  async function logout({ fetchImpl = globalThis.fetch } = {}) {
+    const config = activeConfig;
+    if (!config || config.mode !== "server") return;
+    if (typeof fetchImpl === "function" && await acquireCsrf(fetchImpl)) {
+      await fetchImpl(`${config.apiBase}${SERVER_SESSION_PATH}/logout`, {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+        headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-Token": sessionCsrfToken },
+        body: "{}"
+      });
+    }
+    sessionCsrfToken = "";
+    publish(makeSnapshot("server", RUNTIME_DATA_STATES.AUTH, { buildSha: config.buildSha, httpStatus: 401 }));
+  }
+
+  return Object.freeze({ initialize, authenticate, command, logout, read, readProjection, configurationFailure });
 }
 
 export const runtimeData = createRuntimeDataFacade();

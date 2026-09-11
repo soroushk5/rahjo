@@ -3,6 +3,7 @@ import { brandLogo } from "../components/brandLogo.js";
 import { icon } from "../components/icons.js";
 import { consoleNavigation, routeLabel } from "./navigation.js";
 import { getSession } from "../services/authStore.js";
+import { runtimeData, RUNTIME_DATA_STATES } from "../services/runtimeDataFacade.js";
 
 function activeNavPath(path) {
   if (path === "/customers/detail") return "/customers";
@@ -12,7 +13,12 @@ function activeNavPath(path) {
 
 export function appShell({ content, activePath, title }) {
   const session = getSession();
-  const user = session?.user ?? { name: "نسترن احمدی", role: "مدیر عملیات", organization: "محیط نمایشی رهجو", initials: "ن‌ا" };
+  const runtime = runtimeData.read();
+  const serverMode = runtime.mode === "server" && runtime.state === RUNTIME_DATA_STATES.READY;
+  const liveName = runtime.user?.name || runtime.user?.email || "کاربر رهجو";
+  const user = serverMode
+    ? { name: liveName, role: runtime.user?.role || "کاربر", organization: runtime.workspace?.name || "رهجو", initials: liveName.slice(0, 2) }
+    : session?.user ?? { name: "نسترن احمدی", role: "مدیر عملیات", organization: "محیط نمایشی رهجو", initials: "ن‌ا" };
   const active = activeNavPath(activePath);
   const daily = consoleNavigation.slice(0, 8);
   const management = consoleNavigation.slice(8);
@@ -37,13 +43,13 @@ export function appShell({ content, activePath, title }) {
           <div class="phase-user">
             <span>${user.initials}</span>
             <div><strong>${user.name}</strong><small>${user.role}</small></div>
-            <a data-link data-logout href="/login" aria-label="خروج از دمو">${icon("logout", { size: 17 })}</a>
+            <a data-link ${serverMode ? "data-server-logout" : "data-logout"} href="/login" aria-label="خروج از رهجو">${icon("logout", { size: 17 })}</a>
           </div>
         </div>
       </aside>
 
       <div class="phase-app-main">
-        <div class="demo-strip"><span>${icon("shield", { size: 16 })} نسخهٔ نمایشی — تمام نام‌ها، داده‌ها، پرداخت‌ها و عملیات این محیط ساختگی هستند.</span></div>
+        <div class="demo-strip ${serverMode ? "demo-strip--live" : ""}"><span>${icon("shield", { size: 16 })} ${serverMode ? `محیط زندهٔ ${user.organization} — داده‌ها از سرور خوانده می‌شوند و AI خاموش است.` : "نسخهٔ نمایشی — تمام نام‌ها، داده‌ها، پرداخت‌ها و عملیات این محیط ساختگی هستند."}</span></div>
         <header class="phase-topbar">
           <div class="phase-topbar__title">
             <button id="app-menu-toggle" class="icon-button app-menu-toggle" type="button" aria-label="باز کردن منوی محیط عملیاتی" aria-expanded="false">${icon("menu")}</button>
@@ -51,7 +57,7 @@ export function appShell({ content, activePath, title }) {
           </div>
           <div class="phase-topbar__actions">
             <button id="global-search" class="phase-search" type="button">${icon("search", { size: 17 })}<span>جست‌وجوی مشتری، درخواست، سند…</span><kbd>/</kbd></button>
-            <a data-link class="button button--primary" href="/request-service">درخواست جدید ${icon("arrow", { size: 15 })}</a>
+            <a data-link class="button button--primary" href="${serverMode ? "/cases/new" : "/request-service"}">${serverMode ? "پروندهٔ جدید" : "درخواست جدید"} ${icon("arrow", { size: 15 })}</a>
           </div>
         </header>
         <main id="main-content" class="phase-app-content">${content}</main>
