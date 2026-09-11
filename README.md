@@ -1,35 +1,82 @@
 # رهجو — مدیریت مشتری تا نتیجه
 
-رهجو یک محصول عملیاتی برای کسب‌وکارهای خدماتی است که مشتری، فروش، درخواست خدمت، مدارک، پرداخت، اجرا و نتیجه را در یک جریان واحد نگه می‌دارد.
+رهجو یک محصول عملیاتی برای کسب‌وکارهای خدماتی است که ورودی مشتری، حافظهٔ تجاری، فروش، پروندهٔ خدمت، تأیید انسانی، اجرا، رسید و نتیجه را در یک جریان واحد نگه می‌دارد.
 
-نسخهٔ حاضر، پیاده‌سازی تعاملی فاز اول و بدون وابستگی به هوش مصنوعی است. داده‌ها نمایشی‌اند و در `localStorage` همان مرورگر می‌مانند؛ هیچ API، پرداخت واقعی یا حساب کاربری واقعی به آن متصل نیست.
+نسخهٔ فعلی دو حالت صریح دارد:
+
+- **Server mode** — رابط عملیاتی به Rahjo BFF و PostgreSQL متصل است، نشست امن و جداسازی Workspace دارد و مسیر اصلی Case → Approval → Action → Run → Receipt → Outcome بدون وابستگی به LLM کار می‌کند.
+- **Golden Demo mode** — دادهٔ ساختگی و مرورگرمحلی برای نمایش و QA است و از دادهٔ سرور جدا می‌ماند.
+
+در Server mode هیچ شکست backend نباید با دادهٔ دمو یا `localStorage` پنهان شود.
+
+## وضعیت Production فعلی
+
+نسخهٔ public و backend زنده‌اند، اما وضعیت رسمی همچنان **interim / not production-ready** است.
+
+توپولوژی فعلی:
+
+```text
+Rahjo Web
+  → Rahjo Node BFF
+  → PostgreSQL (Supabase)
+  → native_deferred CRM bridge
+```
+
+Relaticle هنوز به‌عنوان سرویس production جداگانه deploy/provision نشده است. adapter آن در source وجود دارد و مرز AGPL حفظ شده، اما CRM زندهٔ فعلی به‌صورت صریح `native_deferred` کار می‌کند و رکوردهای در انتظار Relaticle را به‌عنوان Relaticle جا نمی‌زند.
+
+همچنین MCP زندهٔ Relaticle و backup/restore کامل dataset production هنوز gateهای باز production-readiness هستند.
+
+## مدل عملیاتی
+
+زنجیرهٔ canonical محصول:
+
+```text
+Intake
+→ Account / Contact
+→ Opportunity / Case
+→ Service
+→ Approval
+→ Action / Run
+→ Execution Receipt
+→ Outcome
+→ Account / Dashboard history
+```
+
+مفاهیم Rahjo مانند Case، Service، Approval، Action، Run، Receipt، Outcome، Provenance و Audit مفاهیم درجه‌یک دامنه هستند و صرفاً custom field نیستند.
 
 ## سطوح محصول
 
-- وب‌سایت تجاری: خانه، محصول، خدمات، موارد استفاده، نحوهٔ کار، اعتماد، راه‌اندازی و تماس
-- ورودی مشتری: انتخاب خدمت، تکمیل مشخصات، وضعیت مدارک، بازبینی و دریافت کد پیگیری
-- کنسول عملیات: داشبورد، مشتریان، فروش، خدمات، درخواست‌ها، کارها، گردش‌کار، مالی، اسناد، گزارش‌ها، ممیزی و تنظیمات
-- پروندهٔ ۳۶۰ درجهٔ مشتری: افراد، فروش، درخواست‌ها، مالی، اسناد و خط زمانی
-- جزئیات درخواست: مدارک، پرداخت، اجرا، تأیید انسانی، رویدادها، نتیجه و اقدام بعدی
+- سایت عمومی: خانه، محصول، خدمات، موارد استفاده، نحوهٔ کار، اعتماد، راه‌اندازی و تماس
+- ورودی مشتری: ثبت درخواست/Case با منبع و provenance
+- محیط عملیاتی: Dashboard، مشتریان، فروش، خدمات، پرونده‌ها، کارها، عملیات، اسناد، گزارش و ممیزی
+- Account 360: رابطهٔ مشتری، افراد، فرصت‌ها، Caseها، تعهدات باز و سابقه
+- Case: خدمت، تأیید، اقدام، Run، Receipt، Outcome و timeline
 
-## سناریوی طلایی دمو
+## هوش مصنوعی
 
-```text
-ورود مهمان → داشبورد → ثبت درخواست خدمت → تکمیل مدارک
-→ ثبت پرداخت نمایشی → تخصیص و شروع اجرا → تأیید انسانی → ثبت نتیجه و تحویل
-→ مشاهدهٔ سابقه در پروندهٔ مشتری
-```
+AI جزء critical path فاز اول نیست.
 
-ورود از مسیر `/login` با یک دکمه انجام می‌شود و صرفاً نشست محلی دمو می‌سازد.
+مجوز، workspace scope، canonical state، قیمت/تعهد قطعی، تأیید انسانی و اجرای نهایی نباید به مدل واگذار شوند. قابلیت‌های هوشمند آینده می‌توانند تحلیل، پیشنهاد یا خلاصه اضافه کنند، ولی مسیر عملیاتی پایه با همهٔ providerها خاموش قابل اجرا است.
 
 ## اجرای محلی
+
+Frontend:
 
 ```bash
 npm install
 npm run dev
 ```
 
-سپس `http://localhost:4173` را باز کنید.
+Backend:
+
+```bash
+cd server
+npm install
+npm run check
+npm test
+```
+
+برای frontend محلی سپس `http://localhost:4173` را باز کنید. تنظیم runtime باید مشخص کند محیط در `demo` یا `server` mode اجرا می‌شود.
 
 ## کنترل کیفیت
 
@@ -40,17 +87,22 @@ npm run build:hostinger
 npm run smoke:hostinger
 ```
 
-Node.js 20 یا جدیدتر لازم است. کد زمان اجرا وابستگی ثالث ندارد و TypeScript فقط برای بررسی سخت‌گیرانهٔ فایل‌های JavaScript استفاده می‌شود.
+برای BFF نیز تست‌های `server/` باید جداگانه پاس شوند. انتشار production تنها با سبز بودن CI کافی نیست؛ gateهای امنیت، restore و topology نیز در Task OS canonical نگه‌داری می‌شوند.
 
 ## اسناد مرجع
 
-- تعریف محصول، معماری اطلاعات، سفرها و نقشهٔ تغییر: `docs/PHASE_ONE_PRODUCT_BLUEPRINT.md`
+- وضعیت اجرای canonical: Google Drive `RAHJO — Task OS — Phase 1 Operational Foundation`
+- قرارداد W14 سایت و محصول عمومی: `docs/W14_PUBLIC_PRODUCT_ALIGNMENT.md`
 - معماری فنی: `docs/ARCHITECTURE.md`
-- سیستم ارائه و قرارداد بصری: `docs/PRESENTATION_SYSTEM.md`
+- Blueprint فاز اول: `docs/PHASE_ONE_PRODUCT_BLUEPRINT.md`
 - قرارداد انتشار Hostinger: `docs/HOSTINGER_PRODUCTION.md`
+- چک‌لیست go-live: `docs/GO_LIVE_CHECKLIST.md`
 
-## مرز ایمنی
+## مرز ایمنی و مجوز
 
-این نسخه فقط برای نمایش و ارزیابی است. ورود دادهٔ شخصی واقعی، اتصال پرداخت، استقرار عمومی، ارسال پیام بیرونی و هر اقدام امنیتی یا مالی به پیاده‌سازی بک‌اند و تأیید صریح جداگانه نیاز دارد.
+- Golden Demo از Server mode جدا است.
+- credential واقعی نباید در UI، source، Drive receipt یا log قرار بگیرد.
+- Relaticle تحت AGPL-3.0 بررسی و pin شده است؛ source قابل‌توجه Relaticle بدون تصمیم مجوز/provenance جداگانه داخل Rahjo کپی نمی‌شود.
+- تا زمانی که Relaticle/MCP production و restore واقعی production تأیید نشده‌اند، از برچسب `production-ready` استفاده نمی‌شود.
 
-آدرس‌های نسخه‌های قبلی با یک لایهٔ سازگاری به مقصد امن فاز اول هدایت می‌شوند. شناسه‌های قدیمی فقط به‌صورت `legacyRef` برای ردیابی نگه داشته می‌شوند و هرگز به رکورد جدید نامرتبط نسبت داده نمی‌شوند.
+مسیرهای legacy فقط برای سازگاری نگه داشته می‌شوند و نباید منبع معماری یا روایت جدید محصول باشند.
