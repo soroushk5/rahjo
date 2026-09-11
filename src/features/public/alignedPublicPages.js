@@ -8,7 +8,8 @@ const journey = Object.freeze([
   ["فرصت / پرونده", "فروش یا درخواست خدمت با مالک و وضعیت روشن شکل می‌گیرد", "requests"],
   ["خدمت", "شرایط، مدارک و مسیر اجرای خدمت مشخص می‌شود", "settings"],
   ["تأیید", "تصمیم انسانی در نقاط حساس ثبت می‌شود", "shield"],
-  ["اقدام", "اجرای کنترل‌شده با وضعیت و Receipt انجام می‌شود", "workflow"],
+  ["اقدام", "Action و Run اجرای کنترل‌شده را انجام می‌دهند", "workflow"],
+  ["رسید", "Receipt شواهد نتیجهٔ اجرای واقعی را نگه می‌دارد", "document"],
   ["نتیجه", "Outcome و اقدام بعدی به سابقهٔ مشتری برمی‌گردد", "check"]
 ]);
 
@@ -93,7 +94,7 @@ export function renderAlignedServicesPage() {
     })}
       <section class="rv-page-section"><div class="container rv-editorial-grid"><div>${editorialHeader("قرارداد خدمت", "قبل از اجرا، پنج چیز باید بدون ابهام روشن باشد.", "این قرارداد پایهٔ Case، کنترل اجرا و پذیرش نتیجه است.")}</div><ol class="rv-contract-list">${contract.map(([index, title, desc]) => `<li><b>${index}</b><div><h3>${title}</h3><p>${desc}</p></div></li>`).join("")}</ol></div></section>
       <section class="rv-map-section rv-map-section--page"><div class="container">${editorialHeader("از درخواست تا Outcome", "هر خدمت روی همان زنجیرهٔ مشتری اجرا می‌شود.")}${journeySpine({ compact: true })}</div></section>
-      <section class="rv-page-section"><div class="container rv-inline-cta"><div><span>${icon("requests", { size: 22 })}</span><div><h2>هر درخواست، یک Case واقعی</h2><p>منبع، مشتری، خدمت، مالک، Approvalها، Actionها و نتیجه در یک پرونده باقی می‌مانند.</p></div></div><a data-link class="button button--primary" href="/request-service">شروع درخواست</a></div></section>`
+      <section class="rv-page-section"><div class="container rv-inline-cta"><div><span>${icon("requests", { size: 22 })}</span><div><h2>هر درخواست، یک Case واقعی</h2><p>منبع، مشتری، خدمت، مالک، Approvalها، Actionها، Receipt و نتیجه در یک پرونده باقی می‌مانند.</p></div></div><a data-link class="button button--primary" href="/request-service">شروع درخواست</a></div></section>`
   });
 }
 
