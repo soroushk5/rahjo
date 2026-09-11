@@ -243,14 +243,22 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
       }
       if (request.method === "POST" && url.pathname === "/api/v1/session/csrf") {
         if (context.auth_method !== "cookie") throw problems.forbidden();
+        const rawSession = opaqueToken("rahjo_session");
         const csrfToken = opaqueToken("rahjo_csrf");
-        const rotated = await database.rotateSessionCsrf(
+        const expiresAt = new Date(Date.now() + config.sessionHours * 60 * 60_000);
+        const renewed = await database.renewSession(
+          context.membership_id,
           tokenDigest(context.session_token, config.tokenPepper),
-          tokenDigest(csrfToken, config.tokenPepper)
+          tokenDigest(rawSession, config.tokenPepper),
+          tokenDigest(csrfToken, config.tokenPepper),
+          expiresAt
         );
-        if (!rotated) throw problems.unauthorized();
+        if (!renewed) throw problems.unauthorized();
         status = 200;
-        json(response, status, { dataMode: "server", csrfToken }, requestId, corsHeaders);
+        json(response, status, { dataMode: "server", csrfToken, expiresAt: expiresAt.toISOString() }, requestId, {
+          ...corsHeaders,
+          "Set-Cookie": `${sessionCookie}=${encodeURIComponent(rawSession)}; Path=/; HttpOnly; ${config.appEnv === "production" ? "Secure; " : ""}SameSite=Lax; Max-Age=${config.sessionHours * 3600}`
+        });
         return;
       }
       if (request.method === "POST" && url.pathname === "/api/v1/session/logout") {

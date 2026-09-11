@@ -222,8 +222,8 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       body: JSON.stringify({ workspaceSlug: `e2e-alpha-${workspaceSuffix}`, email: `e2e-alpha-${workspaceSuffix}@example.test`, password: browserPassword })
     });
     assert.equal(login.status, 201);
-    const loginData = await login.json();
-    const sessionCookie = login.headers.get("set-cookie").split(";")[0];
+    let loginData = await login.json();
+    let sessionCookie = login.headers.get("set-cookie").split(";")[0];
     const browserCall = (path, { method = "GET", body, idempotencyKey, csrf = true } = {}) => fetch(`${base}${path}`, {
       method,
       headers: {
@@ -235,6 +235,18 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       },
       ...(body ? { body: JSON.stringify(body) } : {})
     });
+    assert.equal((await browserCall("/api/v1/runtime")).status, 200);
+    const staleSessionCookie = sessionCookie;
+    const csrfBootstrap = await browserCall("/api/v1/session/csrf", { method: "POST", csrf: false });
+    assert.equal(csrfBootstrap.status, 200);
+    const csrfBootstrapData = await csrfBootstrap.json();
+    assert.match(csrfBootstrapData.csrfToken, /^rahjo_csrf_/);
+    loginData = { ...loginData, csrfToken: csrfBootstrapData.csrfToken };
+    sessionCookie = csrfBootstrap.headers.get("set-cookie").split(";")[0];
+    assert.notEqual(sessionCookie, staleSessionCookie);
+    assert.equal((await fetch(`${base}/api/v1/runtime`, {
+      headers: { Origin: "http://localhost", Cookie: staleSessionCookie }
+    })).status, 401);
     assert.equal((await browserCall("/api/v1/runtime")).status, 200);
     const override = await fetch(`${base}/api/v1/runtime`, { headers: { Origin: "http://localhost", Cookie: sessionCookie, "X-Workspace-Id": workspaceB.id } });
     assert.equal(override.status, 422);

@@ -68,9 +68,18 @@ export class Database {
     return result.rows[0]?.revoked === true;
   }
 
-  async rotateSessionCsrf(tokenHash, csrfHash) {
-    const result = await this.executor.query("SELECT rahjo.rotate_web_session_csrf($1,$2) AS rotated", [tokenHash, csrfHash]);
-    return result.rows[0]?.rotated === true;
+  async renewSession(membershipId, oldTokenHash, newTokenHash, csrfHash, expiresAt) {
+    return this.sql.begin(async (transaction) => {
+      const client = executor(transaction);
+      const created = await client.query(
+        "SELECT rahjo.create_web_session($1,$2,$3,$4) AS id",
+        [membershipId, newTokenHash, csrfHash, expiresAt]
+      );
+      if (!created.rows[0]?.id) throw problems.unauthorized();
+      const revoked = await client.query("SELECT rahjo.revoke_web_session($1) AS revoked", [oldTokenHash]);
+      if (revoked.rows[0]?.revoked !== true) throw problems.unauthorized();
+      return created.rows[0].id;
+    });
   }
 
   async withWorkspace(context, callback) {
