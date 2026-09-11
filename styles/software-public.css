@@ -15,9 +15,9 @@
 .mp-site .container{width:min(1120px,calc(100% - 48px))}
 .mp-header{height:64px;border-bottom:1px solid var(--sw-line);background:rgb(255 255 255/.97)}
 .mp-header__inner{height:64px}
-.mp-nav{gap:24px}
-.mp-nav a,.mp-login{color:#506579;font-size:.82rem;font-weight:700}
-.mp-nav a{padding:20px 0}
+.mp-header__inner--minimal{grid-template-columns:auto 1fr;gap:20px}
+.mp-header__inner--minimal .mp-header__actions{justify-self:end}
+.mp-login{color:#506579;font-size:.82rem;font-weight:700}
 .mp-header__primary{border-radius:10px!important}
 .mp-site .button{border-radius:10px;font-weight:800;transition:transform .15s ease,background .15s ease,border-color .15s ease}
 .mp-site .button:hover{transform:translateY(-1px)}
@@ -116,6 +116,10 @@
 
 @media(max-width:760px){
   .mp-site .container{width:min(100% - 28px,1120px)}
+  .mp-header__inner--minimal{grid-template-columns:auto 1fr;gap:12px}
+  .mp-header__actions{gap:6px}
+  .mp-login{font-size:.78rem}
+  .mp-header__primary{min-height:38px;padding-inline:12px;font-size:.76rem}
   .sw-hero--compact,.sw-page-hero,.sw-pillars,.sw-contact-hero,.sw-product-proof,.sw-final,.sw-journey-section{padding-block:48px}
   .sw-hero__copy h1,.sw-page-hero h1,.sw-contact-hero h1{font-size:clamp(2rem,9vw,2.6rem)}
   .sw-hero-card{grid-template-columns:1fr;width:100%}.sw-hero-card__rail{flex-direction:row;overflow:auto}.sw-hero-metrics,.sw-micro-pipeline{grid-template-columns:1fr}

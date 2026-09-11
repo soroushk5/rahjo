@@ -62,14 +62,25 @@ for (const viewport of viewports) {
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
       text: document.body.innerText,
-      canonicalNavCount: document.querySelectorAll('.mp-nav a').length,
+      headerNavCount: document.querySelectorAll('.mp-header .mp-nav a').length,
+      headerNavPresent: Boolean(document.querySelector('.mp-header .mp-nav')),
+      mobileTogglePresent: Boolean(document.querySelector('#mobile-nav-toggle')),
+      headerActionCount: document.querySelectorAll('.mp-header__actions a').length,
+      homeBrandLink: document.querySelector('.mp-header .mp-brand')?.getAttribute('href') || '',
       legacyDarkFlow: Boolean(document.querySelector('.mp-how')),
       oversizedScreens: document.querySelectorAll('.sw-screen, .sw-showcase').length
     }));
 
     if (metrics.scrollWidth > metrics.clientWidth + 2) failures.push(`${viewport.name} ${route.path}: horizontal overflow ${metrics.scrollWidth}/${metrics.clientWidth}`);
     if (/\bAI\b|هوش[‌\s-]*مصنوعی/i.test(metrics.text)) failures.push(`${viewport.name} ${route.path}: public copy mentions excluded intelligence framing`);
-    if (route.path !== '/login' && metrics.canonicalNavCount !== 3) failures.push(`${viewport.name} ${route.path}: public nav count ${metrics.canonicalNavCount}`);
+
+    if (route.path !== '/login') {
+      if (metrics.headerNavPresent || metrics.headerNavCount !== 0) failures.push(`${viewport.name} ${route.path}: public header tabs returned`);
+      if (metrics.mobileTogglePresent) failures.push(`${viewport.name} ${route.path}: obsolete mobile nav toggle returned`);
+      if (metrics.headerActionCount !== 2) failures.push(`${viewport.name} ${route.path}: expected two header actions, got ${metrics.headerActionCount}`);
+      if (metrics.homeBrandLink !== '/') failures.push(`${viewport.name} ${route.path}: brand does not link home`);
+    }
+
     if (route.path === '/' && metrics.legacyDarkFlow) failures.push(`${viewport.name} /: legacy dark flow section returned`);
     if (route.path === '/' && metrics.oversizedScreens !== 0) failures.push(`${viewport.name} /: oversized screenshot-era layout returned`);
 
@@ -79,18 +90,6 @@ for (const viewport of viewports) {
 
     if (consoleErrors.length) failures.push(`${viewport.name} ${route.path}: console errors: ${consoleErrors.join(' | ')}`);
     if (pageErrors.length) failures.push(`${viewport.name} ${route.path}: page errors: ${pageErrors.join(' | ')}`);
-
-    if (viewport.name === 'mobile' && route.path !== '/login') {
-      const toggle = page.locator('#mobile-nav-toggle');
-      if (!(await toggle.isVisible())) failures.push(`mobile ${route.path}: mobile nav toggle is not visible`);
-      else {
-        await toggle.click();
-        const expanded = await toggle.getAttribute('aria-expanded');
-        const navOpen = await page.locator('#site-nav').getAttribute('data-open');
-        if (expanded !== 'true' || navOpen === null) failures.push(`mobile ${route.path}: mobile nav did not expand`);
-        await toggle.click();
-      }
-    }
 
     await page.screenshot({ path: `${output}/${route.slug}-${viewport.name}.png`, fullPage: true });
   }
@@ -106,4 +105,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Compact public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);
+console.log(`Navless compact public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);
