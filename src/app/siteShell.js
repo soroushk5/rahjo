@@ -27,7 +27,7 @@ export function siteShell({ content, activePath }) {
             <a data-link class="mp-login" href="${workspaceHref}">${workspaceLabel}</a>
             ${workspaceReady
               ? `<a data-link class="button button--primary mp-header__primary" href="/dashboard">باز کردن رهجو</a>`
-              : `<a data-link class="button button--primary mp-header__primary" href="/contact">شروع</a>`}
+              : `<a data-link class="button button--primary mp-header__primary" href="/contact">شروع با رهجو</a>`}
           </div>
         </div>
       </header>
@@ -36,7 +36,7 @@ export function siteShell({ content, activePath }) {
 
       <footer class="phase-footer rv-footer mp-footer">
         <div class="container mp-footer__inner">
-          <div class="mp-footer__brand">${brandLogo({ inverted: true })}<p>رهجو، مسیر مشتری تا نتیجه.</p></div>
+          <div class="mp-footer__brand">${brandLogo()}<p>CRM و عملیات مشتری برای کسب‌وکارهای خدماتی.</p></div>
           <nav class="mp-footer__links" aria-label="پیوندهای پایین صفحه">
             ${link("/product", "محصول")}${link("/contact", "شروع")}${link("/login", "ورود")}${link("/privacy", "حریم خصوصی")}${link("/terms", "شرایط استفاده")}
           </nav>
