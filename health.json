@@ -4,10 +4,10 @@
   "deploymentMode": "preview",
   "runtimeMode": "demo",
   "apiBase": "",
-  "buildSha": "ff3e2d11130d5c7132063210833a2b803caf14a5",
-  "commit": "ff3e2d11130d5c7132063210833a2b803caf14a5",
-  "assetVersion": "ff3e2d11130d5c7132063210833a2b803caf14a5",
-  "assetBase": "/releases/ff3e2d11130d5c7132063210833a2b803caf14a5",
+  "buildSha": "e10a6094d42b3e87ba3e9ec42032502439a92db1",
+  "commit": "e10a6094d42b3e87ba3e9ec42032502439a92db1",
+  "assetVersion": "e10a6094d42b3e87ba3e9ec42032502439a92db1",
+  "assetBase": "/releases/e10a6094d42b3e87ba3e9ec42032502439a92db1",
   "siteBasePath": "",
-  "generatedAt": "2026-09-11T14:49:38.369Z"
+  "generatedAt": "2026-09-11T19:09:18.067Z"
 }
