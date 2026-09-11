@@ -96,7 +96,7 @@ export class Router {
 
   start() {
     window.addEventListener("popstate", this.handleNavigation);
-    window.addEventListener("hashchange", this.handleNavigation);
+    if (this.routingMode === "hash") window.addEventListener("hashchange", this.handleNavigation);
     window.addEventListener("rahjo:navigate", (event) => {
       if (event instanceof CustomEvent && typeof event.detail === "string") this.navigate(event.detail);
     });

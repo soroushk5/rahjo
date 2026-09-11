@@ -4,9 +4,8 @@ import { icon } from "../../components/icons.js";
 
 const fitTags = Object.freeze([
   "فروش B2B",
-  "شرکت‌های خدماتی",
   "بازرگانی",
-  "کسب‌وکارهای پروژه‌ای",
+  "خدمات و پروژه",
   "آموزش و مشاوره",
   "تیم‌های در حال رشد"
 ]);
@@ -138,8 +137,8 @@ export function renderMinimalHomePage() {
             <h1>مشتری‌ها و فرصت‌ها را منظم جلو ببرید.</h1>
             <p class="sw-lead">رهجو کمک می‌کند اطلاعات مشتری، پیگیری فروش، پرونده‌ها و اقدام بعدی در یک مسیر روشن کنار هم بمانند.</p>
             <div class="sw-actions">
-              <a class="button button--primary button--large" href="#product">محصول را ببینید ${icon("arrow")}</a>
-              <a data-link class="button button--outline button--large" href="/contact">شروع با رهجو</a>
+              <a data-link data-cta="home-product" class="button button--primary button--large" href="/product">دیدن محصول ${icon("arrow")}</a>
+              <a data-link data-cta="home-login" class="button button--outline button--large" href="/login">ورود به رهجو</a>
             </div>
             <div class="sw-fit-tags">${fitTags.map((item) => `<span>${item}</span>`).join("")}</div>
           </div>
@@ -152,15 +151,15 @@ export function renderMinimalHomePage() {
         <div class="container">${schematicJourney()}</div>
       </section>
 
-      <section class="sw-pillars" id="product">
+      <section class="sw-pillars" id="product-overview">
         <div class="container sw-section-head"><p class="sw-kicker">سه بخش اصلی</p><h2>همان چیزهایی که تیم هر روز باید سریع ببیند.</h2><p>نه یک کاتالوگ بلند از قابلیت‌ها؛ سه بخش اصلی برای رابطه با مشتری، پیگیری فروش و اجرای کار.</p></div>
         <div class="container sw-pillar-grid">${pillars.map((item) => pillarCard(item)).join("")}</div>
       </section>
 
       <section class="sw-final">
         <div class="container sw-final__inner">
-          <div><p class="sw-kicker">شروع با رهجو</p><h2>پیگیری‌ها را از فایل‌ها و ابزارهای پراکنده جمع کنید.</h2><p>محصول را ببینید و بعد یک مسیر واقعی را در رهجو شروع کنید.</p></div>
-          <div class="sw-actions"><a data-link class="button button--primary button--large" href="/contact">شروع با رهجو</a><a data-link class="button button--outline button--large" href="/login">ورود</a></div>
+          <div><p class="sw-kicker">ادامه</p><h2>محصول را دقیق‌تر ببینید یا وارد فضای کاری شوید.</h2><p>برای جزئیات بیشتر، صفحهٔ محصول را ببینید. اگر فضای کاری دارید، مستقیم وارد رهجو شوید.</p></div>
+          <div class="sw-actions"><a data-link data-cta="home-final-login" class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link data-cta="home-final-product" class="button button--outline button--large" href="/product">جزئیات محصول</a></div>
         </div>
       </section>`
   });
@@ -203,29 +202,23 @@ export function renderMinimalProductPage() {
       </section>
 
       <section class="sw-final sw-final--light">
-        <div class="container sw-final__inner"><div><p class="sw-kicker">مرحله بعد</p><h2>محصول را در یک مسیر واقعی از کسب‌وکارتان امتحان کنید.</h2></div><div class="sw-actions"><a data-link class="button button--primary button--large" href="/contact">شروع با رهجو</a><a data-link class="button button--outline button--large" href="/login">ورود به رهجو</a></div></div>
+        <div class="container sw-final__inner"><div><p class="sw-kicker">مرحله بعد</p><h2>فضای کاری دارید؟ وارد رهجو شوید. برای مرور سریع‌تر، به معرفی برگردید.</h2></div><div class="sw-actions"><a data-link data-cta="product-login" class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link data-cta="product-home" class="button button--outline button--large" href="/">بازگشت به معرفی</a></div></div>
       </section>`
   });
 }
 
+// Compatibility renderer only. /contact and /pilot are redirected to /login by
+// legacyCompatibility until a real public acquisition/intake flow exists.
 export function renderMinimalContactPage() {
   return siteShell({
     activePath: "/contact",
     content: `
       <section class="sw-contact-hero">
         <div class="container sw-contact-hero__inner">
-          <p class="sw-kicker">شروع</p>
-          <h1>از یک مسئلهٔ واقعی شروع کنید.</h1>
-          <p class="sw-lead">پیگیری فروش، سابقهٔ مشتری یا اجرای پرونده؛ یک مسیر مشخص را انتخاب کنید و همان را وارد رهجو کنید.</p>
+          <p class="sw-kicker">ادامه در رهجو</p>
+          <h1>برای ادامه وارد فضای کاری شوید.</h1>
+          <p class="sw-lead">مسیر شروع عمومی هنوز فعال نیست؛ این صفحه هیچ فرم یا فرایند ساختگی نمایش نمی‌دهد.</p>
           <div class="sw-actions"><a data-link class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link class="button button--outline button--large" href="/product">دیدن محصول</a></div>
-        </div>
-      </section>
-
-      <section class="sw-start-grid">
-        <div class="container sw-start-grid__inner">
-          <article><b>۱</b><h2>مسئله را مشخص کنید</h2><p>فروش، مشتری یا اجرای کار؛ فقط یک مسیر را برای شروع انتخاب کنید.</p></article>
-          <article><b>۲</b><h2>ساختار محصول را ببینید</h2><p>مشتری، فرصت، پرونده و اقدام بعدی را در یک جریان مرور کنید.</p></article>
-          <article><b>۳</b><h2>وارد محیط شوید</h2><p>همان مسیر را در فضای کاری رهجو ادامه بدهید.</p></article>
         </div>
       </section>`
   });
@@ -234,6 +227,6 @@ export function renderMinimalContactPage() {
 export function renderMinimalTrackPage() {
   return siteShell({
     activePath: "/contact",
-    content: `<section class="sw-contact-hero"><div class="container sw-contact-hero__inner"><p class="sw-kicker">پیگیری</p><h1>وضعیت پرونده را داخل فضای کاری رهجو ببینید.</h1><p class="sw-lead">برای دیدن پرونده، اقدام‌های باز و آخرین رویدادها وارد محیط کار شوید.</p><div class="sw-actions"><a data-link class="button button--primary button--large" href="/login">ورود ${icon("arrow")}</a></div></div></section>`
+    content: `<section class="sw-contact-hero"><div class="container sw-contact-hero__inner"><p class="sw-kicker">پیگیری</p><h1>وضعیت پرونده را داخل فضای کاری رهجو ببینید.</h1><p class="sw-lead">برای دیدن پرونده، اقدام‌های باز و آخرین رویدادها وارد محیط کار شوید.</p><div class="sw-actions"><a data-link data-cta="track-login" class="button button--primary button--large" href="/login">ورود ${icon("arrow")}</a></div></div></section>`
   });
 }

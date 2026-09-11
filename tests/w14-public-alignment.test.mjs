@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderMinimalHomePage } from "../src/features/public/minimalPublicPages.js";
+import { renderMinimalHomePage, renderMinimalProductPage } from "../src/features/public/minimalPublicPages.js";
 
 test("compact landing makes category, audience and flow concrete", () => {
   const html = renderMinimalHomePage();
   assert.match(html, /CRM برای مدیریت مشتری، فروش و کارهای جاری/);
-  for (const phrase of ["فروش B2B", "بازرگانی", "کسب‌وکارهای پروژه‌ای", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
+  for (const phrase of ["فروش B2B", "بازرگانی", "خدمات و پروژه", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
     assert.match(html, new RegExp(phrase));
   }
   for (const phrase of ["مشتری", "فرصت", "پرونده", "نتیجه", "اقدام بعدی"]) {
@@ -17,13 +17,16 @@ test("compact landing makes category, audience and flow concrete", () => {
   assert.doesNotMatch(html, /sw-screen|sw-showcases|mp-how/);
 });
 
-test("compact landing has product-oriented entry actions", () => {
-  const html = renderMinimalHomePage();
-  assert.match(html, /href="#product"/);
-  assert.match(html, /href="\/contact"/);
-  assert.match(html, /محصول را ببینید/);
-  assert.match(html, /شروع با رهجو/);
-  assert.doesNotMatch(html, /شروع بررسی|دیدن دموی رهجو/);
+test("public CTAs only target real product or login destinations", () => {
+  const home = renderMinimalHomePage();
+  const product = renderMinimalProductPage();
+  assert.match(home, /data-cta="home-product"[^>]+href="\/product"/);
+  assert.match(home, /data-cta="home-login"[^>]+href="\/login"/);
+  assert.match(home, /data-cta="home-final-login"[^>]+href="\/login"/);
+  assert.match(home, /data-cta="home-final-product"[^>]+href="\/product"/);
+  assert.match(product, /data-cta="product-login"[^>]+href="\/login"/);
+  assert.match(product, /data-cta="product-home"[^>]+href="\/"/);
+  assert.doesNotMatch(`${home}\n${product}`, /href="\/contact"|شروع با رهجو|شروع بررسی|دیدن دموی رهجو/);
 });
 
 test("public landing contains no intelligence marketing language", () => {
