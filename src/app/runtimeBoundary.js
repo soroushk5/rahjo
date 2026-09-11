@@ -1,6 +1,17 @@
 import { escapeHtml } from "../lib/html.js";
 import { readRuntimeConfig } from "../config/runtimeConfig.js";
 import { RUNTIME_DATA_STATES, runtimeData } from "../services/runtimeDataFacade.js";
+import { mountPrototypeChrome } from "./prototypeChrome.js";
+import { mountServerOperationalRoute, renderServerOperationalRoute } from "../features/operations/serverOperationalPages.js";
+
+const PUBLIC_SERVER_PATHS = new Set(["/", "/product", "/services", "/use-cases", "/how-it-works", "/pilot", "/trust", "/about", "/contact", "/privacy", "/terms", "/track-request"]);
+
+function renderServerPublicRoute(route) {
+  return route.render()
+    .replaceAll("دیدن دموی رهجو", "ورود به رهجو")
+    .replaceAll("دیدن در دمو", "ورود به محیط عملیاتی")
+    .replaceAll("دموی تعاملی", "محیط عملیاتی");
+}
 
 /** @type {Readonly<Record<string, string>>} */
 const labels = Object.freeze({
@@ -40,30 +51,19 @@ export function renderServerRuntimeState(snapshot, title = "رهجو") {
     : "حالت Server بسته مانده است؛ دادهٔ Golden Demo یا دادهٔ مرورگر به‌عنوان جایگزین نمایش داده نمی‌شود.";
 
   const loginForm = state === RUNTIME_DATA_STATES.AUTH ? `
-          <form id="rahjo-server-login" class="auth-form" novalidate>
-            <label>فضای کاری<input name="workspaceSlug" type="text" autocomplete="organization" required /></label>
-            <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
-            <label>گذرواژه<input name="password" type="password" autocomplete="current-password" required /></label>
-            <button class="button button--primary" type="submit">ورود امن به سرور</button>
+          <form id="rahjo-server-login" class="auth-form server-login-form" novalidate>
+            <label>فضای کاری<input name="workspaceSlug" type="text" autocomplete="organization" value="rahjo" required /></label>
+            <label>ایمیل<input name="email" type="email" autocomplete="username" value="owner@rahjo.local" required /></label>
+            <label>گذرواژه<input name="password" type="password" autocomplete="current-password" required autofocus /></label>
+            <p id="rahjo-login-feedback" class="interaction-feedback" role="alert"></p>
+            <button class="button button--primary button--large" type="submit">ورود به محیط عملیاتی</button>
           </form>` : "";
 
   return `
-    <div class="phase-site" data-runtime-mode="server" data-runtime-state="${escapeHtml(state)}">
-      <main id="main-content" class="container public-section public-section--first">
-        <section class="workspace-panel">
-          <header><div><small>Rahjo Server Runtime</small><h1>${escapeHtml(displayTitle)}</h1></div></header>
-          <div class="empty-state" role="status" aria-live="polite">
-            <strong>${escapeHtml(label)}</strong>
-            <p>${escapeHtml(snapshot.message || "وضعیت سرویس داده مشخص نیست.")}</p>
-            <p>${escapeHtml(readyNote)}</p>
-            ${loginForm}
-          </div>
-          <dl class="financial-summary">
-            <div><dt>حالت داده</dt><dd>Server</dd></div>
-            <div><dt>فضای کاری</dt><dd>${escapeHtml(String(workspaceName))}</dd></div>
-            <div><dt>نسخهٔ رابط</dt><dd>${escapeHtml(String(snapshot.buildSha || "نامشخص"))}</dd></div>
-          </dl>
-        </section>
+    <div class="phase-site server-auth-page" data-runtime-mode="server" data-runtime-state="${escapeHtml(state)}">
+      <main id="main-content" class="server-auth-layout">
+        <section class="server-auth-story"><a data-link href="/" class="server-auth-brand">رهجو <small>RAHJO</small></a><div><span class="server-live-pill">${escapeHtml(label)}</span><h1>${escapeHtml(displayTitle)}</h1><p>مشتری، Case، تأیید انسانی، اقدام، رسید و نتیجه در یک جریان امن و قابل ممیزی.</p><ul><li>دادهٔ واقعی سرور</li><li>جداسازی فضای کاری</li><li>مسیر حیاتی بدون AI</li></ul></div></section>
+        <section class="server-auth-panel"><div class="server-auth-card"><header><small>محیط عملیاتی</small><h2>${escapeHtml(displayTitle)}</h2><p>${escapeHtml(snapshot.message || "وضعیت سرویس داده مشخص نیست.")}</p><p class="server-boundary-note">${escapeHtml(readyNote)}</p></header>${loginForm}<dl class="server-auth-meta"><div><dt>داده</dt><dd>Server</dd></div><div><dt>Workspace</dt><dd>${escapeHtml(String(workspaceName))}</dd></div></dl><small class="server-version">نسخه ${escapeHtml(String(snapshot.buildSha || "نامشخص"))}</small></div></section>
       </main>
     </div>`;
 }
@@ -77,14 +77,23 @@ function mountServerRuntimeState() {
     event.preventDefault();
     const fields = new FormData(form);
     const passwordField = form.elements.namedItem("password");
+    const button = form.querySelector("button[type=submit]");
+    const feedback = form.querySelector("#rahjo-login-feedback");
+    if (button instanceof HTMLButtonElement) button.disabled = true;
+    if (feedback) feedback.textContent = "در حال بررسی امن نشست…";
     try {
-      await runtimeData.authenticate({
+      const result = await runtimeData.authenticate({
         workspaceSlug: String(fields.get("workspaceSlug") ?? ""),
         email: String(fields.get("email") ?? ""),
         password: String(fields.get("password") ?? "")
       });
+      if (result.state === RUNTIME_DATA_STATES.READY) {
+        history.replaceState({}, "", "/dashboard");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      } else if (feedback) feedback.textContent = result.message || "ورود انجام نشد.";
     } finally {
       if (passwordField instanceof HTMLInputElement) passwordField.value = "";
+      if (button instanceof HTMLButtonElement) button.disabled = false;
     }
   });
 }
@@ -93,20 +102,26 @@ function mountServerRuntimeState() {
  * Demo mode delegates to the unchanged W7/W11/W12 renderer and mount function.
  * Every other mode is fail-closed and cannot execute browser-local mutations.
  *
- * @param {{render:() => string, mount?:() => void, title?:string}} route
+ * @param {{path?:string, render:() => string, mount?:() => void, title?:string}} route
  */
 export function applyRuntimeBoundary(route) {
   return {
     ...route,
     render: () => {
       const snapshot = runtimeData.read();
-      return snapshot.mode === "demo"
-        ? route.render()
-        : renderServerRuntimeState(snapshot, route.title);
+      if (snapshot.mode === "demo") return route.render();
+      if (PUBLIC_SERVER_PATHS.has(route.path ?? "")) return renderServerPublicRoute(route);
+      return snapshot.state === RUNTIME_DATA_STATES.READY
+        ? renderServerOperationalRoute(route.path ?? "/dashboard")
+        : renderServerRuntimeState(snapshot, route.path === "/login" ? "ورود امن رهجو" : route.title);
     },
     mount: () => {
       if (runtimeData.read().mode === "demo") route.mount?.();
-      else mountServerRuntimeState();
+      else if (PUBLIC_SERVER_PATHS.has(route.path ?? "")) route.mount?.();
+      else if (runtimeData.read().state === RUNTIME_DATA_STATES.READY) {
+        mountPrototypeChrome();
+        mountServerOperationalRoute();
+      } else mountServerRuntimeState();
     }
   };
 }

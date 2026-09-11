@@ -68,6 +68,11 @@ export class Database {
     return result.rows[0]?.revoked === true;
   }
 
+  async rotateSessionCsrf(tokenHash, csrfHash) {
+    const result = await this.executor.query("SELECT rahjo.rotate_web_session_csrf($1,$2) AS rotated", [tokenHash, csrfHash]);
+    return result.rows[0]?.rotated === true;
+  }
+
   async withWorkspace(context, callback) {
     return this.sql.begin(async (transaction) => {
       const client = executor(transaction);

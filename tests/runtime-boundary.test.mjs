@@ -57,3 +57,33 @@ test("explicit demo mode delegates to the unchanged render and mount functions",
   assert.equal(renderCalls, 1);
   assert.equal(mountCalls, 1);
 });
+
+test("server mode preserves the public homepage instead of replacing it with a status wall", async () => {
+  const guarded = applyRuntimeBoundary({ path: "/", title: "خانه", render: () => "PUBLIC-RAHJO-HOME" });
+  await runtimeData.initialize(
+    { mode: "server", apiBase: "https://api.rahjo.example", buildSha: "server-sha" },
+    { fetchImpl: async () => new Response(null, { status: 401 }) }
+  );
+  assert.equal(guarded.render(), "PUBLIC-RAHJO-HOME");
+});
+
+test("authenticated server routes render the server projection and never call demo renderers", async () => {
+  let demoCalls = 0;
+  const guarded = applyRuntimeBoundary({ path: "/dashboard", title: "داشبورد", render: () => { demoCalls += 1; return "CASE-DEMO"; } });
+  await runtimeData.initialize(
+    { mode: "server", apiBase: "https://api.rahjo.example", buildSha: "server-sha" },
+    { fetchImpl: async (url) => String(url).endsWith("/csrf")
+      ? new Response(JSON.stringify({ dataMode: "server", csrfToken: "rahjo_csrf_abcdefghijklmnopqrstuvwxyz" }), { status: 200 })
+      : new Response(JSON.stringify({
+          dataMode: "server", version: 1,
+          workspace: { id: "workspace-a", name: "رهجو" },
+          user: { name: "مالک رهجو", role: "owner" },
+          projection: { cases: [{ id: "CASE-SERVER-001", purpose: "پرونده واقعی", status: "waiting_approval", version: 1 }], approvals: [], runs: [], outcomes: [], receipts: [], auditEvents: [] }
+        }), { status: 200, headers: { "Content-Type": "application/json" } }) }
+  );
+  const html = guarded.render();
+  assert.equal(demoCalls, 0);
+  assert.match(html, /CASE-SERVER-001/);
+  assert.match(html, /محیط زنده/);
+  assert.doesNotMatch(html, /CASE-DEMO/);
+});
