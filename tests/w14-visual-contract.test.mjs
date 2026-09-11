@@ -14,7 +14,8 @@ test("public surfaces share one restrained shell", () => {
     const html = render();
     assert.match(html, /class="page phase-site rv-site mp-site"/);
     assert.match(html, /class="phase-header rv-header mp-header"/);
-    assert.match(html, /class="phase-footer rv-footer mp-footer"/);
+    assert.match(html, /class="rv-footer mp-footer"/);
+    assert.doesNotMatch(html, /class="phase-footer rv-footer mp-footer"/);
   }
 });
 
