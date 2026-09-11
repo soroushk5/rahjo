@@ -7,19 +7,19 @@ const routes = [
   {
     path: '/',
     slug: 'home',
-    h1: 'همه‌چیز را خلاصه، روشن و قابل پیگیری نگه دارید',
-    markers: ['.sw-journey', '.sw-hero-card', '.sw-pillar-grid']
+    h1: 'مشتری‌ها و فرصت‌ها را منظم جلو ببرید',
+    markers: ['.sw-hero-card', '.sw-journey-section', '.sw-pillar-grid']
   },
   {
     path: '/product',
     slug: 'product',
-    h1: 'رهجو برای تیم‌هایی است که می‌خواهند مسیر مشتری را از رابطه تا نتیجه گم نکنند',
+    h1: 'CRM را با پیگیری کارهای واقعی تیم در یک مسیر نگه دارید',
     markers: ['.sw-journey', '.sw-pillar-grid', '.sw-product-proof']
   },
   {
     path: '/contact',
     slug: 'contact',
-    h1: 'شروع با رهجو باید ساده باشد',
+    h1: 'از یک مسئلهٔ واقعی شروع کنید',
     markers: ['.sw-start-grid__inner']
   },
   { path: '/login', slug: 'login', h1: '', markers: [] }
