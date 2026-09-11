@@ -158,7 +158,7 @@ export function renderMinimalHomePage() {
 
       <section class="sw-final">
         <div class="container sw-final__inner">
-          <div><p class="sw-kicker">ادامه</p><h2>محصول را دقیق‌تر ببینید یا وارد فضای کاری شوید.</h2><p>تا وقتی مسیر شروع عمومی فعال نشده، سایت فقط شما را به مقصدی می‌فرستد که واقعاً وجود دارد.</p></div>
+          <div><p class="sw-kicker">ادامه</p><h2>محصول را دقیق‌تر ببینید یا وارد فضای کاری شوید.</h2><p>برای جزئیات بیشتر، صفحهٔ محصول را ببینید. اگر فضای کاری دارید، مستقیم وارد رهجو شوید.</p></div>
           <div class="sw-actions"><a data-link data-cta="home-final-login" class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link data-cta="home-final-product" class="button button--outline button--large" href="/product">جزئیات محصول</a></div>
         </div>
       </section>`
@@ -202,7 +202,7 @@ export function renderMinimalProductPage() {
       </section>
 
       <section class="sw-final sw-final--light">
-        <div class="container sw-final__inner"><div><p class="sw-kicker">مرحله بعد</p><h2>اگر فضای کاری دارید وارد شوید؛ در غیر این صورت به معرفی کوتاه رهجو برگردید.</h2></div><div class="sw-actions"><a data-link data-cta="product-login" class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link data-cta="product-home" class="button button--outline button--large" href="/">بازگشت به معرفی</a></div></div>
+        <div class="container sw-final__inner"><div><p class="sw-kicker">مرحله بعد</p><h2>فضای کاری دارید؟ وارد رهجو شوید. برای مرور سریع‌تر، به معرفی برگردید.</h2></div><div class="sw-actions"><a data-link data-cta="product-login" class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link data-cta="product-home" class="button button--outline button--large" href="/">بازگشت به معرفی</a></div></div>
       </section>`
   });
 }
