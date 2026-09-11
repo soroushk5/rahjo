@@ -1,36 +1,32 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  renderAlignedHowItWorksPage,
-  renderAlignedProductPage,
-  renderAlignedServicesPage,
-  renderAlignedUseCasesPage
-} from "../src/features/public/alignedPublicPages.js";
+  renderMinimalContactPage,
+  renderMinimalHomePage,
+  renderMinimalProductPage,
+  renderMinimalTrackPage
+} from "../src/features/public/minimalPublicPages.js";
 
-const pages = [
-  renderAlignedProductPage,
-  renderAlignedServicesPage,
-  renderAlignedUseCasesPage,
-  renderAlignedHowItWorksPage
-];
+const canonicalPages = [renderMinimalHomePage, renderMinimalProductPage, renderMinimalContactPage];
 
-test("aligned public pages render the same canonical operational vocabulary", () => {
-  const html = pages.map((render) => render()).join("\n");
-  for (const phrase of ["مشتری", "پرونده", "خدمت", "تأیید", "اقدام", "رسید", "نتیجه"]) {
-    assert.match(html, new RegExp(phrase));
+test("canonical public site is intentionally limited to three destinations", () => {
+  const html = canonicalPages.map((render) => render()).join("\n");
+  for (const path of ["/", "/product", "/contact", "/login"]) assert.match(html, new RegExp(`href="${path}"`));
+  for (const label of ["خدمات", "موارد استفاده", "اعتماد و کنترل", "راه‌اندازی"]) {
+    assert.doesNotMatch(html, new RegExp(`>${label}<`));
   }
 });
 
-test("aligned public pages keep core navigation and entry actions", () => {
-  const html = pages.map((render) => render()).join("\n");
-  for (const path of ["/product", "/services", "/use-cases", "/how-it-works", "/contact", "/login"]) {
-    assert.match(html, new RegExp(`href="${path}"`));
-  }
-});
-
-test("aligned public pages do not claim unavailable production capabilities", () => {
-  const html = pages.map((render) => render()).join("\n");
+test("canonical public copy is concise and avoids intelligence positioning", () => {
+  const html = canonicalPages.map((render) => render()).join("\n");
+  assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
   for (const phrase of ["Relaticle زنده", "MCP زنده", "production-ready", "پرداخت واقعی متصل است"]) {
     assert.doesNotMatch(html, new RegExp(phrase, "i"));
   }
+});
+
+test("legacy tracking route remains safe and sends users to secure login", () => {
+  const html = renderMinimalTrackPage();
+  assert.match(html, /href="\/login"/);
+  assert.doesNotMatch(html, /فرم|کد پیگیری/);
 });

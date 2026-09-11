@@ -6,24 +6,29 @@ import { isAuthenticated, signInAsGuest } from "../../services/authStore.js";
 export function renderLoginPage(options = {}) {
   const returnTo = options.returnTo ?? "/dashboard";
   return `
-    <main id="main-content" class="guest-login">
-      <section class="guest-login__story">
+    <main id="main-content" class="guest-login mp-demo-login">
+      <section class="guest-login__story mp-demo-login__story">
         <a data-link href="/" class="guest-login__brand" aria-label="بازگشت به رهجو">${brandLogo({ inverted: true })}</a>
         <div class="guest-login__copy">
-          <h1>یک مشتری را از اولین درخواست تا تحویل نتیجه دنبال کنید.</h1>
-          <p>در دموی رهجو، فروش، مدارک، پرداخت، عملیات، تأیید و سابقهٔ مشتری در یک مسیر به هم متصل‌اند.</p>
+          <span class="mp-demo-login__label">Golden Demo</span>
+          <h1>یک مسیر کامل را با دادهٔ نمایشی امتحان کنید.</h1>
+          <p>مشتری، پرونده، تأیید، اقدام و نتیجه در یک سناریوی کوتاه و قابل بازنشانی.</p>
         </div>
-        <ol class="guest-login__flow"><li><span>${icon("users")}</span><strong>مشتری</strong></li><li><span>${icon("requests")}</span><strong>درخواست</strong></li><li><span>${icon("bank")}</span><strong>پرداخت</strong></li><li><span>${icon("workflow")}</span><strong>اجرا</strong></li><li><span>${icon("check")}</span><strong>نتیجه</strong></li></ol>
-        <div class="guest-login__sample"><span class="status status--progress">در حال اجرا</span><div><small>درخواست نمونه</small><strong>راه‌اندازی و کنترل فرایند فروش</strong><p>شرکت آریا صنعت · رهـ-۱۴۰۵-۰۲۸۴</p></div></div>
+        <ol class="guest-login__flow mp-demo-login__flow">
+          <li><span>${icon("users")}</span><strong>مشتری</strong></li>
+          <li><span>${icon("requests")}</span><strong>پرونده</strong></li>
+          <li><span>${icon("shield")}</span><strong>تأیید</strong></li>
+          <li><span>${icon("workflow")}</span><strong>اقدام</strong></li>
+          <li><span>${icon("check")}</span><strong>نتیجه</strong></li>
+        </ol>
       </section>
-      <section class="guest-login__panel">
+      <section class="guest-login__panel mp-demo-login__panel">
         <div class="guest-login__panel-inner">
           <div class="guest-login__mobile-brand">${brandLogo()}</div>
-          <h2>ورود مهمان به دموی رهجو</h2>
-          <p>بدون ساخت حساب وارد شوید و سناریوی کامل فاز اول را در چند دقیقه اجرا کنید.</p>
-          <ul class="check-list"><li>${icon("check", { size: 17 })} مشاهدهٔ داشبورد روزانه</li><li>${icon("check", { size: 17 })} ثبت درخواست خدمت</li><li>${icon("check", { size: 17 })} پرداخت و عملیات نمایشی</li><li>${icon("check", { size: 17 })} مشاهدهٔ Account 360</li></ul>
-          <button id="guest-login-button" class="button button--primary button--large guest-login__button" type="button" data-return-to="${returnTo}">شروع دموی تعاملی ${icon("arrow")}</button>
-          <p class="guest-login__note">این محیط به سرویس یا پرداخت واقعی متصل نیست. تمام نام‌ها و عملیات ساختگی‌اند و اطلاعات فقط در همین مرورگر می‌ماند.</p>
+          <h2>ورود به Golden Demo</h2>
+          <p>بدون ساخت حساب، محیط نمایشی رهجو را باز کنید.</p>
+          <button id="guest-login-button" class="button button--primary button--large guest-login__button" type="button" data-return-to="${returnTo}">باز کردن دمو ${icon("arrow")}</button>
+          <p class="guest-login__note">تمام داده‌ها ساختگی‌اند و فقط برای ارزیابی تجربهٔ محصول استفاده می‌شوند.</p>
           <a data-link class="text-link" href="/">بازگشت به سایت ${icon("arrow", { size: 16 })}</a>
         </div>
       </section>
@@ -40,7 +45,7 @@ export function mountLoginPage({ onSuccess }) {
   if (!(button instanceof HTMLButtonElement)) return;
   button.addEventListener("click", () => {
     button.disabled = true;
-    button.innerHTML = `در حال آماده‌سازی دمو…`;
+    button.innerHTML = `در حال آماده‌سازی…`;
     window.setTimeout(() => {
       signInAsGuest();
       onSuccess(returnTo);

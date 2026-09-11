@@ -4,12 +4,10 @@ import { chromium } from 'playwright';
 const baseUrl = process.env.RAHJO_QA_ORIGIN || 'http://127.0.0.1:4173';
 const output = 'qa-artifacts/public-site';
 const routes = [
-  { path: '/', slug: 'home', h1: 'مشتری را از اولین درخواست تا نتیجه', markers: ['.rv-product', '.rv-spine'] },
-  { path: '/product', slug: 'product', h1: 'یک سیستم برای حافظهٔ مشتری و اجرای کار', markers: ['.rv-layer-table', '.rv-journey'] },
-  { path: '/services', slug: 'services', h1: 'خدمت در رهجو یک قرارداد اجرایی', markers: ['.rv-contract-list', '.rv-journey'] },
-  { path: '/use-cases', slug: 'use-cases', h1: 'برای جایی که فروش و ارائهٔ خدمت', markers: ['.rv-scenario-list', '.rv-journey'] },
-  { path: '/how-it-works', slug: 'how-it-works', h1: 'هر مرحله، context را به مرحلهٔ بعد', markers: ['.rv-journey', '.rv-gate-list'] },
-  { path: '/trust', slug: 'trust', h1: 'اعتماد از محدودکردن اختیار سیستم', markers: ['.w14-trust-grid'] }
+  { path: '/', slug: 'home', h1: 'کار مشتری را از درخواست تا نتیجه', markers: ['.mp-product', '.mp-flow', '.mp-benefit-grid'] },
+  { path: '/product', slug: 'product', h1: 'یک فضای کاری برای مشتری، پرونده و اجرای کار', markers: ['.mp-product', '.mp-capability-grid'] },
+  { path: '/contact', slug: 'contact', h1: 'از یک فرایند واقعی شروع کنیم', markers: ['.mp-start__grid'] },
+  { path: '/login', slug: 'login', h1: '', markers: [] }
 ];
 const viewports = [
   { name: 'desktop', width: 1365, height: 900 },
@@ -40,23 +38,21 @@ for (const viewport of viewports) {
     const dir = await page.getAttribute('html', 'dir');
     if (dir !== 'rtl') failures.push(`${viewport.name} ${route.path}: html dir=${dir}`);
 
-    const h1 = (await page.locator('h1').first().textContent())?.replace(/\s+/g, ' ').trim() || '';
-    if (!h1.includes(route.h1)) failures.push(`${viewport.name} ${route.path}: unexpected h1 "${h1}"`);
+    if (route.h1) {
+      const h1 = (await page.locator('h1').first().textContent())?.replace(/\s+/g, ' ').trim() || '';
+      if (!h1.includes(route.h1)) failures.push(`${viewport.name} ${route.path}: unexpected h1 "${h1}"`);
+    }
 
     const metrics = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
-      hasSite: Boolean(document.querySelector('.rv-site')),
-      hasHeader: Boolean(document.querySelector('.rv-header')),
-      hasNav: Boolean(document.querySelector('#site-nav')),
-      oldEyebrowAboveHero: Boolean(document.querySelector('.rv-hero .w14-eyebrow'))
+      text: document.body.innerText,
+      canonicalNavCount: document.querySelectorAll('.mp-nav a').length
     }));
 
     if (metrics.scrollWidth > metrics.clientWidth + 2) failures.push(`${viewport.name} ${route.path}: horizontal overflow ${metrics.scrollWidth}/${metrics.clientWidth}`);
-    if (!metrics.hasSite) failures.push(`${viewport.name} ${route.path}: missing rv-site shell`);
-    if (!metrics.hasHeader) failures.push(`${viewport.name} ${route.path}: missing rv-header`);
-    if (!metrics.hasNav) failures.push(`${viewport.name} ${route.path}: missing site navigation`);
-    if (route.path === '/' && metrics.oldEyebrowAboveHero) failures.push(`${viewport.name} /: decorative hero eyebrow returned`);
+    if (/\bAI\b|هوش[‌\s-]*مصنوعی/i.test(metrics.text)) failures.push(`${viewport.name} ${route.path}: public copy mentions excluded intelligence framing`);
+    if (route.path !== '/login' && metrics.canonicalNavCount !== 3) failures.push(`${viewport.name} ${route.path}: public nav count ${metrics.canonicalNavCount}`);
 
     for (const marker of route.markers) {
       if (!(await page.locator(marker).first().count())) failures.push(`${viewport.name} ${route.path}: missing ${marker}`);
@@ -65,7 +61,7 @@ for (const viewport of viewports) {
     if (consoleErrors.length) failures.push(`${viewport.name} ${route.path}: console errors: ${consoleErrors.join(' | ')}`);
     if (pageErrors.length) failures.push(`${viewport.name} ${route.path}: page errors: ${pageErrors.join(' | ')}`);
 
-    if (viewport.name === 'mobile') {
+    if (viewport.name === 'mobile' && route.path !== '/login') {
       const toggle = page.locator('#mobile-nav-toggle');
       if (!(await toggle.isVisible())) failures.push(`mobile ${route.path}: mobile nav toggle is not visible`);
       else {
@@ -91,4 +87,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Public-site rendered QA passed for ${routes.length} canonical routes across ${viewports.length} viewports.`);
+console.log(`Minimal public-site rendered QA passed for ${routes.length} canonical surfaces across ${viewports.length} viewports.`);
