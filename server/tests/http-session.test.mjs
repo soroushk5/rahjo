@@ -25,7 +25,11 @@ async function fixture({ appEnv = "development" } = {}) {
     ready: async () => ({ database: "test", role: "rahjo_app" }),
     lookupPassword: async (slug, email) => slug === "alpha" && email === "owner@example.test" ? { membership_id: context.membership_id, password_salt: credential.salt, password_hash: credential.hash } : null,
     createSession: async (_membership, tokenHash, csrfHash) => { storedSession = { tokenHash, csrfHash }; return "session-id"; },
-    rotateSessionCsrf: async (_tokenHash, csrfHash) => { storedSession.csrfHash = csrfHash; return true; },
+    renewSession: async (membershipId, oldTokenHash, newTokenHash, csrfHash) => {
+      if (membershipId !== context.membership_id || storedSession?.tokenHash !== oldTokenHash) return null;
+      storedSession = { tokenHash: newTokenHash, csrfHash };
+      return "renewed-session-id";
+    },
     authenticateSession: async (tokenHash) => storedSession?.tokenHash === tokenHash ? { ...context, csrf_hash: storedSession.csrfHash } : null,
     authenticate: async () => null,
     revokeSession: async () => true
@@ -92,6 +96,17 @@ test("an authenticated browser session can rotate a non-persistent CSRF token af
   assert.equal(response.status, 200);
   assert.equal(body.dataMode, "server");
   assert.match(body.csrfToken, /^rahjo_csrf_/);
+  assert.ok(body.expiresAt);
+  const renewedCookie = response.headers.get("set-cookie").split(";")[0];
+  assert.notEqual(renewedCookie, cookie);
+  const renewedRuntime = await fetch(`${base}/api/v1/runtime`, {
+    headers: { Origin: "https://rahjo.example.test", Cookie: renewedCookie }
+  });
+  assert.equal(renewedRuntime.status, 200);
+  const staleRuntime = await fetch(`${base}/api/v1/runtime`, {
+    headers: { Origin: "https://rahjo.example.test", Cookie: cookie }
+  });
+  assert.equal(staleRuntime.status, 401);
 });
 
 test("production browser session uses the locked __Host cookie boundary", async (t) => {
