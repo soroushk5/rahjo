@@ -14,6 +14,14 @@ function absoluteUrl(value, name, { allowHttpLocalhost = false } = {}) {
   return url.toString().replace(/\/$/, "");
 }
 
+function optionalPositiveInteger(env, name, fallback) {
+  const raw = env[name]?.trim();
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`${name} must be a positive integer`);
+  return value;
+}
+
 export function loadConfig(env = process.env) {
   if (env.RAHJO_LLM_ENABLED && env.RAHJO_LLM_ENABLED !== "false") {
     throw new Error("Phase-1 server forbids RAHJO_LLM_ENABLED; the critical path is no-LLM");
@@ -26,6 +34,12 @@ export function loadConfig(env = process.env) {
     throw new Error("native_deferred requires explicit RAHJO_INTERIM_ACK=true");
   }
   const corsOrigins = required(env, "RAHJO_CORS_ORIGINS").split(",").map((item) => absoluteUrl(item.trim(), "RAHJO_CORS_ORIGINS", { allowHttpLocalhost }));
+  const publicIntakeEnabled = env.RAHJO_PUBLIC_INTAKE_ENABLED === "true";
+  const publicIntakeWorkspaceSlug = publicIntakeEnabled ? required(env, "RAHJO_PUBLIC_INTAKE_WORKSPACE_SLUG") : "";
+  if (publicIntakeWorkspaceSlug && !/^[a-z0-9][a-z0-9-]{1,62}$/.test(publicIntakeWorkspaceSlug)) {
+    throw new Error("RAHJO_PUBLIC_INTAKE_WORKSPACE_SLUG is invalid");
+  }
+  const publicIntakeToken = publicIntakeEnabled ? required(env, "RAHJO_PUBLIC_INTAKE_TOKEN", 32) : "";
   return Object.freeze({
     appEnv,
     port: Number(env.PORT || env.RAHJO_API_PORT || 8787),
@@ -38,6 +52,11 @@ export function loadConfig(env = process.env) {
     relaticleTokenFile: crmMode === "relaticle" ? required(env, "RELATICLE_TOKEN_FILE") : "",
     corsOrigins,
     publicOrigin: absoluteUrl(required(env, "RAHJO_PUBLIC_ORIGIN"), "RAHJO_PUBLIC_ORIGIN", { allowHttpLocalhost }),
+    publicIntakeEnabled,
+    publicIntakeWorkspaceSlug,
+    publicIntakeToken,
+    publicIntakeMaxRequests: optionalPositiveInteger(env, "RAHJO_PUBLIC_INTAKE_MAX_REQUESTS", 20),
+    publicIntakeWindowMs: optionalPositiveInteger(env, "RAHJO_PUBLIC_INTAKE_WINDOW_MS", 10 * 60 * 1000),
     bodyLimit: 64 * 1024,
     requestTimeoutMs: Number(env.RAHJO_REQUEST_TIMEOUT_MS || 8000),
     sessionHours: Number(env.RAHJO_SESSION_HOURS || 12),
