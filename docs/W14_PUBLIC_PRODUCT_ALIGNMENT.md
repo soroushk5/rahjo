@@ -7,7 +7,7 @@ Baseline: server-backed W13 + compact W14 public alignment
 Align Rahjo's public website, landing experience, entry points and product narrative with the live server-backed operational product without reopening W7/W11/W12 or changing the W13 backend contract.
 
 ## Product contract
-Rahjo is a CRM and operational workspace for teams that need to keep customer relationship, sales follow-up and work execution connected. The public category is intentionally broader than one industry: B2B sales, trading, service, project-based, consulting/education and growing teams can use the same product core.
+Rahjo is a CRM and operational workspace for teams that need to keep customer relationship, sales follow-up and work execution connected. The public category is intentionally broader than one industry: B2B sales, trading, service/project work, consulting/education and growing teams can use the same product core.
 
 The full operational domain remains:
 
@@ -20,14 +20,15 @@ The public site is allowed to compress that model for comprehension; the compact
 That compression is presentation-only and does not change the first-class backend entities or acceptance gates.
 
 ## Canonical public information architecture
-The primary public navigation is intentionally small:
+The canonical public surface is intentionally small:
 
 - Home
 - Product
-- Start / Contact
-- Login as a utility action
+- Login / Workspace as the single header action
 
-Legacy public routes may remain routable for compatibility, but they must not return to the primary navigation or define the product story unless they gain distinct user value.
+The Rahjo logo is the Home affordance. The header has no public tabs.
+
+`/contact`, `/pilot` and older marketing URLs are compatibility-only. Until W14-005 delivers a real public acquisition/intake flow, they must not be presented as a working Start flow; `/contact` and `/pilot` resolve to Login instead of a dead-end marketing page.
 
 ## Public experience principles
 1. Make the category clear early: Rahjo is CRM for customer, sales and work execution. Then explain concrete jobs and outcomes in plain language.
@@ -35,17 +36,17 @@ Legacy public routes may remain routable for compatibility, but they must not re
 3. Use the same nouns publicly and inside the console where helpful: Customer, Opportunity, Case, next action and Outcome.
 4. Product proof must be compact and believable. Prefer one small product preview plus micro-UI fragments over a gallery of large screenshots.
 5. Home should have a short narrative: **clear promise → compact product signal → schematic journey → three product pillars → final CTA**.
-6. Every public section and route must justify its existence. Do not add filler feature grids or standalone pages merely to make the site feel larger.
-7. Authenticated users get a direct workspace action; Golden Demo stays secondary and explicitly separated from the live workspace.
+6. Every CTA must describe the destination that actually exists. Public canonical CTAs may go to Product, Login/Workspace or Home. Do not label a dead-end page as Start.
+7. Workspace availability is an authentication fact, not a backend-readiness fact. A healthy server must never make a signed-out visitor look signed in.
 8. Public intake must eventually create server records through the existing Rahjo BFF. No silent browser-local fallback in server mode.
 9. Do not claim live Relaticle, MCP, payment, messaging or production-ready disaster recovery until their W13 gates pass.
 
 ## Compact visual contract
 The public experience and operational console are one product and should look related, but the public site must be simpler than the console.
 
-- **First viewport:** one concise promise, one supporting sentence, at most two primary actions, broad-fit chips and one compact product preview. No billboard-scale headline and no ornamental dashboard collage.
+- **First viewport:** one concise promise, one supporting sentence, at most two entry actions, broad-fit chips and one compact product preview. No billboard-scale headline and no ornamental dashboard collage.
 - **Product preview:** show only enough UI to establish that the product is real. The hero preview should remain materially smaller than the content column and must not dominate the page.
-- **Schematic journey:** use a small connected flow for `Lead / Intake → Customer → Opportunity → Case → Outcome`; on mobile it becomes a vertical flow. It is an explanatory diagram, not a second navigation system.
+- **Schematic journey:** use a small connected flow for `Lead / Intake → Customer → Opportunity → Case → Outcome`. On narrow mobile screens the five states remain a compact single-row schematic with secondary descriptions hidden, instead of becoming five tall cards.
 - **Three product pillars:** Home and Product focus on `Customer memory`, `Sales & follow-up`, and `Case & execution`. Each pillar gets concise copy and a micro-UI snippet rather than a full screenshot.
 - **Container model:** use open editorial layouts, thin separators and compact cards. Avoid repeated full-width product frames, nested bento grids and large dark storytelling blocks.
 - **Palette:** true white surfaces, Rahjo navy for depth, teal for action/status, cool neutral borders. Decorative gradients should not become the visual identity.
@@ -55,14 +56,19 @@ The public experience and operational console are one product and should look re
 - **Motion:** subtle only and never required to understand meaning.
 - **Evidence gate:** build/test success is not visual acceptance. W14 visual tasks close only after desktop + mobile rendered screenshots are inspected and the live origin reports the accepted source SHA.
 
-## Current accepted public baseline
-PR #33 / source `6806ea97f3b389e813144af088029edbbd6417f4` is the accepted compact public baseline:
+## CTA behavior contract
+Public Site QA must exercise the controls, not only inspect their markup:
 
-- Home: compact Hero + one small product preview + five-step schematic + three micro-product pillars + CTA.
-- Product: compact schematic + same three pillars + one small proof preview + CTA.
-- Start: one clear problem statement + three short steps.
-- Public/Login rendered output excludes excluded positioning language and keeps Server Login separated from Golden Demo.
-- Audience examples include B2B sales, service companies, trading, project-based businesses, education/consulting and growing teams.
+- Header signed out → `/login`
+- Header signed in → `/dashboard`
+- Home `دیدن محصول` → `/product`
+- Home Login actions → `/login`
+- Product Login → `/login`
+- Product back action → `/`
+- Logo → `/`
+- Legacy `/contact` → `/login` while W14-005 remains open
+
+The canonical Home/Product surfaces must not contain links to `/contact` until that route represents a real acquisition/intake capability.
 
 ## W14 work packages
 - W14-001 Product/message contract and public IA
@@ -76,4 +82,4 @@ PR #33 / source `6806ea97f3b389e813144af088029edbbd6417f4` is the accepted compa
 - W14-009 End-to-end acceptance from landing/intake to operational outcome
 
 ## Acceptance gate
-A new visitor can quickly understand what Rahjo is, see a small product representation consistent with the live console, understand the customer-to-outcome schematic, recognize whether the product fits their kind of team, and reach the correct Start or Login path without encountering legacy terminology, false capability claims, oversized screenshot galleries, unnecessary public routes or a broken responsive state.
+A new visitor can quickly understand what Rahjo is, see a compact product representation consistent with the live console, understand the customer-to-outcome schematic, recognize whether the product fits their kind of team, and reach the correct Product or Login/Workspace destination. Public acceptance fails if a CTA lands on a misleading/dead-end route, a signed-out visitor is presented as workspace-ready merely because the server is healthy, old screenshot galleries return, or mobile becomes unnecessarily tall or horizontally broken.
