@@ -36,7 +36,7 @@ export function siteShell({ content, activePath }) {
 
       <footer class="rv-footer mp-footer">
         <div class="container mp-footer__inner">
-          <div class="mp-footer__brand">${brandLogo()}<p>CRM و عملیات مشتری برای کسب‌وکارهای خدماتی.</p></div>
+          <div class="mp-footer__brand">${brandLogo()}<p>CRM ساده برای مدیریت مشتری، فروش و اجرای کار.</p></div>
           <nav class="mp-footer__links" aria-label="پیوندهای پایین صفحه">
             ${link("/product", "محصول")}${link("/contact", "شروع")}${link("/login", "ورود")}${link("/privacy", "حریم خصوصی")}${link("/terms", "شرایط استفاده")}
           </nav>
