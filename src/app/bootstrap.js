@@ -3,14 +3,9 @@ import { Router } from "./router.js";
 import { mountPrototypeChrome } from "./prototypeChrome.js";
 import {
   mountPublicPage,
-  renderAboutPage,
-  renderContactPage,
   renderNotFoundPage,
-  renderPilotPage,
   renderPrivacyPage,
-  renderTermsPage,
-  renderTrackRequestPage,
-  renderTrustPage
+  renderTermsPage
 } from "../features/public/publicPages.js";
 import { renderHomePageV2 } from "../features/public/homePageV2.js";
 import {
@@ -19,6 +14,13 @@ import {
   renderAlignedServicesPage,
   renderAlignedUseCasesPage
 } from "../features/public/alignedPublicPages.js";
+import {
+  renderAlignedAboutPage,
+  renderAlignedContactPage,
+  renderAlignedPilotPage,
+  renderAlignedTrackRequestPage,
+  renderAlignedTrustPage
+} from "../features/public/alignedEntryPages.js";
 import { mountServiceRequestPage, renderServiceRequestPage } from "../features/requests/serviceRequestPage.js";
 import { mountCorePages, renderCustomersPage, renderDashboardPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../features/operations/corePages.js";
 import { mountDetailPages, renderCustomerDetailPage, renderRequestDetailPage } from "../features/operations/detailPages.js";
@@ -74,13 +76,13 @@ router = new Router({
     { path: "/services", title: "خدمات", description: "خدمت در رهجو یک قرارداد اجرایی با ورودی، مسئول، تأیید، اقدام، رسید و نتیجه است.", render: renderAlignedServicesPage, mount: publicMount },
     { path: "/use-cases", title: "موارد استفاده", description: "رهجو برای کسب‌وکارهای خدماتی که فروش و ارائهٔ خدمت باید یک مسیر مشترک داشته باشند.", render: renderAlignedUseCasesPage, mount: publicMount },
     { path: "/how-it-works", title: "نحوهٔ کار", description: "مسیر رهجو از ورودی و مشتری تا پرونده، خدمت، تأیید، اقدام، رسید و نتیجه.", render: renderAlignedHowItWorksPage, mount: publicMount },
-    { path: "/pilot", title: "راه‌اندازی رهجو", render: renderPilotPage, mount: publicMount },
-    { path: "/trust", title: "اعتماد و کنترل", render: renderTrustPage, mount: publicMount },
-    { path: "/about", title: "دربارهٔ رهجو", render: renderAboutPage, mount: publicMount },
-    { path: "/contact", title: "شروع همکاری", render: renderContactPage, mount: publicMount },
+    { path: "/pilot", title: "راه‌اندازی رهجو", description: "پایلوت رهجو یک حلقهٔ واقعی مشتری تا نتیجه را با acceptance روشن ثابت می‌کند.", render: renderAlignedPilotPage, mount: publicMount },
+    { path: "/trust", title: "اعتماد و کنترل", description: "مرزهای workspace، تأیید انسانی، ممیزی و fail-closed بودن مسیر عملیاتی رهجو.", render: renderAlignedTrustPage, mount: publicMount },
+    { path: "/about", title: "دربارهٔ رهجو", description: "رهجو حافظهٔ تجاری و اجرای عملیاتی را روی یک زنجیرهٔ مشتری تا نتیجه نگه می‌دارد.", render: renderAlignedAboutPage, mount: publicMount },
+    { path: "/contact", title: "شروع همکاری", description: "شروع رهجو از یک جریان واقعی و قابل سنجش کسب‌وکار.", render: renderAlignedContactPage, mount: publicMount },
     { path: "/privacy", title: "حریم خصوصی", render: renderPrivacyPage, mount: publicMount },
     { path: "/terms", title: "شرایط استفاده", render: renderTermsPage, mount: publicMount },
-    { path: "/track-request", title: "پیگیری درخواست", render: renderTrackRequestPage, mount: publicMount },
+    { path: "/track-request", title: "پیگیری پرونده", description: "پیگیری پروندهٔ واقعی در رهجو از مرز امن workspace انجام می‌شود.", render: renderAlignedTrackRequestPage, mount: publicMount },
     { path: "/request-service", title: "ثبت درخواست خدمت", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/cases/new", title: "ورود پروندهٔ جدید", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/login", title: "ورود به رهجو", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
