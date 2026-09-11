@@ -19,14 +19,15 @@ test("public surfaces share one restrained shell", () => {
   }
 });
 
-test("landing is software-led instead of abstract marketing", () => {
+test("landing uses compact product storytelling instead of stacked screenshots", () => {
   const html = renderMinimalHomePage();
-  assert.match(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی/);
-  assert.match(html, /مشتری، فروش و اجرای خدمت را در یک سیستم پیگیری کنید/);
-  assert.match(html, /sw-screen/);
-  assert.match(html, /sw-showcases/);
-  assert.match(html, /sw-benefit-strip/);
-  assert.doesNotMatch(html, /mp-how|Server-backed|Workspace-scoped|Human-gated|AI-optional/);
+  assert.match(html, /CRM ساده برای پیگیری رابطه با مشتری، فروش و اجرای کار/);
+  assert.match(html, /همه‌چیز را خلاصه، روشن و قابل پیگیری نگه دارید/);
+  assert.match(html, /sw-journey/);
+  assert.match(html, /sw-hero-card/);
+  assert.match(html, /sw-pillar-grid/);
+  assert.doesNotMatch(html, /sw-screen|sw-showcases|sw-benefit-strip/);
+  assert.doesNotMatch(html, /کسب‌وکارهای خدماتی/);
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
@@ -37,10 +38,12 @@ test("public information architecture has only three primary destinations", () =
   assert.doesNotMatch(login?.meta ?? "", /مهمان|دمو/);
 });
 
-test("product page focuses on three concrete software areas", () => {
+test("product page explains three connected product pillars", () => {
   const html = renderMinimalProductPage();
-  assert.match(html, /CRM را از اجرای کار جدا نکنید/);
-  for (const phrase of ["مشتریان", "فروش", "عملیات", "فرصت", "پرونده"]) assert.match(html, new RegExp(phrase));
-  assert.match(html, /sw-product-grid/);
-  assert.doesNotMatch(html, /چهار بخش کافی است/);
+  assert.match(html, /سه لایه‌ای که CRM را از اجرای کار جدا نمی‌کنند/);
+  for (const phrase of ["حافظهٔ مشتری", "فروش و پیگیری", "پرونده و اجرا", "اقدام بعدی"]) {
+    assert.match(html, new RegExp(phrase));
+  }
+  assert.match(html, /sw-pillar-grid/);
+  assert.match(html, /sw-product-proof/);
 });
