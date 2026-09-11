@@ -34,11 +34,44 @@ const labels = Object.freeze({
  * @param {{fetchImpl?: typeof fetch, timeoutMs?: number}} [options]
  */
 export async function initializeRuntimeFromDocument(target = document, facade = runtimeData, options = {}) {
+  let config;
   try {
-    return await facade.initialize(readRuntimeConfig(target), options);
+    config = readRuntimeConfig(target);
+    const snapshot = await facade.initialize(config, options);
+    maybeStartBrowserBootstrap(config, snapshot);
+    return snapshot;
   } catch (error) {
     return facade.configurationFailure(error);
   }
+}
+
+const API_BOOTSTRAP_MARKER = "rahjoApiBootstrap";
+
+/**
+ * Resolve Hostinger's one-time browser challenge through a safe top-level hop.
+ * The return URL is same-origin with the current Rahjo UI and is validated again
+ * by the server against RAHJO_CORS_ORIGINS before redirecting.
+ *
+ * @param {{mode:string,apiBase:string}} config
+ * @param {{state?:string,reason?:string}} snapshot
+ * @param {Window} [browserWindow]
+ */
+export function maybeStartBrowserBootstrap(config, snapshot, browserWindow = globalThis.window) {
+  if (!browserWindow || config.mode !== "server"
+    || snapshot.state !== RUNTIME_DATA_STATES.UNAVAILABLE
+    || snapshot.reason !== "request-failed") return false;
+
+  const current = new URL(browserWindow.location.href);
+  const apiOrigin = new URL(config.apiBase).origin;
+  if (PUBLIC_SERVER_PATHS.has(current.pathname)
+    || current.origin === apiOrigin
+    || current.searchParams.has(API_BOOTSTRAP_MARKER)) return false;
+
+  current.searchParams.set(API_BOOTSTRAP_MARKER, "1");
+  const bootstrap = new URL("/browser-bootstrap", apiOrigin);
+  bootstrap.searchParams.set("return", current.toString());
+  browserWindow.location.replace(bootstrap.toString());
+  return true;
 }
 
 /** @param {Record<string, any>} snapshot @param {string} title */
