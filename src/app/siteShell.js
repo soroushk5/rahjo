@@ -11,7 +11,7 @@ export function siteShell({ content, activePath }) {
   const serverReady = runtime.mode === "server" && runtime.state === RUNTIME_DATA_STATES.READY;
   const workspaceReady = signedIn || serverReady;
   const workspaceHref = workspaceReady ? "/dashboard" : "/login";
-  const workspaceLabel = workspaceReady ? "محیط کار" : "ورود";
+  const workspaceLabel = workspaceReady ? "محیط کار" : "ورود به محیط رهجو";
   const link = (path, label) => `<a data-link href="${path}" ${activePath === path ? 'aria-current="page"' : ""}>${label}</a>`;
 
   return `
