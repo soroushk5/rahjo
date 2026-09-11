@@ -111,8 +111,7 @@ export function renderMinimalContactPage() {
     activePath: "/contact",
     content: `
       <section class="mp-contact-hero"><div class="container mp-contact-hero__inner"><p class="mp-kicker">شروع</p><h1>از یک فرایند واقعی شروع کنیم.</h1><p>نه فهرست قابلیت‌ها؛ فقط یک مسیر مشخص که باید از درخواست تا نتیجه بهتر پیش برود.</p><div class="button-row mp-actions"><a data-link class="button button--primary button--large" href="/cases/new">شروع ثبت پرونده ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/login">ورود به رهجو</a></div></div></section>
-      <section class="mp-start"><div class="container mp-start__grid">${steps.map(([index, title, desc]) => `<article><b>${index}</b><h2>${title}</h2><p>${desc}</p></article>`).join("")}</div></section>
-      <section class="mp-contact-note"><div class="container"><p>اگر از قبل دسترسی دارید، مستقیم وارد محیط رهجو شوید. مسیرهای قدیمی سایت برای سازگاری باقی می‌مانند اما دیگر بخشی از ناوبری اصلی نیستند.</p></div></section>`
+      <section class="mp-start"><div class="container mp-start__grid">${steps.map(([index, title, desc]) => `<article><b>${index}</b><h2>${title}</h2><p>${desc}</p></article>`).join("")}</div></section>`
   });
 }
 
