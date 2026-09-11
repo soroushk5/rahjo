@@ -25,7 +25,7 @@ test("canonical public site is intentionally limited to three destinations", () 
 
 test("public home explains a broad CRM category without narrowing to one industry", () => {
   const html = renderMinimalHomePage();
-  assert.match(html, /CRM ساده برای پیگیری رابطه با مشتری، فروش و اجرای کار/);
+  assert.match(html, /CRM برای مدیریت مشتری، فروش و کارهای جاری/);
   for (const phrase of ["فروش B2B", "شرکت‌های خدماتی", "بازرگانی", "کسب‌وکارهای پروژه‌ای", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
     assert.match(html, new RegExp(phrase));
   }
