@@ -1,10 +1,8 @@
 // @ts-nocheck
 export const publicNavigation = Object.freeze([
-  { path: "/", label: "خانه", meta: "رهجو چیست و چه مسئله‌ای را حل می‌کند" },
-  { path: "/product", label: "محصول", meta: "مشتری، پرونده، تصمیم، اجرا و نتیجه در یک سیستم" },
-  { path: "/services", label: "خدمات", meta: "خدمت به‌عنوان قرارداد اجرایی قابل پیگیری" },
-  { path: "/use-cases", label: "موارد استفاده", meta: "الگوهای عملیاتی مناسب رهجو" },
-  { path: "/how-it-works", label: "نحوهٔ کار", meta: "مسیر مشتری از ورودی تا نتیجه" }
+  { path: "/", label: "خانه", meta: "رهجو در یک نگاه" },
+  { path: "/product", label: "محصول", meta: "مشتری، پرونده و اجرای کار" },
+  { path: "/contact", label: "شروع", meta: "شروع از یک جریان واقعی" }
 ]);
 
 export const consoleNavigation = Object.freeze([
@@ -23,26 +21,19 @@ export const consoleNavigation = Object.freeze([
 ]);
 
 export const utilityDestinations = Object.freeze([
-  { path: "/pilot", label: "راه‌اندازی", meta: "تعریف flow، پیکربندی، پایلوت و پذیرش" },
-  { path: "/trust", label: "اعتماد و کنترل", meta: "workspace، تأیید انسانی، ممیزی و fail-closed" },
-  { path: "/about", label: "دربارهٔ رهجو", meta: "مسئله و رویکرد توسعه" },
-  { path: "/contact", label: "شروع همکاری", meta: "بررسی یک جریان واقعی کسب‌وکار" },
-  { path: "/login", label: "ورود به رهجو", meta: "ورود به Workspace یا Golden Demo صریح" },
+  { path: "/login", label: "ورود به رهجو", meta: "ورود به فضای کاری" },
   { path: "/request-service", label: "درخواست خدمت", meta: "ثبت یک درخواست جدید" },
-  { path: "/track-request", label: "پیگیری پرونده", meta: "پیگیری از مرز امن Workspace" },
   { path: "/customers/detail", label: "پرونده مشتری", meta: "نمای ۳۶۰ درجه مشتری" },
   { path: "/requests/detail", label: "جزئیات درخواست", meta: "مدارک، اجرا، رسید و نتیجه" }
 ]);
 
-// Compatibility metadata for retired presentation routes. These URLs redirect to
-// canonical W14 surfaces and do not define the current information architecture.
+// Legacy public URLs stay routable for compatibility, but are intentionally not
+// part of the primary public information architecture.
 export const publicJourney = Object.freeze([
-  { path: "/", index: "01", label: "جایگاه", title: "رهجو چه مسئله‌ای را حل می‌کند؟" },
-  { path: "/platform", index: "02", label: "محصول", title: "محصول چگونه کار مشتری را به نتیجه وصل می‌کند؟" },
-  { path: "/data", index: "03", label: "خدمات", title: "خدمت چگونه به یک قرارداد اجرایی تبدیل می‌شود؟" },
-  { path: "/map", index: "04", label: "نقشهٔ کار", title: "مشتری چگونه از ورودی تا نتیجه حرکت می‌کند؟" },
-  { path: "/trust", index: "05", label: "کنترل", title: "اختیار، تأیید و ممیزی چگونه کنترل می‌شوند؟" },
-  { path: "/login", index: "06", label: "محیط عملیاتی", title: "ورود به Workspace یا Golden Demo چگونه انجام می‌شود؟" }
+  { path: "/", index: "01", label: "خانه", title: "رهجو در یک نگاه" },
+  { path: "/product", index: "02", label: "محصول", title: "محصول چگونه کار را جلو می‌برد؟" },
+  { path: "/contact", index: "03", label: "شروع", title: "از کجا شروع کنیم؟" },
+  { path: "/login", index: "04", label: "ورود", title: "ورود به فضای کاری" }
 ]);
 
 export const allDestinations = Object.freeze([
