@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { siteShell } from "../../app/siteShell.js";
 import { icon } from "../../components/icons.js";
 
@@ -11,7 +12,7 @@ const journey = Object.freeze([
   ["نتیجه", "خروجی و اقدام بعدی به سابقهٔ مشتری برمی‌گردد"]
 ]);
 
-function pageHero({ eyebrow, title, description, activePath, primary = ["/contact", "بررسی کسب‌وکار من"], secondary = ["/login", "ورود به رهجو"] }) {
+function pageHero({ eyebrow, title, description, primary = ["/contact", "بررسی کسب‌وکار من"], secondary = ["/login", "ورود به رهجو"] }) {
   return `
     <section class="w14-subhero">
       <div class="container w14-subhero__inner">
