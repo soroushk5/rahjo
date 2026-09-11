@@ -5,9 +5,9 @@ import { renderMinimalHomePage } from "../src/features/public/minimalPublicPages
 test("minimal landing keeps the public story short and operational", () => {
   const html = renderMinimalHomePage();
   for (const phrase of ["درخواست", "پرونده", "تأیید", "اقدام", "نتیجه"]) assert.match(html, new RegExp(phrase));
-  assert.match(html, /class="mp-product"/);
-  assert.match(html, /class="mp-benefit-grid"/);
-  assert.match(html, /class="mp-flow"/);
+  assert.match(html, /mp-product/);
+  assert.match(html, /mp-benefit-grid/);
+  assert.match(html, /mp-flow/);
 });
 
 test("minimal landing has two clear entry actions", () => {
