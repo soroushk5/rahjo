@@ -1,18 +1,15 @@
-name: Public Site QA — Operational Alignment
+name: Public Site QA — W14 Visual Rebaseline
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - website-operational-alignment
+      - main
     paths:
       - "src/app/**"
-      - "src/data/publicOperationalContent.js"
-      - "src/features/marketing/**"
-      - "src/features/platform/**"
-      - "src/features/stories/**"
-      - "src/features/map/**"
-      - "src/features/trust/**"
+      - "src/features/public/**"
+      - "src/features/auth/**"
+      - "src/features/requests/**"
       - "styles/**"
       - "scripts/public-site-qa.mjs"
       - "scripts/build-hostinger.mjs"
