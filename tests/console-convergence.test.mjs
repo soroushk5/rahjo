@@ -11,7 +11,7 @@ test("authenticated shell uses the compact grouped console contract", async () =
   assert.match(shell, /اجرا و پشتیبانی/);
   assert.match(shell, /مدیریت/);
   assert.match(shell, /Golden Demo/);
-  assert.doesNotMatch(shell, /AI خاموش/);
+  assert.match(shell, /محیط زندهٔ \$\{user\.organization\} — داده‌ها از سرور همین فضای کاری خوانده می‌شوند/);
   assert.doesNotMatch(shell, /هوش[‌\s-]*مصنوعی/);
 });
 
