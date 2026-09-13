@@ -8,11 +8,11 @@ import {
   renderTermsPage
 } from "../features/public/publicPages.js";
 import {
-  renderMinimalContactPage,
   renderMinimalHomePage,
   renderMinimalProductPage,
   renderMinimalTrackPage
 } from "../features/public/minimalPublicPages.js";
+import { mountPublicIntakePage, renderPublicIntakePage } from "../features/public/publicIntakePage.js";
 import { mountServiceRequestPage, renderServiceRequestPage } from "../features/requests/serviceRequestPage.js";
 import { mountCorePages, renderCustomersPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../features/operations/corePages.js";
 import { renderCompactDashboardPage } from "../features/operations/consoleDashboard.js";
@@ -57,6 +57,7 @@ function loginMount() {
 }
 
 const publicMount = withChrome(mountPublicPage);
+const publicIntakeMount = withChrome(mountPublicIntakePage);
 const coreMount = (path) => mountWithSession(mountCorePages, path);
 const detailMount = (path) => mountWithSession(mountDetailPages, path);
 const supportMount = (path) => mountWithSession(mountSupportPages, path);
@@ -66,15 +67,15 @@ router = new Router({
   routes: [
     { path: "/", title: "رهجو | مشتری تا نتیجه", description: "رهجو مشتری، پرونده، تصمیم و اجرای کار را در یک مسیر قابل پیگیری نگه می‌دارد.", render: renderMinimalHomePage, mount: publicMount },
     { path: "/product", title: "محصول رهجو", description: "یک فضای کاری برای مشتری، پرونده و اجرای کار.", render: renderMinimalProductPage, mount: publicMount },
-    { path: "/contact", title: "شروع با رهجو", description: "از یک جریان واقعی کسب‌وکار شروع کنید.", render: renderMinimalContactPage, mount: publicMount },
+    { path: "/contact", title: "شروع با رهجو", description: "یک جریان واقعی مشتری را برای شروع رهجو ثبت کنید.", render: renderPublicIntakePage, mount: publicIntakeMount },
 
     // Legacy public URLs remain routable, but their content is folded into the
-    // three canonical public destinations above.
+    // canonical public destinations above.
     { path: "/services", title: "محصول رهجو", render: renderMinimalProductPage, mount: publicMount },
     { path: "/use-cases", title: "محصول رهجو", render: renderMinimalProductPage, mount: publicMount },
     { path: "/how-it-works", title: "رهجو چگونه کار می‌کند", render: renderMinimalHomePage, mount: publicMount },
     { path: "/trust", title: "محصول رهجو", render: renderMinimalProductPage, mount: publicMount },
-    { path: "/pilot", title: "شروع با رهجو", render: renderMinimalContactPage, mount: publicMount },
+    { path: "/pilot", title: "شروع با رهجو", render: renderPublicIntakePage, mount: publicIntakeMount },
     { path: "/about", title: "رهجو", render: renderMinimalHomePage, mount: publicMount },
     { path: "/track-request", title: "پیگیری پرونده", render: renderMinimalTrackPage, mount: publicMount },
 
