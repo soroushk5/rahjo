@@ -27,6 +27,7 @@ export async function resolvePublicIntakeContext(config, database) {
 }
 
 export function assertPublicIntakeOrigin(config, origin) {
+  if (!config.publicIntakeEnabled) throw problems.notFound();
   const normalized = typeof origin === "string" ? origin.replace(/\/$/, "") : "";
   if (!normalized || normalized !== config.publicIntakeOrigin) throw problems.forbidden();
   return normalized;
