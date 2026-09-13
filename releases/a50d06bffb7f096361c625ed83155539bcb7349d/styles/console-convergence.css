@@ -1,0 +1,676 @@
+/* W14 authenticated-console convergence
+ * Keep the operational information architecture and backend contracts intact,
+ * while bringing density, spacing, color and focus behavior in line with the
+ * compact software-first public surface.
+ */
+
+:root {
+  --console-sidebar: 196px;
+  --console-line: #e1e7eb;
+  --console-soft: #f6f8f9;
+  --console-soft-2: #eef5f5;
+  --console-ink: #10243a;
+  --console-copy: #52697b;
+  --console-muted: #728596;
+  --console-teal: #0a8996;
+  --console-teal-dark: #08717c;
+  --console-teal-soft: #e7f5f5;
+}
+
+.phase-app-shell[data-console-ui="compact"] {
+  --phase-sidebar: var(--console-sidebar);
+  --phase-topbar: 62px;
+  --phase-demo-strip: 30px;
+  min-height: 100vh;
+  background: #f7f9fa;
+  color: var(--console-ink);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar {
+  width: var(--console-sidebar);
+  color: var(--console-copy);
+  background: #fff;
+  border-inline-start: 1px solid var(--console-line);
+  box-shadow: none;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar .brand-logo__fa {
+  color: var(--console-ink);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar .brand-logo__en {
+  color: var(--console-teal-dark);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar__brand {
+  min-height: 68px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--console-line);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar__brand small {
+  color: var(--console-muted);
+  font-size: .58rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-app-nav {
+  padding: 10px 8px 16px;
+  scrollbar-color: #cfd9df transparent;
+}
+
+.phase-app-shell[data-console-ui="compact"] .console-nav-group {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .console-nav-group__label {
+  margin: 7px 9px 4px;
+  color: #8a9aa7;
+  font-size: .56rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-app-nav a {
+  min-height: 36px;
+  gap: 9px;
+  padding: 0 9px;
+  color: #526a7b;
+  border-radius: 9px;
+  font-size: .7rem;
+  font-weight: 700;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-app-nav a:hover {
+  color: var(--console-ink);
+  background: var(--console-soft);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-app-nav a[aria-current="page"] {
+  color: var(--console-ink);
+  background: var(--console-teal-soft);
+  box-shadow: inset -3px 0 var(--console-teal);
+}
+
+.phase-app-shell[data-console-ui="compact"] .app-nav__icon,
+.phase-app-shell[data-console-ui="compact"] .phase-app-nav a[aria-current="page"] .app-nav__icon {
+  color: var(--console-teal-dark);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar__bottom {
+  padding: 8px;
+  border-top: 1px solid var(--console-line);
+  background: #fbfcfd;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar__public {
+  padding: 8px 9px;
+  color: #667c8d;
+  border-radius: 8px;
+  font-size: .64rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-sidebar__public:hover {
+  color: var(--console-ink);
+  background: #fff;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-user {
+  margin-top: 4px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid var(--console-line);
+  border-radius: 10px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-user > span {
+  width: 30px;
+  height: 30px;
+  color: var(--console-teal-dark);
+  background: var(--console-teal-soft);
+  font-size: .62rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-user strong {
+  color: var(--console-ink);
+  font-size: .65rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-user small,
+.phase-app-shell[data-console-ui="compact"] .phase-user > a {
+  color: var(--console-muted);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-app-main {
+  margin-right: var(--console-sidebar);
+}
+
+.phase-app-shell[data-console-ui="compact"] .demo-strip {
+  min-height: 30px;
+  padding-inline: 16px;
+  color: #705408;
+  background: #fff7de;
+  border-bottom: 1px solid #eedda8;
+  font-size: .62rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .demo-strip--live {
+  color: #315d62;
+  background: #edf7f7;
+  border-bottom-color: #d4e9e9;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-topbar {
+  min-height: 62px;
+  padding-inline: 20px;
+  background: rgb(255 255 255 / .97);
+  border-bottom: 1px solid var(--console-line);
+  backdrop-filter: blur(12px);
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-topbar__title {
+  gap: 9px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-topbar__title small {
+  color: var(--console-muted);
+  font-size: .58rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-topbar__title strong {
+  color: var(--console-ink);
+  font-size: .91rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-topbar__actions {
+  gap: 7px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-search {
+  width: min(300px, 28vw);
+  min-height: 36px;
+  padding-inline: 10px;
+  color: #748896;
+  background: #f7f9fa;
+  border-color: var(--console-line);
+  border-radius: 9px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-search span {
+  font-size: .66rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-search kbd {
+  color: #70818e;
+  border-color: #dbe3e8;
+  font-size: .58rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-topbar__primary {
+  min-height: 36px;
+  padding-inline: 13px;
+  background: var(--console-teal);
+  border-color: var(--console-teal);
+  border-radius: 9px;
+  box-shadow: none;
+  font-size: .7rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-topbar__primary:hover {
+  background: var(--console-teal-dark);
+  border-color: var(--console-teal-dark);
+  box-shadow: none;
+}
+
+.phase-app-shell[data-console-ui="compact"] .phase-app-content {
+  width: min(100%, 1360px);
+  padding: 22px 24px 34px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-heading {
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-heading h1 {
+  margin-bottom: 3px;
+  color: var(--console-ink);
+  font-size: 1.4rem;
+  letter-spacing: -.025em;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-heading p {
+  max-width: 720px;
+  color: var(--console-copy);
+  font-size: .72rem;
+  line-height: 1.75;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-heading__actions {
+  gap: 7px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .role-switcher {
+  padding: 5px 7px 5px 10px;
+  color: var(--console-muted);
+  background: #fff;
+  border: 1px solid var(--console-line);
+  border-radius: 9px;
+  font-size: .62rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .role-switcher select {
+  min-height: 30px;
+  padding-inline: 8px;
+  border: 0;
+  background: var(--console-soft);
+  border-radius: 7px;
+  font-size: .66rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .ops-metrics,
+.phase-app-shell[data-console-ui="compact"] .sales-summary,
+.phase-app-shell[data-console-ui="compact"] .finance-metrics {
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .ops-metric,
+.phase-app-shell[data-console-ui="compact"] .finance-metrics article {
+  min-height: 82px;
+  gap: 11px;
+  padding: 13px 14px;
+  background: #fff;
+  border: 1px solid var(--console-line);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.phase-app-shell[data-console-ui="compact"] .ops-metric > span,
+.phase-app-shell[data-console-ui="compact"] .finance-metrics article > span {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .ops-metric small {
+  color: var(--console-muted);
+  font-size: .58rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .ops-metric strong {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .ops-metric em,
+.phase-app-shell[data-console-ui="compact"] .ops-metric a {
+  color: var(--console-copy);
+  font-size: .56rem;
+  font-style: normal;
+  font-weight: 650;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-panel {
+  background: #fff;
+  border: 1px solid var(--console-line);
+  border-radius: 13px;
+  box-shadow: none;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-panel > header {
+  min-height: 46px;
+  padding: 0 14px;
+  border-bottom-color: var(--console-line);
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-panel > header h2 {
+  color: var(--console-ink);
+  font-size: .82rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-panel > header .text-link,
+.phase-app-shell[data-console-ui="compact"] .text-link {
+  color: var(--console-teal-dark);
+  font-size: .61rem;
+  font-weight: 800;
+}
+
+.phase-app-shell[data-console-ui="compact"] .dashboard-layout {
+  gap: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .dashboard-split {
+  gap: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .console-dashboard__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .console-dashboard__side {
+  display: grid;
+  gap: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .console-inline-empty {
+  margin: 0;
+  padding: 18px;
+  color: var(--console-muted);
+  font-size: .68rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-table {
+  font-size: .66rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-table th {
+  padding: 8px 10px;
+  color: #617586;
+  background: #f7f9fa;
+  font-size: .58rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-table td {
+  padding: 9px 10px;
+  color: #385165;
+  border-bottom-color: #edf1f3;
+}
+
+.phase-app-shell[data-console-ui="compact"] .workspace-table tbody tr:hover td {
+  background: #fafcfc;
+}
+
+.phase-app-shell[data-console-ui="compact"] .table-action {
+  padding: 4px 7px;
+  color: var(--console-teal-dark);
+  border-color: #c9dddd;
+  border-radius: 7px;
+  font-size: .57rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .status {
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: .55rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .compact-list article,
+.phase-app-shell[data-console-ui="compact"] .today-list article,
+.phase-app-shell[data-console-ui="compact"] .activity-stream article,
+.phase-app-shell[data-console-ui="compact"] .performance-list div,
+.phase-app-shell[data-console-ui="compact"] .financial-summary div {
+  padding: 10px 14px;
+  border-bottom-color: #edf1f3;
+}
+
+.phase-app-shell[data-console-ui="compact"] .compact-list article {
+  gap: 10px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .compact-list article strong,
+.phase-app-shell[data-console-ui="compact"] .today-list strong,
+.phase-app-shell[data-console-ui="compact"] .activity-stream strong {
+  font-size: .67rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .compact-list article small,
+.phase-app-shell[data-console-ui="compact"] .compact-list article span,
+.phase-app-shell[data-console-ui="compact"] .today-list small,
+.phase-app-shell[data-console-ui="compact"] .today-list time,
+.phase-app-shell[data-console-ui="compact"] .activity-stream p,
+.phase-app-shell[data-console-ui="compact"] .activity-stream article > span {
+  font-size: .56rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .summary-strip {
+  margin-bottom: 12px;
+  border-color: var(--console-line);
+  border-radius: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .summary-strip span {
+  padding: 12px 14px;
+  border-inline-end-color: var(--console-line);
+  font-size: .62rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .summary-strip b {
+  font-size: .9rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .table-toolbar {
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom-color: var(--console-line);
+}
+
+.phase-app-shell[data-console-ui="compact"] .table-search {
+  width: min(330px, 100%);
+  padding-inline: 9px;
+  background: #f7f9fa;
+  border-color: var(--console-line);
+  border-radius: 8px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .table-search input {
+  min-height: 33px;
+  font-size: .66rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] .filter-buttons button,
+.phase-app-shell[data-console-ui="compact"] .report-tabs button,
+.phase-app-shell[data-console-ui="compact"] .task-tabs button {
+  border-radius: 8px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .sales-pipeline {
+  gap: 9px;
+  padding: 12px;
+}
+
+.phase-app-shell[data-console-ui="compact"] .sales-pipeline section,
+.phase-app-shell[data-console-ui="compact"] .operations-board section,
+.phase-app-shell[data-console-ui="compact"] .config-cards article {
+  border-color: var(--console-line);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+.phase-app-shell[data-console-ui="compact"] .account-header,
+.phase-app-shell[data-console-ui="compact"] .relation-summary,
+.phase-app-shell[data-console-ui="compact"] .next-action-box,
+.phase-app-shell[data-console-ui="compact"] .next-action-cta,
+.phase-app-shell[data-console-ui="compact"] .next-action-bar,
+.phase-app-shell[data-console-ui="compact"] .request-stage-rail,
+.phase-app-shell[data-console-ui="compact"] .report-tabs,
+.phase-app-shell[data-console-ui="compact"] .settings-layout > nav {
+  border-color: var(--console-line);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.phase-app-shell[data-console-ui="compact"] .server-feedback {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  color: #365e63;
+  background: #eef7f7;
+  border: 1px solid #d7e8e8;
+  border-radius: 10px;
+  font-size: .62rem;
+}
+
+.phase-app-shell[data-console-ui="compact"] :is(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid #087f8b;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .phase-app-shell[data-console-ui="compact"] {
+    --console-sidebar: 184px;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .console-dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .console-dashboard__side {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .phase-app-shell[data-console-ui="compact"] .phase-sidebar {
+    right: 0;
+    left: auto;
+    width: min(292px, 86vw);
+    transform: translateX(105%);
+    border-inline-start: 0;
+    border-inline-end: 1px solid var(--console-line);
+    box-shadow: -24px 0 60px rgb(10 28 43 / .16);
+    transition: transform var(--transition);
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-sidebar[data-open] {
+    transform: translateX(0);
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-app-main {
+    margin-right: 0;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .app-menu-toggle {
+    display: grid;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-search {
+    width: 38px;
+    min-width: 38px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-search span,
+  .phase-app-shell[data-console-ui="compact"] .phase-search kbd {
+    display: none;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-app-content {
+    padding-inline: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .phase-app-shell[data-console-ui="compact"] .demo-strip {
+    min-height: 28px;
+    justify-items: start;
+    padding: 6px 12px;
+    line-height: 1.55;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-topbar {
+    min-height: 58px;
+    padding-inline: 12px;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-topbar__title strong {
+    font-size: .82rem;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-topbar__title small {
+    display: none;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-topbar__primary {
+    min-height: 34px;
+    padding-inline: 10px;
+    font-size: .64rem;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-app-content {
+    padding: 15px 12px 26px;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .workspace-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .workspace-heading__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .ops-metrics,
+  .phase-app-shell[data-console-ui="compact"] .sales-summary,
+  .phase-app-shell[data-console-ui="compact"] .finance-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .console-dashboard__side,
+  .phase-app-shell[data-console-ui="compact"] .dashboard-split,
+  .phase-app-shell[data-console-ui="compact"] .report-grid,
+  .phase-app-shell[data-console-ui="compact"] .account-overview-grid,
+  .phase-app-shell[data-console-ui="compact"] .request-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .summary-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .summary-strip span:nth-child(2n) {
+    border-inline-end: 0;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .summary-strip span:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--console-line);
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .table-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .table-search {
+    width: 100%;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .compact-list article {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 470px) {
+  .phase-app-shell[data-console-ui="compact"] .ops-metrics,
+  .phase-app-shell[data-console-ui="compact"] .sales-summary,
+  .phase-app-shell[data-console-ui="compact"] .finance-metrics,
+  .phase-app-shell[data-console-ui="compact"] .summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .summary-strip span {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--console-line);
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .summary-strip span:last-child {
+    border-bottom: 0;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .phase-search {
+    display: none;
+  }
+}
