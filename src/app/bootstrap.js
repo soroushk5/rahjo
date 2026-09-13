@@ -14,7 +14,8 @@ import {
   renderMinimalTrackPage
 } from "../features/public/minimalPublicPages.js";
 import { mountServiceRequestPage, renderServiceRequestPage } from "../features/requests/serviceRequestPage.js";
-import { mountCorePages, renderCustomersPage, renderDashboardPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../features/operations/corePages.js";
+import { mountCorePages, renderCustomersPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../features/operations/corePages.js";
+import { renderCompactDashboardPage } from "../features/operations/consoleDashboard.js";
 import { mountDetailPages, renderCustomerDetailPage, renderRequestDetailPage } from "../features/operations/detailPages.js";
 import { mountSupportPages, renderAuditPage, renderDocumentsPage, renderFinancePage, renderOperationsPage, renderReportsPage, renderSettingsPage } from "../features/operations/supportPages.js";
 import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
@@ -82,7 +83,7 @@ router = new Router({
     { path: "/request-service", title: "ثبت درخواست خدمت", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/cases/new", title: "ورود پروندهٔ جدید", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/login", title: "ورود به رهجو", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
-    { path: "/dashboard", title: "داشبورد", render: renderWithSession(renderDashboardPage, "/dashboard"), mount: coreMount("/dashboard") },
+    { path: "/dashboard", title: "داشبورد", render: renderWithSession(renderCompactDashboardPage, "/dashboard"), mount: coreMount("/dashboard") },
     { path: "/customers", title: "مشتریان", render: renderWithSession(renderCustomersPage, "/customers"), mount: coreMount("/customers") },
     { path: "/customers/detail", title: "پرونده مشتری", render: renderWithSession(renderCustomerDetailPage, "/customers/detail"), mount: detailMount("/customers/detail") },
     { path: "/sales", title: "فروش", render: renderWithSession(renderSalesPage, "/sales"), mount: coreMount("/sales") },
