@@ -16,16 +16,21 @@ const routes = [
     h1: 'CRM را با پیگیری کارهای واقعی تیم در یک مسیر نگه دارید',
     markers: ['.sw-journey', '.sw-pillar-grid', '.sw-product-proof']
   },
+  {
+    path: '/contact',
+    slug: 'start',
+    h1: 'از یک جریان واقعی مشتری شروع کنید',
+    markers: ['[data-public-intake-page]', '#rahjo-public-intake', '.public-intake__steps']
+  },
   { path: '/login', slug: 'login', h1: '', markers: [] }
 ];
 const viewports = [
   { name: 'desktop', width: 1365, height: 900 },
   { name: 'mobile', width: 390, height: 844 }
 ];
-const allowedPublicLinks = new Set(['/', '/product', '/login', '/privacy', '/terms']);
+const allowedPublicLinks = new Set(['/', '/product', '/contact', '/login', '/privacy', '/terms']);
 const legacyRoutes = [
-  ['/contact', '/login'],
-  ['/pilot', '/login'],
+  ['/pilot', '/contact'],
   ['/services', '/product'],
   ['/use-cases', '/product'],
   ['/how-it-works', '/'],
@@ -106,7 +111,7 @@ async function verifyKeyboardRoute(page, selector, expected, label) {
 
   await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
   let reached = false;
-  for (let index = 0; index < 12; index += 1) {
+  for (let index = 0; index < 14; index += 1) {
     await page.keyboard.press('Tab');
     reached = await page.locator(selector).evaluateAll((elements) => elements.includes(document.activeElement));
     if (reached) break;
@@ -175,10 +180,10 @@ for (const viewport of viewports) {
     if (route.path !== '/login') {
       if (metrics.headerNavPresent || metrics.headerNavCount !== 0) failures.push(`${viewport.name} ${route.path}: public header tabs returned`);
       if (metrics.mobileTogglePresent) failures.push(`${viewport.name} ${route.path}: obsolete mobile nav toggle returned`);
-      if (metrics.headerActionCount !== 1) failures.push(`${viewport.name} ${route.path}: expected one header action, got ${metrics.headerActionCount}`);
+      const expectedActions = route.path === '/contact' ? 1 : 2;
+      if (metrics.headerActionCount !== expectedActions) failures.push(`${viewport.name} ${route.path}: expected ${expectedActions} header actions, got ${metrics.headerActionCount}`);
       if (metrics.homeBrandLink !== '/') failures.push(`${viewport.name} ${route.path}: brand does not link home`);
       for (const path of metrics.internalLinks) {
-        if (path === '/contact') failures.push(`${viewport.name} ${route.path}: dead-end /contact link returned`);
         if (!allowedPublicLinks.has(path)) failures.push(`${viewport.name} ${route.path}: unexpected public link ${path}`);
       }
     }
@@ -191,9 +196,22 @@ for (const viewport of viewports) {
     }
 
     if (route.path === '/') {
-      await contrastRatio(page, '[data-cta="header-access"]', `${viewport.name} header CTA`);
+      await contrastRatio(page, '[data-cta="header-access"]', `${viewport.name} header access CTA`);
+      await contrastRatio(page, '[data-cta="header-start"]', `${viewport.name} header Start CTA`);
       await contrastRatio(page, '[data-cta="home-product"]', `${viewport.name} home primary CTA`);
       await contrastRatio(page, '.mp-footer__links a', `${viewport.name} footer link`);
+    }
+    if (route.path === '/contact') {
+      const startState = await page.evaluate(() => ({
+        form: Boolean(document.querySelector('#rahjo-public-intake')),
+        submitDisabled: document.querySelector('#rahjo-public-intake button[type=submit]')?.disabled === true,
+        workspaceControl: Boolean(document.querySelector('[name="workspaceId"], [name="workspace_id"]')),
+        serviceControl: Boolean(document.querySelector('[name="serviceId"]')),
+        passwordControl: Boolean(document.querySelector('input[type="password"]'))
+      }));
+      if (!startState.form) failures.push(`${viewport.name} /contact: public intake form missing`);
+      if (!startState.submitDisabled) failures.push(`${viewport.name} /contact: demo-rendered Start must fail closed instead of creating local intake`);
+      if (startState.workspaceControl || startState.serviceControl || startState.passwordControl) failures.push(`${viewport.name} /contact: browser-owned intake routing/auth control rendered`);
     }
     if (route.path === '/login') {
       await contrastRatio(page, '#rahjo-server-login .button--primary, #guest-login-button', `${viewport.name} login primary action`);
@@ -206,6 +224,9 @@ for (const viewport of viewports) {
   }
 
   // Primary behavior audit: click the real controls and verify the resulting SPA route.
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await clickTo(page, '[data-cta="header-start"]', '/contact', `${viewport.name} header Start`);
+
   await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
   await clickTo(page, '[data-cta="header-access"]', '/login', `${viewport.name} header access`);
 
@@ -231,7 +252,7 @@ for (const viewport of viewports) {
   await clickTo(page, '.mp-header .mp-brand', '/', `${viewport.name} brand home link`);
 
   // Footer links are part of the public contract too.
-  for (const [path, expected] of [['/product', '/product'], ['/login', '/login'], ['/privacy', '/privacy'], ['/terms', '/terms']]) {
+  for (const [path, expected] of [['/product', '/product'], ['/contact', '/contact'], ['/login', '/login'], ['/privacy', '/privacy'], ['/terms', '/terms']]) {
     await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
     await clickTo(page, `.mp-footer a[data-route-path="${path}"]`, expected, `${viewport.name} footer ${path}`);
   }
@@ -258,4 +279,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Public UX audit passed: ${routes.length} canonical surfaces, ${viewports.length} viewports, CTA/footer clicks and legacy redirects.`);
+console.log(`Public UX audit passed: ${routes.length} canonical/utility surfaces, ${viewports.length} viewports, Start fail-closed demo behavior, CTA/footer clicks and legacy redirects.`);
