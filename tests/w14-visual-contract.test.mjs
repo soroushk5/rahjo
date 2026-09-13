@@ -1,15 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  renderMinimalContactPage,
   renderMinimalHomePage,
   renderMinimalProductPage
 } from "../src/features/public/minimalPublicPages.js";
 import { publicNavigation, utilityDestinations } from "../src/app/navigation.js";
 
-const publicPages = [renderMinimalHomePage, renderMinimalProductPage, renderMinimalContactPage];
+const publicPages = [renderMinimalHomePage, renderMinimalProductPage];
 
-test("public surfaces share one restrained shell", () => {
+test("canonical public surfaces share one restrained shell", () => {
   for (const render of publicPages) {
     const html = render();
     assert.match(html, /class="page phase-site rv-site mp-site"/);
@@ -19,15 +18,15 @@ test("public surfaces share one restrained shell", () => {
   }
 });
 
-test("public header is intentionally tabless", () => {
+test("public header is tabless and exposes one real access action", () => {
   for (const render of publicPages) {
     const html = render();
-    assert.match(html, /class="site-brand-link rv-brand mp-brand"/);
     assert.match(html, /href="\/" class="site-brand-link/);
-    assert.match(html, /class="mp-login"/);
-    assert.match(html, /class="button button--primary mp-header__primary"/);
+    assert.match(html, /data-cta="header-access"/);
+    assert.match(html, /href="\/login"/);
     assert.doesNotMatch(html, /class="phase-nav rv-nav mp-nav"/);
     assert.doesNotMatch(html, /id="mobile-nav-toggle"/);
+    assert.doesNotMatch(html, /class="mp-login"/);
   }
 });
 
@@ -43,8 +42,8 @@ test("landing uses compact product storytelling instead of stacked screenshots",
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
-test("canonical public routes stay available without becoming header tabs", () => {
-  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/contact"]);
+test("canonical public destinations exclude the unfinished start flow", () => {
+  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product"]);
   const login = utilityDestinations.find((item) => item.path === "/login");
   assert.equal(login?.label, "ورود به رهجو");
   assert.doesNotMatch(login?.meta ?? "", /مهمان|دمو/);

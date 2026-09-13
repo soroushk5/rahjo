@@ -26,10 +26,10 @@ test("all primary phase-one routes render meaningful safe markup", () => {
 test("homepage communicates the concise customer-to-outcome promise", () => {
   const html = renderMinimalHomePage();
   for (const phrase of ["مشتری", "پرونده", "تأیید", "اقدام", "نتیجه"]) assert.match(html, new RegExp(phrase));
-  for (const path of ["/product", "/login", "/contact"]) {
+  for (const path of ["/product", "/login"]) {
     assert.match(html, new RegExp(`href="${path}"`));
   }
-  for (const retiredPath of ["/services", "/use-cases", "/how-it-works", "/trust", "/pilot"]) {
+  for (const retiredPath of ["/contact", "/services", "/use-cases", "/how-it-works", "/trust", "/pilot"]) {
     assert.doesNotMatch(html, new RegExp(`href="${retiredPath}"`));
   }
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);

@@ -5,15 +5,19 @@ import { legacyRoutePaths, resolveLegacyTarget } from "../src/app/legacyCompatib
 
 test("retired live URLs resolve to safe phase-one destinations", () => {
   assert.equal(resolveLegacyTarget("/platform"), "/product");
-  assert.equal(resolveLegacyTarget("/data"), "/services");
-  assert.equal(resolveLegacyTarget("/map"), "/how-it-works");
+  assert.equal(resolveLegacyTarget("/data"), "/product");
+  assert.equal(resolveLegacyTarget("/map"), "/");
+  assert.equal(resolveLegacyTarget("/contact"), "/login");
+  assert.equal(resolveLegacyTarget("/pilot"), "/login");
+  assert.equal(resolveLegacyTarget("/use-cases"), "/product");
   assert.equal(resolveLegacyTarget("/dashboard/requests"), "/requests");
   assert.equal(resolveLegacyTarget("/crm", "?account=ACC-DEMO-001"), "/customers?legacyRef=account%3AACC-DEMO-001");
   assert.equal(resolveLegacyTarget("/services", "?case=CASE-001&service=SVC-001"), "/requests?legacyRef=case%3ACASE-001");
   assert.equal(resolveLegacyTarget("/services", "?service=SVC-001"), "/services-admin?legacyRef=service%3ASVC-001");
-  assert.equal(resolveLegacyTarget("/services"), null);
+  assert.equal(resolveLegacyTarget("/services"), "/product");
   assert.equal(resolveLegacyTarget("/dashboard"), null);
   assert.ok(legacyRoutePaths.includes("/request"));
+  assert.ok(legacyRoutePaths.includes("/services"));
 });
 
 test("legacy references are bounded and arbitrary query data is discarded", () => {

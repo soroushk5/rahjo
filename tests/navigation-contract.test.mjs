@@ -42,7 +42,7 @@ test("rendered phase-one pages contain no orphan internal links", () => {
 });
 
 test("public and operations navigation expose the intended information architecture", () => {
-  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/contact"]);
+  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product"]);
   assert.deepEqual(consoleNavigation.map((item) => item.path), [
     "/dashboard", "/customers", "/sales", "/services-admin", "/requests", "/tasks",
     "/operations", "/finance", "/documents", "/reports", "/audit", "/settings"

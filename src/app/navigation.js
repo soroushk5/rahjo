@@ -1,8 +1,9 @@
 // @ts-nocheck
+// Canonical public destinations. These remain routable/direct-link surfaces; the
+// public header intentionally has no tab navigation.
 export const publicNavigation = Object.freeze([
   { path: "/", label: "خانه", meta: "رهجو در یک نگاه" },
-  { path: "/product", label: "محصول", meta: "مشتری، پرونده و اجرای کار" },
-  { path: "/contact", label: "شروع", meta: "شروع از یک جریان واقعی" }
+  { path: "/product", label: "محصول", meta: "مشتری، فروش و اجرای کار" }
 ]);
 
 export const consoleNavigation = Object.freeze([
@@ -27,13 +28,12 @@ export const utilityDestinations = Object.freeze([
   { path: "/requests/detail", label: "جزئیات درخواست", meta: "مدارک، اجرا، رسید و نتیجه" }
 ]);
 
-// Legacy public URLs stay routable for compatibility, but are intentionally not
-// part of the primary public information architecture.
+// Public journey is intentionally short. /contact and older marketing URLs are
+// compatibility-only until Rahjo has a real public acquisition/intake flow.
 export const publicJourney = Object.freeze([
   { path: "/", index: "01", label: "خانه", title: "رهجو در یک نگاه" },
   { path: "/product", index: "02", label: "محصول", title: "محصول چگونه کار را جلو می‌برد؟" },
-  { path: "/contact", index: "03", label: "شروع", title: "از کجا شروع کنیم؟" },
-  { path: "/login", index: "04", label: "ورود", title: "ورود به فضای کاری" }
+  { path: "/login", index: "03", label: "ورود", title: "ورود به فضای کاری" }
 ]);
 
 export const allDestinations = Object.freeze([
