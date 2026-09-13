@@ -1,9 +1,10 @@
 // @ts-nocheck
-// Canonical public destinations. These remain routable/direct-link surfaces; the
-// public header intentionally has no tab navigation.
+// Canonical public destinations. The header stays compact; these routes define
+// the intentional public product IA and search/navigation contract.
 export const publicNavigation = Object.freeze([
   { path: "/", label: "خانه", meta: "رهجو در یک نگاه" },
-  { path: "/product", label: "محصول", meta: "مشتری، فروش و اجرای کار" }
+  { path: "/product", label: "محصول", meta: "مشتری، فروش و اجرای کار" },
+  { path: "/contact", label: "شروع", meta: "ثبت یک جریان واقعی برای شروع" }
 ]);
 
 export const consoleNavigation = Object.freeze([
@@ -28,12 +29,10 @@ export const utilityDestinations = Object.freeze([
   { path: "/requests/detail", label: "جزئیات درخواست", meta: "مدارک، اجرا، رسید و نتیجه" }
 ]);
 
-// Public journey is intentionally short. /contact and older marketing URLs are
-// compatibility-only until Rahjo has a real public acquisition/intake flow.
 export const publicJourney = Object.freeze([
   { path: "/", index: "01", label: "خانه", title: "رهجو در یک نگاه" },
   { path: "/product", index: "02", label: "محصول", title: "محصول چگونه کار را جلو می‌برد؟" },
-  { path: "/login", index: "03", label: "ورود", title: "ورود به فضای کاری" }
+  { path: "/contact", index: "03", label: "شروع", title: "ثبت یک جریان واقعی" }
 ]);
 
 export const allDestinations = Object.freeze([

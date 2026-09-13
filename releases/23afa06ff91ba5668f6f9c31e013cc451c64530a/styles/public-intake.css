@@ -1,0 +1,176 @@
+.public-intake {
+  padding: clamp(72px, 10vw, 128px) 0 96px;
+  background: #f8fafb;
+}
+
+.public-intake__grid {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(440px, 1fr);
+  gap: clamp(36px, 7vw, 88px);
+  align-items: start;
+}
+
+.public-intake__intro h1 {
+  max-width: 680px;
+  margin: 12px 0 18px;
+  color: #10243a;
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 1.12;
+  letter-spacing: -.035em;
+}
+
+.public-intake__intro .sw-lead {
+  max-width: 620px;
+}
+
+.public-intake__steps {
+  display: grid;
+  gap: 10px;
+  margin: 34px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-intake__steps li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e4eaee;
+}
+
+.public-intake__steps li > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #08717c;
+  background: #e7f5f5;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.public-intake__steps strong,
+.public-intake__steps small {
+  display: block;
+}
+
+.public-intake__steps strong {
+  color: #10243a;
+  font-size: .82rem;
+}
+
+.public-intake__steps small {
+  margin-top: 2px;
+  color: #6f8190;
+  font-size: .68rem;
+}
+
+.public-intake__card {
+  padding: clamp(22px, 3vw, 34px);
+  background: #fff;
+  border: 1px solid #dfe6ea;
+  border-radius: 18px;
+  box-shadow: 0 20px 70px rgb(16 36 58 / .07);
+}
+
+.public-intake-form,
+.public-intake-form__row {
+  display: grid;
+  gap: 16px;
+}
+
+.public-intake-form__row {
+  grid-template-columns: 1fr 1fr;
+}
+
+.public-intake-field {
+  display: grid;
+  gap: 7px;
+}
+
+.public-intake-field span {
+  color: #2e4659;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.public-intake-field input,
+.public-intake-field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: #10243a;
+  background: #fbfcfd;
+  border: 1px solid #dce4e8;
+  border-radius: 10px;
+  font: inherit;
+  font-size: .78rem;
+}
+
+.public-intake-field textarea {
+  min-height: 132px;
+  resize: vertical;
+  line-height: 1.8;
+}
+
+.public-intake-field :is(input, textarea):focus-visible {
+  outline: 3px solid #0a8996;
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+.public-intake-form__hint,
+.public-intake-form__privacy,
+.public-intake-form__feedback {
+  margin: 0;
+  color: #708391;
+  font-size: .64rem;
+  line-height: 1.75;
+}
+
+.public-intake-form__feedback {
+  min-height: 1.6em;
+  color: #315d62;
+  font-weight: 750;
+}
+
+.public-intake-form__submit {
+  justify-self: start;
+}
+
+.public-intake-form__submit:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+@media (max-width: 860px) {
+  .public-intake {
+    padding: 56px 0 72px;
+  }
+
+  .public-intake__grid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .public-intake__card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 540px) {
+  .public-intake-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .public-intake__card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .public-intake-form__submit {
+    width: 100%;
+  }
+}
