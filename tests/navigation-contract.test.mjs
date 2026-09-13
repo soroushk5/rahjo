@@ -6,6 +6,7 @@ import {
   renderPrivacyPage, renderProductPage, renderServicesPage, renderTermsPage, renderTrackRequestPage,
   renderTrustPage, renderUseCasesPage
 } from "../src/features/public/publicPages.js";
+import { renderPublicIntakePage } from "../src/features/public/publicIntakePage.js";
 import { renderLoginPage } from "../src/features/auth/loginPage.js";
 import { renderServiceRequestPage } from "../src/features/requests/serviceRequestPage.js";
 import { renderCustomersPage, renderDashboardPage, renderRequestsPage, renderSalesPage, renderServicesAdminPage, renderTasksPage } from "../src/features/operations/corePages.js";
@@ -20,7 +21,7 @@ const knownRoutes = new Set([
 
 const renderers = [
   renderHomePage, renderProductPage, renderServicesPage, renderUseCasesPage, renderHowItWorksPage,
-  renderPilotPage, renderTrustPage, renderAboutPage, renderContactPage, renderPrivacyPage, renderTermsPage,
+  renderPilotPage, renderTrustPage, renderAboutPage, renderContactPage, renderPublicIntakePage, renderPrivacyPage, renderTermsPage,
   renderTrackRequestPage, renderServiceRequestPage, () => renderLoginPage({ returnTo: "/dashboard" }),
   renderDashboardPage, renderCustomersPage, renderCustomerDetailPage, renderSalesPage, renderServicesAdminPage,
   renderRequestsPage, renderRequestDetailPage, renderTasksPage, renderOperationsPage, renderFinancePage,
@@ -42,7 +43,7 @@ test("rendered phase-one pages contain no orphan internal links", () => {
 });
 
 test("public and operations navigation expose the intended information architecture", () => {
-  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product"]);
+  assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/contact"]);
   assert.deepEqual(consoleNavigation.map((item) => item.path), [
     "/dashboard", "/customers", "/sales", "/services-admin", "/requests", "/tasks",
     "/operations", "/finance", "/documents", "/reports", "/audit", "/settings"

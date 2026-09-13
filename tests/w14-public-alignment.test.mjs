@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { renderMinimalHomePage, renderMinimalProductPage } from "../src/features/public/minimalPublicPages.js";
+import { renderPublicIntakePage } from "../src/features/public/publicIntakePage.js";
 
 test("compact landing makes category, audience and flow concrete", () => {
   const html = renderMinimalHomePage();
@@ -18,28 +19,31 @@ test("compact landing makes category, audience and flow concrete", () => {
   assert.doesNotMatch(html, /sw-screen|sw-showcases|mp-how/);
 });
 
-test("public CTAs only target real product or login destinations", () => {
+test("public CTAs target real product, Start or login destinations", () => {
   const home = renderMinimalHomePage();
   const product = renderMinimalProductPage();
+  const start = renderPublicIntakePage();
   assert.match(home, /data-cta="home-product"[^>]+href="\/product"/);
   assert.match(home, /data-cta="home-login"[^>]+href="\/login"/);
+  assert.match(home, /data-cta="header-start"[^>]+href="\/contact"/);
   assert.match(home, /data-cta="home-final-login"[^>]+href="\/login"/);
   assert.match(home, /data-cta="home-final-product"[^>]+href="\/product"/);
   assert.match(product, /data-cta="product-login"[^>]+href="\/login"/);
   assert.match(product, /data-cta="product-home"[^>]+href="\/"/);
-  assert.doesNotMatch(`${home}\n${product}`, /href="\/contact"|شروع با رهجو|شروع بررسی|دیدن دموی رهجو/);
+  assert.match(start, /id="rahjo-public-intake"/);
+  assert.doesNotMatch(`${home}\n${product}\n${start}`, /شروع بررسی|دیدن دموی رهجو/);
 });
 
-test("public landing contains no intelligence marketing language", () => {
-  const html = renderMinimalHomePage();
+test("public canonical surfaces contain no intelligence marketing language", () => {
+  const html = `${renderMinimalHomePage()}\n${renderMinimalProductPage()}\n${renderPublicIntakePage()}`;
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
 });
 
-test("production sitemap excludes compatibility-only acquisition routes", () => {
+test("production sitemap exposes Start and excludes compatibility-only acquisition routes", () => {
   const buildScript = readFileSync("scripts/build-hostinger.mjs", "utf8");
   const smokeScript = readFileSync("scripts/smoke-hostinger.mjs", "utf8");
 
-  assert.match(buildScript, /const routes = \['\/', '\/product', '\/privacy', '\/terms'\];/);
-  assert.doesNotMatch(buildScript, /const routes = \[[^\n]*'\/contact'/);
-  assert.match(smokeScript, /const nonCanonicalRoutes = \[[^\n]*'\/contact'/);
+  assert.match(buildScript, /const routes = \['\/', '\/product', '\/contact', '\/privacy', '\/terms'\];/);
+  assert.match(smokeScript, /const publicRoutes = \['\/', '\/product', '\/contact', '\/privacy', '\/terms'\];/);
+  assert.doesNotMatch(smokeScript, /const nonCanonicalRoutes = \[[^\n]*'\/contact'/);
 });
