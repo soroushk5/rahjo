@@ -38,6 +38,7 @@ test("server authentication state renders a distinct login without demo content 
   const html = guarded.render();
   assert.match(html, /id="rahjo-server-login"/);
   assert.match(html, /workspaceSlug/);
+  assert.match(html, /name="password"[^>]*autofocus/);
   assert.doesNotMatch(html, /GOLDEN-DEMO-LOGIN/);
   assert.doesNotMatch(html, /ورود مهمان/);
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);

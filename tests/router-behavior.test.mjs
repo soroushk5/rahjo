@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Router } from "../src/app/router.js";
+import { prepareMainContent, Router } from "../src/app/router.js";
 import { legacyRoutePaths, resolveLegacyTarget } from "../src/app/legacyCompatibility.js";
 
 test("retired live URLs resolve to safe phase-one destinations", () => {
@@ -79,5 +79,42 @@ test("RawGitHack hash routes remain stable after repeated rewrites", () => {
     assert.equal(router.logicalPathForLink(/** @type {any} */ (fakeLink)), "/crm?account=ACC-DEMO-001");
   } finally {
     global.window = previousWindow;
+  }
+});
+
+test("main content becomes a skip target and only receives focus after SPA navigation", () => {
+  const previousHTMLElement = global.HTMLElement;
+  const focusCalls = [];
+  const attributes = new Map();
+  class FakeHTMLElement {
+    hasAttribute(name) {
+      return attributes.has(name);
+    }
+
+    setAttribute(name, value) {
+      attributes.set(name, value);
+    }
+
+    focus(options) {
+      focusCalls.push(options);
+    }
+  }
+  const main = new FakeHTMLElement();
+  const browserDocument = {
+    getElementById(id) {
+      return id === "main-content" ? main : null;
+    }
+  };
+  global.HTMLElement = FakeHTMLElement;
+
+  try {
+    prepareMainContent(/** @type {any} */ (browserDocument));
+    assert.equal(attributes.get("tabindex"), "-1");
+    assert.equal(focusCalls.length, 0, "direct render must not steal native autofocus");
+
+    prepareMainContent(/** @type {any} */ (browserDocument), true);
+    assert.deepEqual(focusCalls, [{ preventScroll: true }]);
+  } finally {
+    global.HTMLElement = previousHTMLElement;
   }
 });
