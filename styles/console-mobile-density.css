@@ -1,0 +1,26 @@
+/* Final mobile-density override for the compact console.
+ * Four dashboard metrics remain a 2×2 summary at phone width instead of
+ * becoming four full-width cards and stretching the first screen. */
+@media (max-width: 470px) {
+  .phase-app-shell[data-console-ui="compact"] .ops-metrics,
+  .phase-app-shell[data-console-ui="compact"] .sales-summary,
+  .phase-app-shell[data-console-ui="compact"] .finance-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .ops-metric,
+  .phase-app-shell[data-console-ui="compact"] .finance-metrics article {
+    min-height: 74px;
+    padding: 10px 11px;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .ops-metric > span,
+  .phase-app-shell[data-console-ui="compact"] .finance-metrics article > span {
+    width: 30px;
+    height: 30px;
+  }
+
+  .phase-app-shell[data-console-ui="compact"] .ops-metric strong {
+    font-size: 1rem;
+  }
+}
