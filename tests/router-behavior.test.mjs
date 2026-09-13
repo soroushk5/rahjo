@@ -7,8 +7,8 @@ test("retired live URLs resolve to safe phase-one destinations", () => {
   assert.equal(resolveLegacyTarget("/platform"), "/product");
   assert.equal(resolveLegacyTarget("/data"), "/product");
   assert.equal(resolveLegacyTarget("/map"), "/");
-  assert.equal(resolveLegacyTarget("/contact"), "/login");
-  assert.equal(resolveLegacyTarget("/pilot"), "/login");
+  assert.equal(resolveLegacyTarget("/contact"), null);
+  assert.equal(resolveLegacyTarget("/pilot"), "/contact");
   assert.equal(resolveLegacyTarget("/use-cases"), "/product");
   assert.equal(resolveLegacyTarget("/dashboard/requests"), "/requests");
   assert.equal(resolveLegacyTarget("/crm", "?account=ACC-DEMO-001"), "/customers?legacyRef=account%3AACC-DEMO-001");
@@ -18,6 +18,7 @@ test("retired live URLs resolve to safe phase-one destinations", () => {
   assert.equal(resolveLegacyTarget("/dashboard"), null);
   assert.ok(legacyRoutePaths.includes("/request"));
   assert.ok(legacyRoutePaths.includes("/services"));
+  assert.ok(!legacyRoutePaths.includes("/contact"));
 });
 
 test("legacy references are bounded and arbitrary query data is discarded", () => {
