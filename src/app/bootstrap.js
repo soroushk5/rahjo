@@ -22,7 +22,10 @@ import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
 import { isAuthenticated } from "../services/authStore.js";
 import { applyRuntimeBoundary, initializeRuntimeFromDocument } from "./runtimeBoundary.js";
 
-await initializeRuntimeFromDocument();
+// Start server/runtime discovery immediately, but never hold the public shell
+// behind a cross-origin backend request. Public routes render from static assets;
+// protected routes read the current runtime snapshot and re-render on updates.
+void initializeRuntimeFromDocument();
 
 const root = document.querySelector("#app");
 if (!(root instanceof HTMLElement)) throw new Error("App root not found");
