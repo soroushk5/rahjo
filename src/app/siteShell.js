@@ -1,9 +1,13 @@
 // @ts-nocheck
 import { brandLogo } from "../components/brandLogo.js";
 import { isAuthenticated } from "../services/authStore.js";
+import { RUNTIME_DATA_STATES, runtimeData } from "../services/runtimeDataFacade.js";
 
 export function siteShell({ content, activePath }) {
-  const signedIn = isAuthenticated();
+  const runtime = runtimeData.read();
+  const signedIn = runtime.mode === "server"
+    ? runtime.state === RUNTIME_DATA_STATES.READY && Boolean(runtime.user?.id)
+    : isAuthenticated();
   const accessHref = signedIn ? "/dashboard" : "/login";
   const accessLabel = signedIn ? "باز کردن رهجو" : "ورود به رهجو";
   const link = (path, label) => `<a data-link href="${path}" ${activePath === path ? 'aria-current="page"' : ""}>${label}</a>`;

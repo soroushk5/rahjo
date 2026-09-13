@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { renderMinimalHomePage, renderMinimalProductPage } from "../src/features/public/minimalPublicPages.js";
 
 test("compact landing makes category, audience and flow concrete", () => {
@@ -32,4 +33,13 @@ test("public CTAs only target real product or login destinations", () => {
 test("public landing contains no intelligence marketing language", () => {
   const html = renderMinimalHomePage();
   assert.doesNotMatch(html, /\bAI\b|هوش[‌\s-]*مصنوعی/i);
+});
+
+test("production sitemap excludes compatibility-only acquisition routes", () => {
+  const buildScript = readFileSync("scripts/build-hostinger.mjs", "utf8");
+  const smokeScript = readFileSync("scripts/smoke-hostinger.mjs", "utf8");
+
+  assert.match(buildScript, /const routes = \['\/', '\/product', '\/privacy', '\/terms'\];/);
+  assert.doesNotMatch(buildScript, /const routes = \[[^\n]*'\/contact'/);
+  assert.match(smokeScript, /const nonCanonicalRoutes = \[[^\n]*'\/contact'/);
 });

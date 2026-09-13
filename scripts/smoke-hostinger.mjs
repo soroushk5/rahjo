@@ -113,8 +113,8 @@ if (mode === 'preview') {
   await access(join(output, 'sitemap.xml'));
 
   const sitemap = await readFile(join(output, 'sitemap.xml'), 'utf8');
-  const publicRoutes = ['/', '/product', '/contact', '/privacy', '/terms'];
-  const nonCanonicalRoutes = ['/services', '/use-cases', '/how-it-works', '/pilot', '/trust', '/about', '/track-request'];
+  const publicRoutes = ['/', '/product', '/privacy', '/terms'];
+  const nonCanonicalRoutes = ['/contact', '/services', '/use-cases', '/how-it-works', '/pilot', '/trust', '/about', '/track-request'];
   const retiredRoutes = ['/platform', '/data', '/map', '/atlas', '/request'];
 
   for (const route of publicRoutes) {

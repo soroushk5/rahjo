@@ -6,6 +6,7 @@ import {
   renderMinimalTrackPage
 } from "../src/features/public/minimalPublicPages.js";
 import { publicNavigation } from "../src/app/navigation.js";
+import { runtimeData } from "../src/services/runtimeDataFacade.js";
 
 const canonicalPages = [renderMinimalHomePage, renderMinimalProductPage];
 
@@ -45,4 +46,29 @@ test("legacy tracking route remains safe and sends users to secure login", () =>
   const html = renderMinimalTrackPage();
   assert.match(html, /href="\/login"/);
   assert.doesNotMatch(html, /فرم|کد پیگیری/);
+});
+
+test("public header uses a validated server user rather than backend readiness as authentication", async () => {
+  const config = { mode: "server", apiBase: "https://api.rahjo.example", buildSha: "server-sha" };
+  const envelope = {
+    dataMode: "server",
+    version: 1,
+    workspace: { id: "workspace-a", name: "رهجو" },
+    user: { id: "user-a", email: "owner@rahjo.example", name: "مالک رهجو", role: "owner" },
+    projection: { cases: [] }
+  };
+  const authenticatedFetch = async (url) => String(url).endsWith("/csrf")
+    ? new Response(JSON.stringify({ dataMode: "server", csrfToken: "rahjo_csrf_abcdefghijklmnopqrstuvwxyz" }), { status: 200 })
+    : new Response(JSON.stringify(envelope), { status: 200 });
+
+  await runtimeData.initialize(config, { fetchImpl: authenticatedFetch });
+  assert.match(renderMinimalHomePage(), /data-cta="header-access"[^>]+href="\/dashboard"/);
+
+  await runtimeData.initialize(config, { fetchImpl: async () => new Response(null, { status: 401 }) });
+  assert.match(renderMinimalHomePage(), /data-cta="header-access"[^>]+href="\/login"/);
+
+  await runtimeData.initialize(config, {
+    fetchImpl: async () => new Response(JSON.stringify({ ...envelope, user: null }), { status: 200 })
+  });
+  assert.match(renderMinimalHomePage(), /data-cta="header-access"[^>]+href="\/login"/);
 });
