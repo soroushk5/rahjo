@@ -57,10 +57,6 @@ async function checkSurface(page, route, viewport) {
   if (metrics.navLinks < 10 || metrics.navLinks > 12) failures.push(`${viewport} ${route}: unexpected nav link count ${metrics.navLinks}`);
   if (metrics.scrollWidth > metrics.clientWidth + 2) failures.push(`${viewport} ${route}: horizontal overflow ${metrics.scrollWidth}/${metrics.clientWidth}`);
   if (/\bAI\b|هوش[‌\s-]*مصنوعی/i.test(metrics.text)) failures.push(`${viewport} ${route}: excluded intelligence wording rendered`);
-
-  const errors = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  if (errors.length) failures.push(`${viewport} ${route}: ${errors.join(' | ')}`);
 }
 
 for (const viewport of viewports) {
@@ -97,7 +93,19 @@ for (const viewport of viewports) {
 
   await page.screenshot({ path: `${output}/dashboard-${viewport.name}.png`, fullPage: true });
 
-  // Real sidebar navigation should survive the visual convergence.
+  // Real sidebar navigation should survive the visual convergence. On mobile,
+  // exercise the actual menu control before clicking an off-canvas nav target.
+  if (viewport.name === 'mobile') {
+    const toggle = page.locator('#app-menu-toggle');
+    if (!(await toggle.count())) failures.push('mobile: app menu toggle missing');
+    else {
+      await toggle.click();
+      const open = await page.locator('.phase-sidebar').evaluate((element) => element.hasAttribute('data-open'));
+      const expanded = await toggle.getAttribute('aria-expanded');
+      if (!open || expanded !== 'true') failures.push('mobile: sidebar did not open accessibly');
+    }
+  }
+
   const customers = page.locator('.phase-app-nav a[href="/customers"]').first();
   if (!(await customers.count())) failures.push(`${viewport.name}: customers nav missing`);
   else {
@@ -110,18 +118,6 @@ for (const viewport of viewports) {
   await checkSurface(page, '/requests', viewport.name);
   await checkSurface(page, '/customers/detail', viewport.name);
   await checkSurface(page, '/requests/detail', viewport.name);
-
-  if (viewport.name === 'mobile') {
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
-    const toggle = page.locator('#app-menu-toggle');
-    if (!(await toggle.count())) failures.push('mobile: app menu toggle missing');
-    else {
-      await toggle.click();
-      const open = await page.locator('.phase-sidebar').evaluate((element) => element.hasAttribute('data-open'));
-      const expanded = await toggle.getAttribute('aria-expanded');
-      if (!open || expanded !== 'true') failures.push('mobile: sidebar did not open accessibly');
-    }
-  }
 
   // Keyboard focus must stay visible on the first reachable console control.
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
