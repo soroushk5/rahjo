@@ -14,6 +14,37 @@
   display: none;
 }
 
+/* White labels on the earlier teal and muted footer copy both fell below
+ * WCAG AA at their rendered text sizes. Keep the visual system, but use the
+ * existing darker tokens for interactive controls and compact footer copy. */
+.mp-site .button--primary {
+  background: var(--sw-teal-dark);
+  border-color: var(--sw-teal-dark);
+}
+
+.mp-site .button--primary:hover {
+  background: #06616c;
+  border-color: #06616c;
+}
+
+.mp-footer__brand p,
+.mp-footer__links a,
+.mp-footer__bottom span {
+  color: var(--sw-copy);
+}
+
+.server-auth-page .button--primary,
+.guest-login .button--primary {
+  background: var(--teal-800);
+  border-color: var(--teal-800);
+}
+
+.server-auth-page .button--primary:hover,
+.guest-login .button--primary:hover {
+  background: #06616c;
+  border-color: #06616c;
+}
+
 @media (max-width: 760px) {
   .mp-header .mp-header__actions {
     display: flex !important;
