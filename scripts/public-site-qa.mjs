@@ -57,6 +57,76 @@ async function clickTo(page, selector, expected, label) {
   await waitForPath(page, expected, label);
 }
 
+async function contrastRatio(page, selector, label) {
+  const target = page.locator(selector).first();
+  if (!(await target.count())) {
+    failures.push(`${label}: missing ${selector}`);
+    return;
+  }
+  const result = await target.evaluate((element) => {
+    const parse = (value) => (value.match(/[\d.]+/g) || []).map(Number);
+    const luminance = (rgb) => {
+      const channels = rgb.map((value) => {
+        const normalized = value / 255;
+        return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const style = getComputedStyle(element);
+    let backgroundElement = element;
+    let backgroundColor = style.backgroundColor;
+    while (backgroundElement.parentElement && (parse(backgroundColor)[3] ?? 1) === 0) {
+      backgroundElement = backgroundElement.parentElement;
+      backgroundColor = getComputedStyle(backgroundElement).backgroundColor;
+    }
+    const foreground = luminance(parse(style.color).slice(0, 3));
+    const background = luminance(parse(backgroundColor).slice(0, 3));
+    return {
+      ratio: (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05),
+      color: style.color,
+      background: backgroundColor,
+      fontSize: style.fontSize
+    };
+  });
+  if (result.ratio < 4.5) {
+    failures.push(`${label}: contrast ${result.ratio.toFixed(2)} (${result.color} on ${result.background}, ${result.fontSize})`);
+  }
+}
+
+async function verifyKeyboardRoute(page, selector, expected, label) {
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await page.keyboard.press('Tab');
+  if (!(await page.locator('.skip-link').evaluate((element) => element === document.activeElement))) {
+    failures.push(`${label}: skip link was not the first keyboard target`);
+  }
+  await page.keyboard.press('Enter');
+  if (!(await page.locator('#main-content').evaluate((element) => element === document.activeElement))) {
+    failures.push(`${label}: skip link did not focus main content`);
+  }
+
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  let reached = false;
+  for (let index = 0; index < 12; index += 1) {
+    await page.keyboard.press('Tab');
+    reached = await page.locator(selector).evaluateAll((elements) => elements.includes(document.activeElement));
+    if (reached) break;
+  }
+  if (!reached) {
+    failures.push(`${label}: ${selector} was not reachable by Tab`);
+    return;
+  }
+  const focusStyle = await page.locator(selector).first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { width: Number.parseFloat(style.outlineWidth), style: style.outlineStyle };
+  });
+  if (focusStyle.style === 'none' || focusStyle.width < 2) failures.push(`${label}: keyboard focus is not visibly outlined`);
+  await page.keyboard.press('Enter');
+  await waitForPath(page, expected, label);
+  if (!(await page.locator('#main-content').evaluate((element) => element === document.activeElement))) {
+    failures.push(`${label}: SPA route did not transfer focus to main content`);
+  }
+}
+
 for (const viewport of viewports) {
   const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, locale: 'fa-IR' });
   const page = await context.newPage();
@@ -120,6 +190,15 @@ for (const viewport of viewports) {
       if (!(await page.locator(marker).first().count())) failures.push(`${viewport.name} ${route.path}: missing ${marker}`);
     }
 
+    if (route.path === '/') {
+      await contrastRatio(page, '[data-cta="header-access"]', `${viewport.name} header CTA`);
+      await contrastRatio(page, '[data-cta="home-product"]', `${viewport.name} home primary CTA`);
+      await contrastRatio(page, '.mp-footer__links a', `${viewport.name} footer link`);
+    }
+    if (route.path === '/login') {
+      await contrastRatio(page, '#rahjo-server-login .button--primary, #guest-login-button', `${viewport.name} login primary action`);
+    }
+
     if (consoleErrors.length) failures.push(`${viewport.name} ${route.path}: console errors: ${consoleErrors.join(' | ')}`);
     if (pageErrors.length) failures.push(`${viewport.name} ${route.path}: page errors: ${pageErrors.join(' | ')}`);
 
@@ -165,6 +244,8 @@ for (const viewport of viewports) {
 
   await page.goto(`${baseUrl}/track-request`, { waitUntil: 'networkidle' });
   await clickTo(page, '[data-cta="track-login"]', '/login', `${viewport.name} legacy tracking login`);
+
+  await verifyKeyboardRoute(page, '[data-cta="home-product"]', '/product', `${viewport.name} keyboard home product CTA`);
 
   await context.close();
 }
