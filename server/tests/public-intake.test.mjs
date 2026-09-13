@@ -147,6 +147,23 @@ test("public intake requires the exact configured origin", async () => {
   });
 });
 
+test("disabled public intake is not discoverable", async () => {
+  const deps = dependencies(baseConfig({
+    publicIntakeEnabled: false,
+    publicIntakeOrigin: "",
+    publicIntakeWorkspaceSlug: "",
+    publicIntakeToken: "",
+    publicIntakeServiceId: ""
+  }));
+  await withServer(deps, async (base) => {
+    const response = await submit(base);
+    assert.equal(response.status, 404);
+    const payload = await response.json();
+    assert.equal(payload.code, "NOT_FOUND");
+    assert.equal(deps.captured.length, 0);
+  });
+});
+
 test("public intake returns explicit 429 with Retry-After", async () => {
   const deps = dependencies(baseConfig({ publicIntakeMaxRequests: 1 }));
   await withServer(deps, async (base) => {
