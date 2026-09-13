@@ -29,8 +29,7 @@ const CONSOLE_GROUPS = Object.freeze([
 function cleanConsoleCopy(content) {
   return String(content || "")
     .replaceAll("AI خاموش · ", "")
-    .replaceAll("بدون مدل AI", "ثبت‌شده روی سرور")
-    .replaceAll("AI", "");
+    .replaceAll("بدون مدل AI", "ثبت‌شده روی سرور");
 }
 
 export function appShell({ content, activePath, title }) {
