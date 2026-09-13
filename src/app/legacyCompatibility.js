@@ -1,10 +1,16 @@
 /** @type {Readonly<Record<string, {target: string, keys: readonly string[]}>>} */
 const legacyRoutes = Object.freeze({
   "/platform": { target: "/product", keys: [] },
-  "/data": { target: "/services", keys: [] },
-  "/atlas": { target: "/services", keys: [] },
-  "/stories": { target: "/use-cases", keys: [] },
-  "/map": { target: "/how-it-works", keys: [] },
+  "/data": { target: "/product", keys: [] },
+  "/atlas": { target: "/product", keys: [] },
+  "/stories": { target: "/product", keys: [] },
+  "/map": { target: "/", keys: [] },
+  "/use-cases": { target: "/product", keys: [] },
+  "/how-it-works": { target: "/", keys: [] },
+  "/trust": { target: "/product", keys: [] },
+  "/about": { target: "/", keys: [] },
+  "/contact": { target: "/login", keys: [] },
+  "/pilot": { target: "/login", keys: [] },
   "/cases/new": { target: "/request-service", keys: ["account", "service", "case"] },
   "/request": { target: "/request-service", keys: ["account", "service", "case"] },
   "/crm": { target: "/customers", keys: ["account", "case"] },
@@ -46,7 +52,7 @@ export function resolveLegacyTarget(path, search = "") {
       const query = encodedLegacyRef(search, ["service"]);
       return query ? `/services-admin?${query}` : "/services-admin";
     }
-    return null;
+    return "/product";
   }
 
   const alias = legacyRoutes[path];
@@ -55,4 +61,4 @@ export function resolveLegacyTarget(path, search = "") {
   return query ? `${alias.target}?${query}` : alias.target;
 }
 
-export const legacyRoutePaths = Object.freeze(Object.keys(legacyRoutes));
+export const legacyRoutePaths = Object.freeze(["/services", ...Object.keys(legacyRoutes)]);
