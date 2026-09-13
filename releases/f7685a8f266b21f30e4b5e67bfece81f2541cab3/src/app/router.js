@@ -25,6 +25,20 @@ function detectRoutingMode() {
   return hostname === "raw.githack.com" || hostname === "rawcdn.githack.com" ? "hash" : "history";
 }
 
+/**
+ * Keep the skip-link target focusable on every rendered route and, after
+ * client-side navigation, move assistive-technology context into the new page.
+ * Direct loads deliberately do not steal focus from native autofocus controls.
+ * @param {Document} browserDocument
+ * @param {boolean} moveFocus
+ */
+export function prepareMainContent(browserDocument, moveFocus = false) {
+  const main = browserDocument.getElementById("main-content");
+  if (!(main instanceof HTMLElement)) return;
+  if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+  if (moveFocus) main.focus({ preventScroll: true });
+}
+
 export class Router {
   /** @param {{root: HTMLElement, routes: Route[], basePath?: string, routingMode?: "history" | "hash"}} options */
   constructor({ root, routes, basePath = detectBasePath(), routingMode = detectRoutingMode() }) {
@@ -95,8 +109,8 @@ export class Router {
   }
 
   start() {
-    window.addEventListener("popstate", this.handleNavigation);
-    if (this.routingMode === "hash") window.addEventListener("hashchange", this.handleNavigation);
+    window.addEventListener("popstate", () => this.handleNavigation({ moveFocus: true }));
+    if (this.routingMode === "hash") window.addEventListener("hashchange", () => this.handleNavigation({ moveFocus: true }));
     window.addEventListener("rahjo:navigate", (event) => {
       if (event instanceof CustomEvent && typeof event.detail === "string") this.navigate(event.detail);
     });
@@ -115,16 +129,17 @@ export class Router {
   /** @param {string} path */
   navigate(path) {
     window.history.pushState({}, "", this.browserPath(path));
-    this.handleNavigation();
+    this.handleNavigation({ moveFocus: true });
   }
 
   /** @param {string} path */
   replace(path) {
     window.history.replaceState({}, "", this.browserPath(path));
-    this.handleNavigation();
+    this.handleNavigation({ moveFocus: true });
   }
 
-  handleNavigation() {
+  /** @param {{moveFocus?: boolean}} [options] */
+  handleNavigation(options = {}) {
     const sourcePath = this.routingMode === "hash"
       ? window.location.hash.slice(1) || "/"
       : `${window.location.pathname}${window.location.search}`;
@@ -149,5 +164,6 @@ export class Router {
     route.mount?.();
     this.rewriteInternalLinks();
     window.scrollTo({ top: 0, behavior: "instant" });
+    prepareMainContent(document, options.moveFocus === true);
   }
 }
