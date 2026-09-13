@@ -4,10 +4,10 @@
   "deploymentMode": "production",
   "runtimeMode": "server",
   "apiBase": "https://paleturquoise-dogfish-211679.hostingersite.com",
-  "buildSha": "23afa06ff91ba5668f6f9c31e013cc451c64530a",
-  "commit": "23afa06ff91ba5668f6f9c31e013cc451c64530a",
-  "assetVersion": "23afa06ff91ba5668f6f9c31e013cc451c64530a",
-  "assetBase": "/releases/23afa06ff91ba5668f6f9c31e013cc451c64530a",
+  "buildSha": "015d02079eac9a47bb079819322c04361962b2a8",
+  "commit": "015d02079eac9a47bb079819322c04361962b2a8",
+  "assetVersion": "015d02079eac9a47bb079819322c04361962b2a8",
+  "assetBase": "/releases/015d02079eac9a47bb079819322c04361962b2a8",
   "siteBasePath": "",
-  "generatedAt": "2026-09-13T11:21:05.859Z"
+  "generatedAt": "2026-09-13T16:30:29.884Z"
 }
