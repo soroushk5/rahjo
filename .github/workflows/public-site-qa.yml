@@ -1,4 +1,4 @@
-name: Public Site QA — W14 Visual Rebaseline
+name: Public + Console QA — W14 Visual Rebaseline
 
 on:
   workflow_dispatch:
@@ -10,8 +10,10 @@ on:
       - "src/features/public/**"
       - "src/features/auth/**"
       - "src/features/requests/**"
+      - "src/features/operations/**"
       - "styles/**"
       - "scripts/public-site-qa.mjs"
+      - "scripts/console-qa.mjs"
       - "scripts/build-hostinger.mjs"
       - "index.html"
       - "tests/**"
@@ -23,7 +25,7 @@ permissions:
 jobs:
   public-site-qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,13 +65,17 @@ jobs:
       - name: Render desktop and mobile public pages
         run: node scripts/public-site-qa.mjs
 
+      - name: Render desktop and mobile console surfaces
+        run: node scripts/console-qa.mjs
+
       - name: Upload rendered evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rahjo-public-site-qa
+          name: rahjo-public-console-qa
           path: |
             qa-artifacts/public-site
+            qa-artifacts/console
             /tmp/rahjo-public-server.log
           if-no-files-found: warn
           retention-days: 14
