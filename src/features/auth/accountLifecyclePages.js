@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { readRuntimeConfig } from "../../config/runtimeConfig.js";
 import { escapeHtml } from "../../lib/html.js";
+import { runtimeData } from "../../services/runtimeDataFacade.js";
 
 function shell(title, lead, body) {
   return `<div class="phase-site server-auth-page">
@@ -41,7 +42,7 @@ export function renderRecoverAccountPage() {
     <form id="rahjo-account-recovery" class="auth-form server-login-form" novalidate>
       <div data-recovery-identity>
         <label>فضای کاری<input name="workspaceSlug" value="rahjo" autocomplete="organization" required /></label>
-        <label>ایمیل<input name="email" type="email" value="owner@rahjo.local" autocomplete="username" required /></label>
+        <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
         <label>کد بازیابی<input name="recoveryCode" autocomplete="one-time-code" /></label>
       </div>
       ${passwordFields("new-")}
@@ -75,7 +76,7 @@ export function renderAccountSecurityPage() {
       </form>
     </section>
     <section class="workspace-panel">
-      <header><h3>کدهای بازیابی</h3><p>کدها فقط یک‌بار نمایش داده می‌شوند. آن‌ها را در password manager یا جای امن ذخیره کنید.</p></header>
+      <header><h3>کدهای بازیابی</h3><p>کدها فقط یک‌بار نمایش داده می‌شوند. آن‌ها را در یک محل امن ذخیره کنید.</p></header>
       <button id="rahjo-generate-recovery" class="button button--outline" type="button">ساخت کدهای جدید</button>
       <pre id="recovery-codes-output" hidden></pre>
     </section>
@@ -88,7 +89,7 @@ function lifecycleConfig() {
   return config;
 }
 
-async function api(config, path, options = {}) {
+async function publicApi(config, path, options = {}) {
   const response = await fetch(`${config.apiBase}${path}`, {
     credentials: "include",
     cache: "no-store",
@@ -144,7 +145,7 @@ export function mountAcceptInvitePage() {
       if (button) button.disabled = true;
       setText("invite-feedback", "در حال فعال‌سازی حساب…");
       const config = lifecycleConfig();
-      await api(config, "/api/v1/invitations/accept", { method: "POST", body: JSON.stringify({ token, password }) });
+      await publicApi(config, "/api/v1/invitations/accept", { method: "POST", body: JSON.stringify({ token, password }) });
       location.replace("/dashboard");
     } catch (error) {
       if (button) button.disabled = false;
@@ -172,9 +173,9 @@ export function mountRecoverAccountPage() {
       setText("recovery-feedback", "در حال بازیابی امن حساب…");
       const config = lifecycleConfig();
       if (token && mode === "reset") {
-        await api(config, "/api/v1/account/reset", { method: "POST", body: JSON.stringify({ token, password }) });
+        await publicApi(config, "/api/v1/account/reset", { method: "POST", body: JSON.stringify({ token, password }) });
       } else {
-        await api(config, "/api/v1/account/recovery", {
+        await publicApi(config, "/api/v1/account/recovery", {
           method: "POST",
           body: JSON.stringify({
             workspaceSlug: String(fields.get("workspaceSlug") || "").trim(),
@@ -192,7 +193,7 @@ export function mountRecoverAccountPage() {
   });
 }
 
-function memberTable(members, csrf, config) {
+function memberTable(members) {
   const host = document.getElementById("member-list");
   if (!host) return;
   host.innerHTML = `<div class="table-wrap"><table class="workspace-table"><thead><tr><th>عضو</th><th>نقش</th><th>وضعیت</th><th>بازیابی</th></tr></thead><tbody>${members.map((member) => `
@@ -201,7 +202,7 @@ function memberTable(members, csrf, config) {
   host.querySelectorAll("[data-member-reset]").forEach((button) => button.addEventListener("click", async () => {
     try {
       button.disabled = true;
-      const result = await api(config, `/api/v1/members/${encodeURIComponent(button.dataset.memberReset)}/reset-link`, { method: "POST", headers: { "X-CSRF-Token": csrf }, body: "{}" });
+      const result = await runtimeData.sessionRequest(`/api/v1/members/${encodeURIComponent(button.dataset.memberReset)}/reset-link`, { method: "POST", body: {} });
       setText("account-feedback", `لینک بازیابی تا ${new Date(result.reset.expiresAt).toLocaleString("fa-IR")} معتبر است: ${result.reset.url}`, "success");
     } catch (error) {
       setText("account-feedback", error instanceof Error ? error.message : "ساخت لینک انجام نشد.", "error");
@@ -213,19 +214,16 @@ function memberTable(members, csrf, config) {
 
 export async function mountAccountSecurityPage() {
   try {
-    const config = lifecycleConfig();
-    const session = await api(config, "/api/v1/session");
+    const session = await runtimeData.sessionRequest("/api/v1/session");
     setText("account-heading", `${session.user.name || session.user.email} · ${session.workspace.name}`);
     setText("account-session-copy", "نشست این دستگاه از سرور تأیید شد.");
 
-    const csrfResponse = await api(config, "/api/v1/session/csrf", { method: "POST", body: "{}" });
-    const csrf = csrfResponse.csrfToken;
     const isAdmin = ["owner", "admin"].includes(session.user.role);
     const adminSection = document.querySelector("[data-account-admin]");
     if (isAdmin) {
       adminSection?.removeAttribute("hidden");
-      const members = await api(config, "/api/v1/members");
-      memberTable(members.members || [], csrf, config);
+      const members = await runtimeData.sessionRequest("/api/v1/members");
+      memberTable(members.members || []);
     }
 
     const invite = document.querySelector("#rahjo-member-invite");
@@ -236,9 +234,13 @@ export async function mountAccountSecurityPage() {
       const button = invite.querySelector("button[type=submit]");
       try {
         if (button) button.disabled = true;
-        const result = await api(config, "/api/v1/members/invitations", {
-          method: "POST", headers: { "X-CSRF-Token": csrf },
-          body: JSON.stringify({ displayName: String(fields.get("displayName") || ""), email: String(fields.get("email") || ""), role: String(fields.get("role") || "operator") })
+        const result = await runtimeData.sessionRequest("/api/v1/members/invitations", {
+          method: "POST",
+          body: {
+            displayName: String(fields.get("displayName") || ""),
+            email: String(fields.get("email") || ""),
+            role: String(fields.get("role") || "operator")
+          }
         });
         const output = document.getElementById("invite-result");
         if (output) output.textContent = `لینک دعوت تا ${new Date(result.invitation.expiresAt).toLocaleString("fa-IR")} معتبر است: ${result.invitation.url}`;
@@ -257,9 +259,9 @@ export async function mountAccountSecurityPage() {
       try {
         const fields = new FormData(passwordForm);
         const newPassword = validatePair(passwordForm, "change-password", "change-confirm");
-        await api(config, "/api/v1/account/password", {
-          method: "POST", headers: { "X-CSRF-Token": csrf },
-          body: JSON.stringify({ currentPassword: String(fields.get("currentPassword") || ""), newPassword })
+        await runtimeData.sessionRequest("/api/v1/account/password", {
+          method: "POST",
+          body: { currentPassword: String(fields.get("currentPassword") || ""), newPassword }
         });
         location.replace("/login");
       } catch (error) {
@@ -271,7 +273,7 @@ export async function mountAccountSecurityPage() {
       const button = event.currentTarget;
       try {
         button.disabled = true;
-        const result = await api(config, "/api/v1/account/recovery-codes", { method: "POST", headers: { "X-CSRF-Token": csrf }, body: "{}" });
+        const result = await runtimeData.sessionRequest("/api/v1/account/recovery-codes", { method: "POST", body: {} });
         const output = document.getElementById("recovery-codes-output");
         if (output) {
           output.hidden = false;
