@@ -21,8 +21,8 @@ function feedback(id) {
 }
 
 function passwordFields(prefix = "") {
-  return `<label>گذرواژه جدید<input name="${prefix}password" type="password" autocomplete="new-password" minlength="14" maxlength="256" required /></label>
-    <label>تکرار گذرواژه<input name="${prefix}confirm" type="password" autocomplete="new-password" minlength="14" maxlength="256" required /></label>`;
+  return `<label>گذرواژه جدید<input name="${prefix}password" type="password" autocomplete="new-password" minlength="8" maxlength="256" required /></label>
+    <label>تکرار گذرواژه<input name="${prefix}confirm" type="password" autocomplete="new-password" minlength="8" maxlength="256" required /></label>`;
 }
 
 export function renderAcceptInvitePage() {
@@ -116,7 +116,7 @@ function tokenFromFragment(expectedMode = "") {
 function validatePair(form, passwordName, confirmName) {
   const password = String(new FormData(form).get(passwordName) || "");
   const confirm = String(new FormData(form).get(confirmName) || "");
-  if (password.length < 14) throw new Error("گذرواژه باید حداقل ۱۴ کاراکتر باشد.");
+  if (password.length < 8) throw new Error("گذرواژه باید حداقل ۸ کاراکتر باشد.");
   if (password !== confirm) throw new Error("تکرار گذرواژه یکسان نیست.");
   return password;
 }
