@@ -134,7 +134,7 @@ export function renderServerRuntimeState(snapshot, title = "رهجو") {
   const loginForm = state === RUNTIME_DATA_STATES.AUTH ? `
           <form id="rahjo-server-login" class="auth-form server-login-form" novalidate>
             <label>فضای کاری<input name="workspaceSlug" type="text" autocomplete="organization" value="rahjo" required /></label>
-            <label>ایمیل<input name="email" type="email" autocomplete="username" value="owner@rahjo.local" required /></label>
+            <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
             <label>گذرواژه<input name="password" type="password" autocomplete="current-password" required autofocus /></label>
             <p id="rahjo-login-feedback" class="interaction-feedback" role="alert"></p>
             <button class="button button--primary button--large" type="submit">ورود به محیط عملیاتی</button>
@@ -180,9 +180,6 @@ function mountServerRuntimeState() {
         syncCurrentLoginForm(submitted, result);
       }
     } finally {
-      // If no runtime publication replaced the form, restore the original
-      // controls too. Detached controls are harmless; current controls are
-      // handled by syncCurrentLoginForm above.
       const passwordField = form.elements.namedItem("password");
       if (passwordField instanceof HTMLInputElement) passwordField.value = "";
       if (button instanceof HTMLButtonElement) button.disabled = false;
