@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          npm ci --ignore-scripts
+          npm install --no-save --ignore-scripts playwright@1.63.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Probe live frontend and auth edge
@@ -122,10 +124,10 @@ jobs:
           console.log('workspace-default=', workspace);
           console.log('email-default=', email);
           await page.locator('input[name="password"]').fill('definitely-wrong-live-diagnostic-browser');
-          await Promise.all([
-            page.waitForResponse((r) => r.url() === `${backend}/api/v1/session` && r.request().method() === 'POST', { timeout: 15000 }),
-            page.locator('#rahjo-server-login button[type="submit"]').click()
-          ]).then(([response]) => console.log('login-response=', response.status()));
+          const responsePromise = page.waitForResponse((r) => r.url() === `${backend}/api/v1/session` && r.request().method() === 'POST', { timeout: 15000 });
+          await page.locator('#rahjo-server-login button[type="submit"]').click();
+          const response = await responsePromise;
+          console.log('login-response=', response.status());
           await page.waitForTimeout(300);
           const feedback = await page.locator('#rahjo-login-feedback').textContent();
           const buttonDisabled = await page.locator('#rahjo-server-login button[type="submit"]').isDisabled();
