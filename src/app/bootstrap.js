@@ -19,6 +19,14 @@ import { renderCompactDashboardPage } from "../features/operations/consoleDashbo
 import { mountDetailPages, renderCustomerDetailPage, renderRequestDetailPage } from "../features/operations/detailPages.js";
 import { mountSupportPages, renderAuditPage, renderDocumentsPage, renderFinancePage, renderOperationsPage, renderReportsPage, renderSettingsPage } from "../features/operations/supportPages.js";
 import { mountLoginPage, renderLoginPage } from "../features/auth/loginPage.js";
+import {
+  mountAcceptInvitePage,
+  mountAccountSecurityPage,
+  mountRecoverAccountPage,
+  renderAcceptInvitePage,
+  renderAccountSecurityPage,
+  renderRecoverAccountPage
+} from "../features/auth/accountLifecyclePages.js";
 import { isAuthenticated } from "../services/authStore.js";
 import { applyRuntimeBoundary, initializeRuntimeFromDocument } from "./runtimeBoundary.js";
 
@@ -87,6 +95,9 @@ router = new Router({
     { path: "/request-service", title: "ثبت درخواست خدمت", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/cases/new", title: "ورود پروندهٔ جدید", render: renderServiceRequestPage, mount: withChrome(mountServiceRequestPage) },
     { path: "/login", title: "ورود به رهجو", render: () => renderLoginPage({ returnTo: "/dashboard" }), mount: loginMount },
+    { path: "/accept-invite", title: "فعال‌کردن حساب", render: renderAcceptInvitePage, mount: mountAcceptInvitePage },
+    { path: "/recover-account", title: "بازیابی حساب", render: renderRecoverAccountPage, mount: mountRecoverAccountPage },
+    { path: "/account", title: "حساب و اعضا", render: renderAccountSecurityPage, mount: mountAccountSecurityPage },
     { path: "/dashboard", title: "داشبورد", render: renderWithSession(renderCompactDashboardPage, "/dashboard"), mount: coreMount("/dashboard") },
     { path: "/customers", title: "مشتریان", render: renderWithSession(renderCustomersPage, "/customers"), mount: coreMount("/customers") },
     { path: "/customers/detail", title: "پرونده مشتری", render: renderWithSession(renderCustomerDetailPage, "/customers/detail"), mount: detailMount("/customers/detail") },
