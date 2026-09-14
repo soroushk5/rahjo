@@ -82,6 +82,67 @@ export class Database {
     });
   }
 
+  async listWorkspaceMembers(workspaceId, requesterMembershipId) {
+    const result = await this.executor.query("SELECT * FROM rahjo.list_workspace_members($1,$2)", [workspaceId, requesterMembershipId]);
+    return result.rows;
+  }
+
+  async createMemberInvitation(workspaceId, invitedBy, email, displayName, role, tokenHash, expiresAt) {
+    const result = await this.executor.query(
+      "SELECT * FROM rahjo.create_member_invitation($1,$2,$3,$4,$5,$6,$7)",
+      [workspaceId, invitedBy, email, displayName, role, tokenHash, expiresAt]
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async consumeMemberInvitation(tokenHash, passwordSalt, passwordHash) {
+    const result = await this.executor.query(
+      "SELECT * FROM rahjo.consume_member_invitation($1,$2,$3)",
+      [tokenHash, passwordSalt, passwordHash]
+    );
+    return result.rows[0] ?? null;
+  }
+
+  async createPasswordResetToken(workspaceId, membershipId, issuedBy, tokenHash, expiresAt) {
+    const result = await this.executor.query(
+      "SELECT rahjo.create_password_reset_token($1,$2,$3,$4,$5) AS created",
+      [workspaceId, membershipId, issuedBy, tokenHash, expiresAt]
+    );
+    return result.rows[0]?.created === true;
+  }
+
+  async consumePasswordResetToken(tokenHash, passwordSalt, passwordHash) {
+    const result = await this.executor.query(
+      "SELECT rahjo.consume_password_reset_token($1,$2,$3) AS membership_id",
+      [tokenHash, passwordSalt, passwordHash]
+    );
+    return result.rows[0]?.membership_id ?? null;
+  }
+
+  async setPasswordCredential(workspaceId, membershipId, passwordSalt, passwordHash) {
+    const result = await this.executor.query(
+      "SELECT rahjo.set_password_credential($1,$2,$3,$4) AS changed",
+      [workspaceId, membershipId, passwordSalt, passwordHash]
+    );
+    return result.rows[0]?.changed === true;
+  }
+
+  async replaceRecoveryCodes(workspaceId, membershipId, codeHashes, expiresAt) {
+    const result = await this.executor.query(
+      "SELECT rahjo.replace_account_recovery_codes($1,$2,$3,$4) AS count",
+      [workspaceId, membershipId, codeHashes, expiresAt]
+    );
+    return Number(result.rows[0]?.count ?? 0);
+  }
+
+  async consumeRecoveryCode(workspaceSlug, email, codeHash, passwordSalt, passwordHash) {
+    const result = await this.executor.query(
+      "SELECT rahjo.consume_account_recovery_code($1,$2,$3,$4,$5) AS membership_id",
+      [workspaceSlug, email, codeHash, passwordSalt, passwordHash]
+    );
+    return result.rows[0]?.membership_id ?? null;
+  }
+
   async withWorkspace(context, callback) {
     return this.sql.begin(async (transaction) => {
       const client = executor(transaction);

@@ -4,6 +4,10 @@ export function tokenDigest(token, pepper) {
   return createHmac("sha256", pepper).update(token, "utf8").digest("hex");
 }
 
+export function secretDigest(secret) {
+  return createHash("sha256").update(String(secret), "utf8").digest("hex");
+}
+
 function canonicalize(value) {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (value && typeof value === "object") {
