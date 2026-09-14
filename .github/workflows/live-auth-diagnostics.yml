@@ -1,0 +1,97 @@
+name: Live Auth Diagnostics
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/live-auth-diagnostics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-live-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FRONTEND_ORIGIN: https://linen-crocodile-733177.hostingersite.com
+      BACKEND_ORIGIN: https://paleturquoise-dogfish-211679.hostingersite.com
+    steps:
+      - name: Probe live frontend and auth edge
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          echo '=== frontend root ==='
+          curl -sS -o /dev/null -D "$tmp/front-root.h" -w 'status=%{http_code}\n' "$FRONTEND_ORIGIN/"
+          sed -n '1,20p' "$tmp/front-root.h"
+
+          echo '=== frontend login ==='
+          curl -sS -o /dev/null -D "$tmp/front-login.h" -w 'status=%{http_code}\n' "$FRONTEND_ORIGIN/login"
+          sed -n '1,20p' "$tmp/front-login.h"
+
+          echo '=== backend healthz ==='
+          health_status="$(curl -sS -o "$tmp/health.body" -D "$tmp/health.h" -w '%{http_code}' "$BACKEND_ORIGIN/healthz")"
+          echo "status=$health_status"
+          sed -n '1,20p' "$tmp/health.h"
+          cat "$tmp/health.body" || true
+          echo
+
+          echo '=== backend readyz ==='
+          ready_status="$(curl -sS -o "$tmp/ready.body" -D "$tmp/ready.h" -w '%{http_code}' "$BACKEND_ORIGIN/readyz")"
+          echo "status=$ready_status"
+          sed -n '1,20p' "$tmp/ready.h"
+          cat "$tmp/ready.body" || true
+          echo
+
+          echo '=== runtime unauthenticated with browser Origin ==='
+          runtime_status="$(curl -sS -o "$tmp/runtime.body" -D "$tmp/runtime.h" -w '%{http_code}' \
+            -H "Origin: $FRONTEND_ORIGIN" \
+            -H "Referer: $FRONTEND_ORIGIN/login" \
+            -H 'Accept: application/json' \
+            "$BACKEND_ORIGIN/api/v1/runtime")"
+          echo "status=$runtime_status"
+          sed -n '1,30p' "$tmp/runtime.h"
+          cat "$tmp/runtime.body" || true
+          echo
+
+          echo '=== session preflight ==='
+          options_status="$(curl -sS -o "$tmp/options.body" -D "$tmp/options.h" -w '%{http_code}' -X OPTIONS \
+            -H "Origin: $FRONTEND_ORIGIN" \
+            -H 'Access-Control-Request-Method: POST' \
+            -H 'Access-Control-Request-Headers: content-type' \
+            "$BACKEND_ORIGIN/api/v1/session")"
+          echo "status=$options_status"
+          sed -n '1,30p' "$tmp/options.h"
+          cat "$tmp/options.body" || true
+          echo
+
+          echo '=== bogus login should reach app and return 401, not edge 403 ==='
+          login_status="$(curl -sS -o "$tmp/login.body" -D "$tmp/login.h" -w '%{http_code}' -X POST \
+            -H "Origin: $FRONTEND_ORIGIN" \
+            -H "Referer: $FRONTEND_ORIGIN/login" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            --data '{"workspaceSlug":"rahjo","email":"owner@rahjo.local","password":"definitely-wrong-live-diagnostic"}' \
+            "$BACKEND_ORIGIN/api/v1/session")"
+          echo "status=$login_status"
+          sed -n '1,30p' "$tmp/login.h"
+          cat "$tmp/login.body" || true
+          echo
+
+          echo '=== browser bootstrap endpoint ==='
+          bootstrap_status="$(curl -sS -o /dev/null -D "$tmp/bootstrap.h" -w '%{http_code}' --max-redirs 0 \
+            "$BACKEND_ORIGIN/browser-bootstrap?return=$FRONTEND_ORIGIN/login" || true)"
+          echo "status=$bootstrap_status"
+          sed -n '1,30p' "$tmp/bootstrap.h" || true
+
+          echo '=== assertions ==='
+          test "$health_status" = '200'
+          test "$ready_status" = '200'
+          test "$runtime_status" = '401'
+          test "$options_status" = '204'
+          test "$login_status" = '401'
+          grep -qi "^access-control-allow-origin: $FRONTEND_ORIGIN" "$tmp/runtime.h"
+          grep -qi '^access-control-allow-credentials: true' "$tmp/runtime.h"
+          grep -qi "^access-control-allow-origin: $FRONTEND_ORIGIN" "$tmp/options.h"
+          grep -qi '^access-control-allow-credentials: true' "$tmp/options.h"
