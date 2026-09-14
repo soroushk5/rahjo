@@ -26,6 +26,53 @@ const labels = Object.freeze({
 });
 
 /**
+ * Keep failed-login copy intentionally non-specific so authentication does not
+ * disclose whether the workspace, email, or password was the failing field.
+ * @param {Record<string, any>} snapshot
+ */
+export function loginFeedbackMessage(snapshot = {}) {
+  switch (snapshot.state) {
+    case RUNTIME_DATA_STATES.AUTH:
+      return "اطلاعات ورود یا فضای کاری درست نیست.";
+    case RUNTIME_DATA_STATES.FORBIDDEN:
+      return "این حساب به فضای کاری درخواستی دسترسی ندارد.";
+    case RUNTIME_DATA_STATES.UNAVAILABLE:
+      return "ارتباط با سرویس ورود برقرار نشد؛ دوباره تلاش کنید.";
+    case RUNTIME_DATA_STATES.CONFLICT:
+      return "وضعیت نشست تغییر کرده است؛ دوباره تلاش کنید.";
+    case RUNTIME_DATA_STATES.VALIDATION:
+      return "اطلاعات ورود معتبر نیست؛ فیلدها را بررسی کنید.";
+    default:
+      return snapshot.message || "ورود انجام نشد.";
+  }
+}
+
+/**
+ * Runtime state publications can replace the login DOM while authenticate() is
+ * awaiting the server. Always update the CURRENT form instead of references
+ * captured before the request, otherwise users see a silent failed login.
+ * @param {{workspaceSlug:string,email:string}} submitted
+ * @param {Record<string, any>} result
+ */
+function syncCurrentLoginForm(submitted, result) {
+  const currentForm = document.querySelector("#rahjo-server-login");
+  if (!(currentForm instanceof HTMLFormElement)) return;
+  const currentWorkspace = currentForm.elements.namedItem("workspaceSlug");
+  const currentEmail = currentForm.elements.namedItem("email");
+  const currentPassword = currentForm.elements.namedItem("password");
+  const currentButton = currentForm.querySelector("button[type=submit]");
+  const currentFeedback = currentForm.querySelector("#rahjo-login-feedback");
+  if (currentWorkspace instanceof HTMLInputElement) currentWorkspace.value = submitted.workspaceSlug;
+  if (currentEmail instanceof HTMLInputElement) currentEmail.value = submitted.email;
+  if (currentPassword instanceof HTMLInputElement) {
+    currentPassword.value = "";
+    currentPassword.focus();
+  }
+  if (currentButton instanceof HTMLButtonElement) currentButton.disabled = false;
+  if (currentFeedback) currentFeedback.textContent = loginFeedbackMessage(result);
+}
+
+/**
  * Resolve the public runtime configuration and initialize its data source before
  * any route is rendered.
  *
@@ -110,22 +157,32 @@ function mountServerRuntimeState() {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const fields = new FormData(form);
-    const passwordField = form.elements.namedItem("password");
+    const submitted = {
+      workspaceSlug: String(fields.get("workspaceSlug") ?? "").trim(),
+      email: String(fields.get("email") ?? "").trim()
+    };
+    const password = String(fields.get("password") ?? "");
     const button = form.querySelector("button[type=submit]");
     const feedback = form.querySelector("#rahjo-login-feedback");
     if (button instanceof HTMLButtonElement) button.disabled = true;
     if (feedback) feedback.textContent = "در حال بررسی امن نشست…";
     try {
       const result = await runtimeData.authenticate({
-        workspaceSlug: String(fields.get("workspaceSlug") ?? ""),
-        email: String(fields.get("email") ?? ""),
-        password: String(fields.get("password") ?? "")
+        workspaceSlug: submitted.workspaceSlug,
+        email: submitted.email,
+        password
       });
       if (result.state === RUNTIME_DATA_STATES.READY) {
         history.replaceState({}, "", "/dashboard");
         window.dispatchEvent(new PopStateEvent("popstate"));
-      } else if (feedback) feedback.textContent = result.message || "ورود انجام نشد.";
+      } else {
+        syncCurrentLoginForm(submitted, result);
+      }
     } finally {
+      // If no runtime publication replaced the form, restore the original
+      // controls too. Detached controls are harmless; current controls are
+      // handled by syncCurrentLoginForm above.
+      const passwordField = form.elements.namedItem("password");
       if (passwordField instanceof HTMLInputElement) passwordField.value = "";
       if (button instanceof HTMLButtonElement) button.disabled = false;
     }
