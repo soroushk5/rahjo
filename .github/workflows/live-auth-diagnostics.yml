@@ -12,11 +12,21 @@ permissions:
 jobs:
   probe-live-auth:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     env:
       FRONTEND_ORIGIN: https://linen-crocodile-733177.hostingersite.com
       BACKEND_ORIGIN: https://paleturquoise-dogfish-211679.hostingersite.com
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
       - name: Probe live frontend and auth edge
         shell: bash
         run: |
@@ -24,23 +34,18 @@ jobs:
           tmp="$(mktemp -d)"
           echo '=== frontend root ==='
           curl -sS -o /dev/null -D "$tmp/front-root.h" -w 'status=%{http_code}\n' "$FRONTEND_ORIGIN/"
-          sed -n '1,20p' "$tmp/front-root.h"
-
           echo '=== frontend login ==='
           curl -sS -o /dev/null -D "$tmp/front-login.h" -w 'status=%{http_code}\n' "$FRONTEND_ORIGIN/login"
-          sed -n '1,20p' "$tmp/front-login.h"
 
           echo '=== backend healthz ==='
           health_status="$(curl -sS -o "$tmp/health.body" -D "$tmp/health.h" -w '%{http_code}' "$BACKEND_ORIGIN/healthz")"
           echo "status=$health_status"
-          sed -n '1,20p' "$tmp/health.h"
           cat "$tmp/health.body" || true
           echo
 
           echo '=== backend readyz ==='
           ready_status="$(curl -sS -o "$tmp/ready.body" -D "$tmp/ready.h" -w '%{http_code}' "$BACKEND_ORIGIN/readyz")"
           echo "status=$ready_status"
-          sed -n '1,20p' "$tmp/ready.h"
           cat "$tmp/ready.body" || true
           echo
 
@@ -51,7 +56,6 @@ jobs:
             -H 'Accept: application/json' \
             "$BACKEND_ORIGIN/api/v1/runtime")"
           echo "status=$runtime_status"
-          sed -n '1,30p' "$tmp/runtime.h"
           cat "$tmp/runtime.body" || true
           echo
 
@@ -62,9 +66,6 @@ jobs:
             -H 'Access-Control-Request-Headers: content-type' \
             "$BACKEND_ORIGIN/api/v1/session")"
           echo "status=$options_status"
-          sed -n '1,30p' "$tmp/options.h"
-          cat "$tmp/options.body" || true
-          echo
 
           echo '=== bogus login should reach app and return 401, not edge 403 ==='
           login_status="$(curl -sS -o "$tmp/login.body" -D "$tmp/login.h" -w '%{http_code}' -X POST \
@@ -75,7 +76,6 @@ jobs:
             --data '{"workspaceSlug":"rahjo","email":"owner@rahjo.local","password":"definitely-wrong-live-diagnostic"}' \
             "$BACKEND_ORIGIN/api/v1/session")"
           echo "status=$login_status"
-          sed -n '1,30p' "$tmp/login.h"
           cat "$tmp/login.body" || true
           echo
 
@@ -83,15 +83,59 @@ jobs:
           bootstrap_status="$(curl -sS -o /dev/null -D "$tmp/bootstrap.h" -w '%{http_code}' --max-redirs 0 \
             "$BACKEND_ORIGIN/browser-bootstrap?return=$FRONTEND_ORIGIN/login" || true)"
           echo "status=$bootstrap_status"
-          sed -n '1,30p' "$tmp/bootstrap.h" || true
 
-          echo '=== assertions ==='
           test "$health_status" = '200'
           test "$ready_status" = '200'
           test "$runtime_status" = '401'
           test "$options_status" = '204'
           test "$login_status" = '401'
+          test "$bootstrap_status" = '302'
           grep -qi "^access-control-allow-origin: $FRONTEND_ORIGIN" "$tmp/runtime.h"
           grep -qi '^access-control-allow-credentials: true' "$tmp/runtime.h"
           grep -qi "^access-control-allow-origin: $FRONTEND_ORIGIN" "$tmp/options.h"
           grep -qi '^access-control-allow-credentials: true' "$tmp/options.h"
+
+      - name: Exercise live login UI in Chromium
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          const frontend = process.env.FRONTEND_ORIGIN;
+          const backend = process.env.BACKEND_ORIGIN;
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext({ locale: 'fa-IR' });
+          const page = await context.newPage();
+          const consoleErrors = [];
+          const failed = [];
+          const authResponses = [];
+          page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+          page.on('requestfailed', (request) => failed.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText}`));
+          page.on('response', (response) => {
+            if (response.url().startsWith(backend)) authResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
+          });
+          await page.goto(`${frontend}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+          await page.waitForSelector('#rahjo-server-login', { state: 'visible', timeout: 15000 });
+          const state = await page.locator('[data-runtime-state]').getAttribute('data-runtime-state');
+          const workspace = await page.locator('input[name="workspaceSlug"]').inputValue();
+          const email = await page.locator('input[name="email"]').inputValue();
+          console.log('runtime-state=', state);
+          console.log('workspace-default=', workspace);
+          console.log('email-default=', email);
+          await page.locator('input[name="password"]').fill('definitely-wrong-live-diagnostic-browser');
+          await Promise.all([
+            page.waitForResponse((r) => r.url() === `${backend}/api/v1/session` && r.request().method() === 'POST', { timeout: 15000 }),
+            page.locator('#rahjo-server-login button[type="submit"]').click()
+          ]).then(([response]) => console.log('login-response=', response.status()));
+          await page.waitForTimeout(300);
+          const feedback = await page.locator('#rahjo-login-feedback').textContent();
+          const buttonDisabled = await page.locator('#rahjo-server-login button[type="submit"]').isDisabled();
+          console.log('feedback=', feedback);
+          console.log('button-disabled=', buttonDisabled);
+          console.log('auth-responses=', authResponses.join(' | '));
+          console.log('failed-requests=', failed.join(' | '));
+          console.log('console-errors=', consoleErrors.join(' | '));
+          if (buttonDisabled) throw new Error('Login button stayed disabled after a failed login');
+          if (!feedback?.trim()) throw new Error('Failed login produced no user-visible feedback');
+          if (consoleErrors.length) throw new Error(`Console errors: ${consoleErrors.join(' | ')}`);
+          await browser.close();
+          NODE
