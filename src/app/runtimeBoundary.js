@@ -4,7 +4,7 @@ import { RUNTIME_DATA_STATES, runtimeData } from "../services/runtimeDataFacade.
 import { mountPrototypeChrome } from "./prototypeChrome.js";
 import { mountServerOperationalRoute, renderServerOperationalRoute } from "../features/operations/serverOperationalPages.js";
 
-const PUBLIC_SERVER_PATHS = new Set(["/", "/product", "/services", "/use-cases", "/how-it-works", "/pilot", "/trust", "/about", "/contact", "/privacy", "/terms", "/track-request"]);
+const PUBLIC_SERVER_PATHS = new Set(["/", "/product", "/services", "/use-cases", "/how-it-works", "/pilot", "/trust", "/about", "/contact", "/privacy", "/terms", "/track-request", "/accept-invite", "/recover-account", "/account"]);
 
 /** @param {{render:() => string}} route */
 function renderServerPublicRoute(route) {
@@ -138,6 +138,7 @@ export function renderServerRuntimeState(snapshot, title = "رهجو") {
             <label>گذرواژه<input name="password" type="password" autocomplete="current-password" required autofocus /></label>
             <p id="rahjo-login-feedback" class="interaction-feedback" role="alert"></p>
             <button class="button button--primary button--large" type="submit">ورود به محیط عملیاتی</button>
+            <a data-link class="text-link" href="/recover-account">بازیابی دسترسی</a>
           </form>` : "";
 
   return `
