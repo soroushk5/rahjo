@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const sql = await readFile(new URL("../migrations/001_w13_foundation.sql", import.meta.url), "utf8");
+const identitySql = await readFile(new URL("../migrations/002_w15_identity_lifecycle.sql", import.meta.url), "utf8");
 const migrator = await readFile(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
 const database = await readFile(new URL("../src/database.js", import.meta.url), "utf8");
 const repository = await readFile(new URL("../src/repository.js", import.meta.url), "utf8");
@@ -36,4 +37,20 @@ test("approval gate and evidence immutability are database-enforced", () => {
   assert.match(sql, /FOREIGN KEY \(workspace_id, action_id, case_id\) REFERENCES rahjo\.actions\(workspace_id, id, case_id\)/);
   assert.match(sql, /FOREIGN KEY \(workspace_id, receipt_id, action_id\) REFERENCES rahjo\.execution_receipts\(workspace_id, id, action_id\)/);
   assert.match(sql, /FOREIGN KEY \(workspace_id, token_id\) REFERENCES rahjo\.api_tokens\(workspace_id, id\)/);
+});
+
+test("identity lifecycle is invite-only, one-time, session-revoking and RLS protected", () => {
+  for (const table of ["member_invitations", "password_reset_tokens", "account_recovery_codes"]) {
+    assert.match(identitySql, new RegExp(`CREATE TABLE IF NOT EXISTS rahjo\\.${table}`));
+  }
+  assert.match(identitySql, /role IN \('admin', 'operator', 'viewer'\)/);
+  assert.doesNotMatch(identitySql, /CREATE.*public.*signup/i);
+  assert.match(identitySql, /consume_member_invitation/);
+  assert.match(identitySql, /consume_password_reset_token/);
+  assert.match(identitySql, /consume_account_recovery_code/);
+  assert.match(identitySql, /authz_version=authz_version\+1/);
+  assert.match(identitySql, /web_sessions s SET revoked_at/);
+  assert.match(identitySql, /FORCE ROW LEVEL SECURITY/);
+  assert.match(identitySql, /SECURITY DEFINER/);
+  assert.match(identitySql, /GRANT EXECUTE ON FUNCTION rahjo\.create_member_invitation/);
 });
