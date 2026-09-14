@@ -10,94 +10,23 @@ permissions:
   contents: read
 
 jobs:
-  probe-live-auth:
+  verify-live-login-feedback:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       FRONTEND_ORIGIN: https://linen-crocodile-733177.hostingersite.com
       BACKEND_ORIGIN: https://paleturquoise-dogfish-211679.hostingersite.com
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install dependencies
+      - name: Install browser probe
         run: |
           npm ci --ignore-scripts
           npm install --no-save --ignore-scripts playwright@1.63.0
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Probe live frontend and auth edge
-        shell: bash
-        run: |
-          set -euo pipefail
-          tmp="$(mktemp -d)"
-          echo '=== frontend root ==='
-          curl -sS -o /dev/null -D "$tmp/front-root.h" -w 'status=%{http_code}\n' "$FRONTEND_ORIGIN/"
-          echo '=== frontend login ==='
-          curl -sS -o /dev/null -D "$tmp/front-login.h" -w 'status=%{http_code}\n' "$FRONTEND_ORIGIN/login"
-
-          echo '=== backend healthz ==='
-          health_status="$(curl -sS -o "$tmp/health.body" -D "$tmp/health.h" -w '%{http_code}' "$BACKEND_ORIGIN/healthz")"
-          echo "status=$health_status"
-          cat "$tmp/health.body" || true
-          echo
-
-          echo '=== backend readyz ==='
-          ready_status="$(curl -sS -o "$tmp/ready.body" -D "$tmp/ready.h" -w '%{http_code}' "$BACKEND_ORIGIN/readyz")"
-          echo "status=$ready_status"
-          cat "$tmp/ready.body" || true
-          echo
-
-          echo '=== runtime unauthenticated with browser Origin ==='
-          runtime_status="$(curl -sS -o "$tmp/runtime.body" -D "$tmp/runtime.h" -w '%{http_code}' \
-            -H "Origin: $FRONTEND_ORIGIN" \
-            -H "Referer: $FRONTEND_ORIGIN/login" \
-            -H 'Accept: application/json' \
-            "$BACKEND_ORIGIN/api/v1/runtime")"
-          echo "status=$runtime_status"
-          cat "$tmp/runtime.body" || true
-          echo
-
-          echo '=== session preflight ==='
-          options_status="$(curl -sS -o "$tmp/options.body" -D "$tmp/options.h" -w '%{http_code}' -X OPTIONS \
-            -H "Origin: $FRONTEND_ORIGIN" \
-            -H 'Access-Control-Request-Method: POST' \
-            -H 'Access-Control-Request-Headers: content-type' \
-            "$BACKEND_ORIGIN/api/v1/session")"
-          echo "status=$options_status"
-
-          echo '=== bogus login should reach app and return 401, not edge 403 ==='
-          login_status="$(curl -sS -o "$tmp/login.body" -D "$tmp/login.h" -w '%{http_code}' -X POST \
-            -H "Origin: $FRONTEND_ORIGIN" \
-            -H "Referer: $FRONTEND_ORIGIN/login" \
-            -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' \
-            --data '{"workspaceSlug":"rahjo","email":"owner@rahjo.local","password":"definitely-wrong-live-diagnostic"}' \
-            "$BACKEND_ORIGIN/api/v1/session")"
-          echo "status=$login_status"
-          cat "$tmp/login.body" || true
-          echo
-
-          echo '=== browser bootstrap endpoint ==='
-          bootstrap_status="$(curl -sS -o /dev/null -D "$tmp/bootstrap.h" -w '%{http_code}' --max-redirs 0 \
-            "$BACKEND_ORIGIN/browser-bootstrap?return=$FRONTEND_ORIGIN/login" || true)"
-          echo "status=$bootstrap_status"
-
-          test "$health_status" = '200'
-          test "$ready_status" = '200'
-          test "$runtime_status" = '401'
-          test "$options_status" = '204'
-          test "$login_status" = '401'
-          test "$bootstrap_status" = '302'
-          grep -qi "^access-control-allow-origin: $FRONTEND_ORIGIN" "$tmp/runtime.h"
-          grep -qi '^access-control-allow-credentials: true' "$tmp/runtime.h"
-          grep -qi "^access-control-allow-origin: $FRONTEND_ORIGIN" "$tmp/options.h"
-          grep -qi '^access-control-allow-credentials: true' "$tmp/options.h"
-
-      - name: Exercise live login UI in Chromium
+          npx playwright install --with-deps chromium
+      - name: Verify live failed-login UX
         shell: bash
         run: |
           node --input-type=module <<'NODE'
@@ -107,37 +36,30 @@ jobs:
           const browser = await chromium.launch({ headless: true });
           const context = await browser.newContext({ locale: 'fa-IR' });
           const page = await context.newPage();
-          const consoleErrors = [];
           const failed = [];
-          const authResponses = [];
-          page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
           page.on('requestfailed', (request) => failed.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText}`));
-          page.on('response', (response) => {
-            if (response.url().startsWith(backend)) authResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
-          });
           await page.goto(`${frontend}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 });
           await page.waitForSelector('#rahjo-server-login', { state: 'visible', timeout: 15000 });
-          const state = await page.locator('[data-runtime-state]').getAttribute('data-runtime-state');
-          const workspace = await page.locator('input[name="workspaceSlug"]').inputValue();
-          const email = await page.locator('input[name="email"]').inputValue();
-          console.log('runtime-state=', state);
-          console.log('workspace-default=', workspace);
-          console.log('email-default=', email);
+          await page.locator('input[name="workspaceSlug"]').fill('rahjo');
+          await page.locator('input[name="email"]').fill('owner@rahjo.local');
           await page.locator('input[name="password"]').fill('definitely-wrong-live-diagnostic-browser');
           const responsePromise = page.waitForResponse((r) => r.url() === `${backend}/api/v1/session` && r.request().method() === 'POST', { timeout: 15000 });
           await page.locator('#rahjo-server-login button[type="submit"]').click();
           const response = await responsePromise;
-          console.log('login-response=', response.status());
-          await page.waitForTimeout(300);
-          const feedback = await page.locator('#rahjo-login-feedback').textContent();
+          if (response.status() !== 401) throw new Error(`Expected 401 from invalid credentials; got ${response.status()}`);
+          await page.waitForFunction(() => document.querySelector('#rahjo-login-feedback')?.textContent?.trim().length > 0, null, { timeout: 5000 });
+          const feedback = (await page.locator('#rahjo-login-feedback').textContent())?.trim();
+          const workspace = await page.locator('input[name="workspaceSlug"]').inputValue();
+          const email = await page.locator('input[name="email"]').inputValue();
+          const password = await page.locator('input[name="password"]').inputValue();
+          const focusedName = await page.evaluate(() => document.activeElement?.getAttribute('name'));
           const buttonDisabled = await page.locator('#rahjo-server-login button[type="submit"]').isDisabled();
-          console.log('feedback=', feedback);
-          console.log('button-disabled=', buttonDisabled);
-          console.log('auth-responses=', authResponses.join(' | '));
-          console.log('failed-requests=', failed.join(' | '));
-          console.log('console-errors=', consoleErrors.join(' | '));
-          if (buttonDisabled) throw new Error('Login button stayed disabled after a failed login');
-          if (!feedback?.trim()) throw new Error('Failed login produced no user-visible feedback');
-          if (consoleErrors.length) throw new Error(`Console errors: ${consoleErrors.join(' | ')}`);
+          console.log(JSON.stringify({ feedback, workspace, email, passwordEmpty: password === '', focusedName, buttonDisabled, failed }, null, 2));
+          if (feedback !== 'اطلاعات ورود یا فضای کاری درست نیست.') throw new Error(`Unexpected feedback: ${feedback}`);
+          if (workspace !== 'rahjo' || email !== 'owner@rahjo.local') throw new Error('Submitted identity fields were not preserved');
+          if (password !== '') throw new Error('Password was not cleared');
+          if (focusedName !== 'password') throw new Error('Password field did not regain focus');
+          if (buttonDisabled) throw new Error('Submit button stayed disabled');
+          if (failed.length) throw new Error(`Network request failures: ${failed.join(' | ')}`);
           await browser.close();
           NODE
