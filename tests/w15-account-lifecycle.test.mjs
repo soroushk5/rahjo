@@ -30,9 +30,15 @@ test("public account flows keep secrets in URL fragments and never add open sign
 
 test("authenticated console exposes account management without putting credentials in browser storage", () => {
   assert.match(shell, /href=\"\/account\"/);
-  assert.match(pages, /credentials: \"include\"/);
+  assert.match(pages, /runtimeData\.sessionRequest/);
   assert.match(pages, /\/api\/v1\/members\/invitations/);
   assert.match(pages, /\/api\/v1\/account\/password/);
   assert.match(pages, /\/api\/v1\/account\/recovery-codes/);
+  assert.doesNotMatch(pages, /\/api\/v1\/session\/csrf/);
   assert.doesNotMatch(pages, /localStorage|sessionStorage/);
+});
+
+test("owner identity is not prefilled on public login or recovery forms", () => {
+  assert.doesNotMatch(boundary, /value=\"owner@rahjo\.local\"/);
+  assert.doesNotMatch(pages, /value=\"owner@rahjo\.local\"/);
 });
