@@ -86,13 +86,13 @@ function rejectWorkspaceOverride(request, body = {}) {
 }
 
 function credentialForNewPassword(value) {
-  if (typeof value !== "string" || value.length < 14 || value.length > 256) {
-    throw problems.validation("Password must be 14-256 characters");
+  if (typeof value !== "string" || value.length < 8 || value.length > 256) {
+    throw problems.validation("Password must be 8-256 characters");
   }
   try {
     return passwordCredential(value);
   } catch {
-    throw problems.validation("Password must be 14-256 characters");
+    throw problems.validation("Password must be 8-256 characters");
   }
 }
 

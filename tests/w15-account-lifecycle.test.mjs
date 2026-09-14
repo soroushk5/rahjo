@@ -28,6 +28,12 @@ test("public account flows keep secrets in URL fragments and never add open sign
   assert.doesNotMatch(pages, /id=["'][^"']*(?:signup|register)[^"']*["']/i);
 });
 
+test("new account passwords require at least 8 characters in the public flows", () => {
+  assert.match(pages, /minlength="8"/);
+  assert.match(pages, /password\.length < 8/);
+  assert.doesNotMatch(pages, /minlength="14"|password\.length < 14/);
+});
+
 test("authenticated console exposes account management without putting credentials in browser storage", () => {
   assert.match(shell, /href=\"\/account\"/);
   assert.match(pages, /runtimeData\.sessionRequest/);

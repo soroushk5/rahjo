@@ -147,7 +147,7 @@ test("owner can issue a reset link and consuming it starts a fresh browser sessi
   assert.equal(consumed.status, 201);
 });
 
-test("password change verifies the old password, invalidates the session and requires 14+ chars", async (t) => {
+test("password change verifies the old password, invalidates the session and requires 8+ chars", async (t) => {
   const fixtureState = await fixture();
   t.after(() => fixtureState.server.close());
   const session = await login(fixtureState.base);
@@ -161,13 +161,13 @@ test("password change verifies the old password, invalidates the session and req
 
   const short = await fetch(`${fixtureState.base}/api/v1/account/password`, {
     method: "POST", headers: authHeaders(session),
-    body: JSON.stringify({ currentPassword: "a correct long password", newPassword: "too-short" })
+    body: JSON.stringify({ currentPassword: "a correct long password", newPassword: "short7" })
   });
   assert.equal(short.status, 422);
 
   const changed = await fetch(`${fixtureState.base}/api/v1/account/password`, {
     method: "POST", headers: authHeaders(session),
-    body: JSON.stringify({ currentPassword: "a correct long password", newPassword: "new password that is long" })
+    body: JSON.stringify({ currentPassword: "a correct long password", newPassword: "Eight888" })
   });
   assert.equal(changed.status, 204);
   assert.match(changed.headers.get("set-cookie"), /Max-Age=0/);
