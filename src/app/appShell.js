@@ -68,6 +68,7 @@ export function appShell({ content, activePath, title }) {
           ${navGroups}
         </nav>
         <div class="phase-sidebar__bottom">
+          ${serverMode ? `<a data-link href="/account" class="phase-sidebar__public">${icon("shield", { size: 16 })} حساب و اعضا</a>` : ""}
           <a data-link href="/" class="phase-sidebar__public">${icon("external", { size: 16 })} بازگشت به سایت</a>
           <div class="phase-user">
             <span>${user.initials}</span>

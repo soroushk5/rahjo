@@ -324,6 +324,49 @@ export function createRuntimeDataFacade() {
     return initialize(config, options);
   }
 
+  /**
+   * Make an authenticated request without exposing or independently rotating
+   * the private CSRF token. Account-management UI uses this path so a visit to
+   * /account cannot desynchronize the cookie and the operational command token.
+   *
+   * @param {string} path
+   * @param {{method?:string, body?:Record<string, unknown>, fetchImpl?:typeof fetch}} [options]
+   */
+  async function sessionRequest(path, { method = "GET", body, fetchImpl = globalThis.fetch } = {}) {
+    const config = activeConfig;
+    if (!config || config.mode !== "server" || current.state !== RUNTIME_DATA_STATES.READY) {
+      throw new Error("نشست عملیاتی آماده نیست.");
+    }
+    if (typeof fetchImpl !== "function") throw new Error("ارتباط با سرور در دسترس نیست.");
+
+    const normalizedMethod = String(method || "GET").toUpperCase();
+    const mutating = normalizedMethod !== "GET" && normalizedMethod !== "HEAD";
+    if (mutating && !await acquireCsrf(fetchImpl)) {
+      throw new Error("توکن امن عملیات در دسترس نیست؛ صفحه را تازه کنید.");
+    }
+
+    const response = await fetchImpl(`${config.apiBase}${path}`, {
+      method: normalizedMethod,
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(mutating ? { "X-CSRF-Token": sessionCsrfToken } : {})
+      },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {})
+    });
+    if (!response.ok) {
+      if (response.status === 401) sessionCsrfToken = "";
+      const problem = await response.json().catch(() => null);
+      throw Object.assign(new Error(problem?.detail || problem?.title || `عملیات سرور ناموفق بود (${response.status}).`), {
+        status: response.status,
+        code: problem?.code || `HTTP_${response.status}`
+      });
+    }
+    return response.status === 204 ? null : response.json();
+  }
+
   /** @param {string} path @param {{body?:Record<string, unknown>, idempotencyKey?:string, fetchImpl?:typeof fetch}} [options] */
   async function command(path, { body = {}, idempotencyKey = "", fetchImpl = globalThis.fetch } = {}) {
     const config = activeConfig;
@@ -374,7 +417,7 @@ export function createRuntimeDataFacade() {
     publish(makeSnapshot("server", RUNTIME_DATA_STATES.AUTH, { buildSha: config.buildSha, httpStatus: 401 }));
   }
 
-  return Object.freeze({ initialize, authenticate, command, logout, read, readProjection, configurationFailure });
+  return Object.freeze({ initialize, authenticate, sessionRequest, command, logout, read, readProjection, configurationFailure });
 }
 
 export const runtimeData = createRuntimeDataFacade();
