@@ -20,7 +20,12 @@ test("public account flows keep secrets in URL fragments and never add open sign
   assert.match(pages, /\/api\/v1\/invitations\/accept/);
   assert.match(pages, /\/api\/v1\/account\/reset/);
   assert.match(pages, /\/api\/v1\/account\/recovery/);
-  assert.doesNotMatch(pages, /signup|ثبت.?نام عمومی/i);
+
+  // It is useful for the UI to explicitly say that public signup is closed.
+  // What must stay absent is an actual open registration route, endpoint, or form.
+  assert.doesNotMatch(bootstrap, /path:\s*["']\/(?:signup|sign-up|register)["']/i);
+  assert.doesNotMatch(pages, /\/api\/v1\/(?:signup|sign-up|register)\b/i);
+  assert.doesNotMatch(pages, /id=["'][^"']*(?:signup|register)[^"']*["']/i);
 });
 
 test("authenticated console exposes account management without putting credentials in browser storage", () => {
