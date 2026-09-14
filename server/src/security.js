@@ -25,8 +25,8 @@ export function opaqueToken(prefix = "rahjo_live") {
 }
 
 export function passwordCredential(password, saltHex = randomBytes(16).toString("hex")) {
-  if (typeof password !== "string" || password.length < 14 || password.length > 256) {
-    throw new Error("Password must be 14-256 characters");
+  if (typeof password !== "string" || password.length < 8 || password.length > 256) {
+    throw new Error("Password must be 8-256 characters");
   }
   return {
     salt: saltHex,
