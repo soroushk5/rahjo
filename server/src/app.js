@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
+import { requireRole } from "./database.js";
 import { HttpProblem, problems, toProblem } from "./errors.js";
 import { normalizeEmail, normalizePersianText } from "./normalization.js";
 import {
@@ -10,7 +11,7 @@ import {
   resolvePublicIntakeContext,
   safePublicIntakeResponse
 } from "./publicIntake.js";
-import { opaqueToken, passwordCredential, safeEqual, tokenDigest, verifyPassword } from "./security.js";
+import { opaqueToken, passwordCredential, safeEqual, secretDigest, tokenDigest, verifyPassword } from "./security.js";
 
 function routeMatch(pathname, expression) {
   return pathname.match(expression);
@@ -84,23 +85,55 @@ function rejectWorkspaceOverride(request, body = {}) {
   }
 }
 
+function credentialForNewPassword(value) {
+  if (typeof value !== "string" || value.length < 14 || value.length > 256) {
+    throw problems.validation("Password must be 14-256 characters");
+  }
+  try {
+    return passwordCredential(value);
+  } catch {
+    throw problems.validation("Password must be 14-256 characters");
+  }
+}
+
+function trustedUiOrigin(origin, corsOrigins) {
+  const normalized = typeof origin === "string" ? origin.replace(/\/$/, "") : "";
+  if (normalized && corsOrigins.includes(normalized)) return normalized;
+  return corsOrigins[0];
+}
+
+function fragmentUrl(origin, path, values) {
+  const target = new URL(path, `${origin.replace(/\/$/, "")}/`);
+  target.hash = new URLSearchParams(values).toString();
+  return target.toString();
+}
+
 export function createRahjoServer({ config, database, repository, relaticle, workspaceTokens, logger = console }) {
   const sessionCookie = config.appEnv === "production" ? "__Host-rahjo_session" : "rahjo_session";
   const dummyCredential = passwordCredential("not-a-real-password-value");
   const loginWindows = new Map();
+  const accountWindows = new Map();
   const publicIntakeLimit = createFixedWindowLimiter({
     maxRequests: config.publicIntakeMaxRequests ?? 20,
     windowMs: config.publicIntakeWindowMs ?? 10 * 60_000
   });
 
-  function checkLoginRate(request) {
+  function checkWindow(request, store, maxRequests = 10, windowMs = 10 * 60_000) {
     const now = Date.now();
     const key = request.socket?.remoteAddress ?? "unknown";
-    const prior = loginWindows.get(key);
-    const state = !prior || now - prior.startedAt >= 10 * 60_000 ? { startedAt: now, count: 0 } : prior;
+    const prior = store.get(key);
+    const state = !prior || now - prior.startedAt >= windowMs ? { startedAt: now, count: 0 } : prior;
     state.count += 1;
-    loginWindows.set(key, state);
-    if (state.count > 10) throw problems.rateLimited(Math.ceil((state.startedAt + 10 * 60_000 - now) / 1000));
+    store.set(key, state);
+    if (state.count > maxRequests) throw problems.rateLimited(Math.ceil((state.startedAt + windowMs - now) / 1000));
+  }
+
+  function checkLoginRate(request) {
+    checkWindow(request, loginWindows, 10);
+  }
+
+  function checkAccountRate(request) {
+    checkWindow(request, accountWindows, 12);
   }
 
   async function authenticate(request) {
@@ -128,6 +161,31 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
     if (typeof csrf !== "string" || csrf.length < 24 || !safeEqual(tokenDigest(csrf, config.tokenPepper), context.csrf_hash)) {
       throw problems.forbidden();
     }
+  }
+
+  async function issueBrowserSession(membershipId, response, requestId, corsHeaders) {
+    const rawSession = opaqueToken("rahjo_session");
+    const csrfToken = opaqueToken("rahjo_csrf");
+    const expiresAt = new Date(Date.now() + config.sessionHours * 60 * 60_000);
+    const created = await database.createSession(
+      membershipId,
+      tokenDigest(rawSession, config.tokenPepper),
+      tokenDigest(csrfToken, config.tokenPepper),
+      expiresAt
+    );
+    if (!created) throw problems.unauthorized();
+    const context = await database.authenticateSession(tokenDigest(rawSession, config.tokenPepper));
+    if (!context) throw problems.unauthorized();
+    json(response, 201, {
+      dataMode: "server",
+      csrfToken,
+      expiresAt: expiresAt.toISOString(),
+      workspace: { id: context.workspace_id, slug: context.workspace_slug, name: context.workspace_name },
+      user: { id: context.user_id, email: context.user_email, name: context.display_name, role: context.role }
+    }, requestId, {
+      ...corsHeaders,
+      "Set-Cookie": `${sessionCookie}=${encodeURIComponent(rawSession)}; Path=/; HttpOnly; ${config.appEnv === "production" ? "Secure; " : ""}SameSite=Lax; Max-Age=${config.sessionHours * 3600}`
+    });
   }
 
   async function handler(request, response) {
@@ -242,29 +300,52 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
           credential?.password_hash ?? dummyCredential.hash
         );
         if (!credential || !valid) throw problems.unauthorized();
-        const rawSession = opaqueToken("rahjo_session");
-        const csrfToken = opaqueToken("rahjo_csrf");
-        const expiresAt = new Date(Date.now() + config.sessionHours * 60 * 60_000);
-        const created = await database.createSession(
-          credential.membership_id,
-          tokenDigest(rawSession, config.tokenPepper),
-          tokenDigest(csrfToken, config.tokenPepper),
-          expiresAt
-        );
-        if (!created) throw problems.unauthorized();
-        const context = await database.authenticateSession(tokenDigest(rawSession, config.tokenPepper));
-        if (!context) throw problems.unauthorized();
         status = 201;
-        json(response, status, {
-          dataMode: "server",
-          csrfToken,
-          expiresAt: expiresAt.toISOString(),
-          workspace: { id: context.workspace_id, slug: context.workspace_slug, name: context.workspace_name },
-          user: { id: context.user_id, email: context.user_email, name: context.display_name, role: context.role }
-        }, requestId, {
-          ...corsHeaders,
-          "Set-Cookie": `${sessionCookie}=${encodeURIComponent(rawSession)}; Path=/; HttpOnly; ${config.appEnv === "production" ? "Secure; " : ""}SameSite=Lax; Max-Age=${config.sessionHours * 3600}`
-        });
+        await issueBrowserSession(credential.membership_id, response, requestId, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/invitations/accept") {
+        checkAccountRate(request);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const token = typeof body.token === "string" ? body.token.trim() : "";
+        if (token.length < 32 || token.length > 256) throw problems.unauthorized();
+        const password = credentialForNewPassword(body.password);
+        const accepted = await database.consumeMemberInvitation(secretDigest(token), password.salt, password.hash);
+        if (!accepted?.membership_id) throw problems.unauthorized();
+        status = 201;
+        await issueBrowserSession(accepted.membership_id, response, requestId, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/account/reset") {
+        checkAccountRate(request);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const token = typeof body.token === "string" ? body.token.trim() : "";
+        if (token.length < 32 || token.length > 256) throw problems.unauthorized();
+        const password = credentialForNewPassword(body.password);
+        const membershipId = await database.consumePasswordResetToken(secretDigest(token), password.salt, password.hash);
+        if (!membershipId) throw problems.unauthorized();
+        status = 201;
+        await issueBrowserSession(membershipId, response, requestId, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/account/recovery") {
+        checkAccountRate(request);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63, required: true });
+        const email = normalizeEmail(body.email);
+        const recoveryCode = typeof body.recoveryCode === "string" ? body.recoveryCode.trim() : "";
+        if (recoveryCode.length < 24 || recoveryCode.length > 256) throw problems.unauthorized();
+        const password = credentialForNewPassword(body.password);
+        const membershipId = await database.consumeRecoveryCode(workspaceSlug, email, secretDigest(recoveryCode), password.salt, password.hash);
+        if (!membershipId) throw problems.unauthorized();
+        status = 201;
+        await issueBrowserSession(membershipId, response, requestId, corsHeaders);
         return;
       }
 
@@ -338,6 +419,95 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
           "Set-Cookie": `${sessionCookie}=; Path=/; HttpOnly; ${config.appEnv === "production" ? "Secure; " : ""}SameSite=Lax; Max-Age=0`
         });
         response.end();
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/v1/members") {
+        requireRole(context, ["owner", "admin"]);
+        const members = await database.listWorkspaceMembers(context.workspace_id, context.membership_id);
+        status = 200;
+        json(response, status, { dataMode: "server", members }, requestId, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/members/invitations") {
+        requireRole(context, ["owner", "admin"]);
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const email = normalizeEmail(body.email);
+        const displayName = normalizePersianText(body.displayName, { max: 160, required: true });
+        const role = typeof body.role === "string" ? body.role : "viewer";
+        if (!new Set(["admin", "operator", "viewer"]).has(role)) throw problems.validation("Invitation role is invalid");
+        const rawToken = opaqueToken("rahjo_invite");
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60_000);
+        const invitation = await database.createMemberInvitation(
+          context.workspace_id, context.membership_id, email, displayName, role, secretDigest(rawToken), expiresAt
+        );
+        if (!invitation) throw problems.conflict("INVITATION_NOT_CREATED", "Invitation could not be created");
+        const uiOrigin = trustedUiOrigin(origin, config.corsOrigins);
+        status = 201;
+        json(response, status, {
+          dataMode: "server",
+          invitation: {
+            id: invitation.invitation_id,
+            email,
+            role,
+            expiresAt: expiresAt.toISOString(),
+            url: fragmentUrl(uiOrigin, "/accept-invite", { token: rawToken })
+          }
+        }, requestId, corsHeaders);
+        return;
+      }
+
+      const memberReset = routeMatch(url.pathname, /^\/api\/v1\/members\/([^/]+)\/reset-link$/);
+      if (request.method === "POST" && memberReset) {
+        requireRole(context, ["owner", "admin"]);
+        requireCsrf(request, context);
+        const membershipId = decodeURIComponent(memberReset[1]);
+        const rawToken = opaqueToken("rahjo_reset");
+        const expiresAt = new Date(Date.now() + 30 * 60_000);
+        const created = await database.createPasswordResetToken(
+          context.workspace_id, membershipId, context.membership_id, secretDigest(rawToken), expiresAt
+        );
+        if (!created) throw problems.notFound();
+        const uiOrigin = trustedUiOrigin(origin, config.corsOrigins);
+        status = 201;
+        json(response, status, {
+          dataMode: "server",
+          reset: { expiresAt: expiresAt.toISOString(), url: fragmentUrl(uiOrigin, "/recover-account", { mode: "reset", token: rawToken }) }
+        }, requestId, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/account/password") {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
+        const credential = await database.lookupPassword(context.workspace_slug, context.user_email);
+        if (!credential || !verifyPassword(currentPassword, credential.password_salt, credential.password_hash)) throw problems.unauthorized();
+        const next = credentialForNewPassword(body.newPassword);
+        const changed = await database.setPasswordCredential(context.workspace_id, context.membership_id, next.salt, next.hash);
+        if (!changed) throw problems.unavailable("PASSWORD_CHANGE_FAILED", "Password change could not be completed");
+        status = 204;
+        response.writeHead(status, {
+          ...baseHeaders(requestId),
+          ...corsHeaders,
+          "Set-Cookie": `${sessionCookie}=; Path=/; HttpOnly; ${config.appEnv === "production" ? "Secure; " : ""}SameSite=Lax; Max-Age=0`
+        });
+        response.end();
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/v1/account/recovery-codes") {
+        requireCsrf(request, context);
+        const codes = Array.from({ length: 8 }, () => opaqueToken("rahjo_recovery"));
+        const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60_000);
+        const count = await database.replaceRecoveryCodes(context.workspace_id, context.membership_id, codes.map(secretDigest), expiresAt);
+        if (count !== codes.length) throw problems.unavailable("RECOVERY_CODES_FAILED", "Recovery codes could not be generated");
+        status = 201;
+        json(response, status, { dataMode: "server", codes, expiresAt: expiresAt.toISOString() }, requestId, corsHeaders);
         return;
       }
 
