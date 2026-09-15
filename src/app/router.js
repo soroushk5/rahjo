@@ -110,7 +110,11 @@ export class Router {
 
   start() {
     window.addEventListener("popstate", () => this.handleNavigation({ moveFocus: true }));
-    if (this.routingMode === "hash") window.addEventListener("hashchange", () => this.handleNavigation({ moveFocus: true }));
+    window.addEventListener("hashchange", () => {
+      const currentPath = this.routePath(window.location.pathname);
+      const accountLinkChanged = currentPath === "/accept-invite" || currentPath === "/recover-account";
+      if (this.routingMode === "hash" || accountLinkChanged) this.handleNavigation({ moveFocus: true });
+    });
     window.addEventListener("rahjo:navigate", (event) => {
       if (event instanceof CustomEvent && typeof event.detail === "string") this.navigate(event.detail);
     });
