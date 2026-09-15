@@ -6,6 +6,7 @@ const bootstrap = await readFile(new URL("../src/app/bootstrap.js", import.meta.
 const boundary = await readFile(new URL("../src/app/runtimeBoundary.js", import.meta.url), "utf8");
 const pages = await readFile(new URL("../src/features/auth/accountLifecyclePages.js", import.meta.url), "utf8");
 const shell = await readFile(new URL("../src/app/appShell.js", import.meta.url), "utf8");
+const router = await readFile(new URL("../src/app/router.js", import.meta.url), "utf8");
 
 test("account lifecycle routes stay available in fail-closed server mode", () => {
   for (const path of ["/accept-invite", "/recover-account", "/account"]) {
@@ -32,6 +33,13 @@ test("new account passwords require at least 8 characters in the public flows", 
   assert.match(pages, /minlength="8"/);
   assert.match(pages, /password\.length < 8/);
   assert.doesNotMatch(pages, /minlength="14"|password\.length < 14/);
+});
+
+test("fresh invite and reset fragments remount account flows in history routing mode", () => {
+  assert.match(router, /window\.addEventListener\("hashchange"/);
+  assert.match(router, /currentPath === "\/accept-invite"/);
+  assert.match(router, /currentPath === "\/recover-account"/);
+  assert.match(router, /accountLinkChanged/);
 });
 
 test("authenticated console exposes account management without putting credentials in browser storage", () => {
