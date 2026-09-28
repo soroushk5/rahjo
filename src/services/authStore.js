@@ -1,10 +1,10 @@
 import { resetDemoState } from "./phaseOneStore.js";
 
-const AUTH_KEY = "rahjo.demo.session.v1";
+const AUTH_KEY = "crm.demo.session.v1";
 
 export const demoCredentials = Object.freeze({
-  email: "demo@rahjo.ir",
-  password: "RahjoDemo1405"
+  email: "demo@crm.ir",
+  password: "CRM CoreDemo1405"
 });
 
 const demoSession = Object.freeze({
@@ -12,7 +12,7 @@ const demoSession = Object.freeze({
     name: "نسترن احمدی",
     email: demoCredentials.email,
     role: "مدیر عملیات",
-    organization: "محیط نمایشی رهجو",
+    organization: "محیط نمایشی CRM",
     initials: "ن‌ا"
   },
   environment: "Sandbox",
