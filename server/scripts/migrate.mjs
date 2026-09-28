@@ -1,17 +1,17 @@
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import postgres from "postgres";
-const databaseUrl = process.env.RAHJO_MIGRATION_DATABASE_URL;
-const runtimePassword = process.env.RAHJO_DB_RUNTIME_PASSWORD;
+const databaseUrl = process.env.CRM_MIGRATION_DATABASE_URL || process.env.RAHJO_MIGRATION_DATABASE_URL;
+const runtimePassword = process.env.CRM_DB_RUNTIME_PASSWORD || process.env.RAHJO_DB_RUNTIME_PASSWORD;
 
-if (!databaseUrl) throw new Error("RAHJO_MIGRATION_DATABASE_URL is required");
-if (!runtimePassword || runtimePassword.length < 32) throw new Error("RAHJO_DB_RUNTIME_PASSWORD must be at least 32 characters");
+if (!databaseUrl) throw new Error("CRM_MIGRATION_DATABASE_URL is required");
+if (!runtimePassword || runtimePassword.length < 32) throw new Error("CRM_DB_RUNTIME_PASSWORD must be at least 32 characters");
 
 function literal(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-const sql = postgres(databaseUrl, { max: 1, connection: { application_name: "rahjo-migrator" } });
+const sql = postgres(databaseUrl, { max: 1, connection: { application_name: "crm-core-migrator" } });
 
 async function query(text, parameters = [], { simple = false } = {}) {
   const pending = sql.unsafe(text, parameters);
