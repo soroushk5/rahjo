@@ -47,7 +47,7 @@ test("Relaticle adapter uses only the server-side team-pinned token", async () =
       return new Response(JSON.stringify({ data: { id: "01RELATICLE", type: "companies", attributes: { name: "شرکت یارا" } } }), { status: 201, headers: { "Content-Type": "application/json" } });
     }
   });
-  const company = await client.createCompany(workspaceId, { name: "شرکت یارا" });
+  const company = await client.createAccount(workspaceId, { name: "شرکت یارا" });
   assert.equal(company.id, "01RELATICLE");
   assert.equal(request.options.headers.Authorization, "Bearer relaticle-test-token-with-enough-length");
   assert.equal(request.options.headers["X-Team-Id"], undefined);
@@ -68,12 +68,12 @@ test("upstream credential and contract failures remain explicit server failures"
     workspaceTokens,
     fetchImpl: async () => new Response(JSON.stringify({ records: [] }), { status: 200 })
   });
-  await assert.rejects(() => malformed.list(workspaceId, "companies"), (error) => error.status === 503 && error.code === "RELATICLE_CONTRACT_ERROR");
+  await assert.rejects(() => malformed.listAccounts(workspaceId), (error) => error.status === 503 && error.code === "RELATICLE_CONTRACT_ERROR");
 });
 
 test("an unmapped workspace never reuses another workspace credential", async () => {
   const client = new RelaticleClient({ baseUrl: "https://crm.example.test/api/v1", workspaceTokens, fetchImpl: async () => { throw new Error("must not call"); } });
-  await assert.rejects(() => client.list("22222222-2222-4222-8222-222222222222", "companies"), (error) => error.status === 503 && error.code === "RELATICLE_WORKSPACE_NOT_PROVISIONED");
+  await assert.rejects(() => client.listAccounts("22222222-2222-4222-8222-222222222222"), (error) => error.status === 503 && error.code === "RELATICLE_WORKSPACE_NOT_PROVISIONED");
 });
 
 test("MCP who-ami proves the pinned team and least required token abilities", async () => {
