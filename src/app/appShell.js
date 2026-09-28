@@ -36,9 +36,9 @@ export function appShell({ content, activePath, title }) {
   const session = getSession();
   const runtime = runtimeData.read();
   const serverMode = runtime.mode === "server" && runtime.state === RUNTIME_DATA_STATES.READY;
-  const liveName = runtime.user?.name || runtime.user?.email || "کاربر رهجو";
+  const liveName = runtime.user?.name || runtime.user?.email || "کاربر CRM";
   const user = serverMode
-    ? { name: liveName, role: runtime.user?.role || "کاربر", organization: runtime.workspace?.name || "رهجو", initials: liveName.slice(0, 2) }
+    ? { name: liveName, role: runtime.user?.role || "کاربر", organization: runtime.workspace?.name || "CRM", initials: liveName.slice(0, 2) }
     : session?.user ?? { name: "نسترن احمدی", role: "مدیر عملیات", organization: "Golden Demo", initials: "ن‌ا" };
   const active = activeNavPath(activePath);
   const navByPath = new Map(consoleNavigation.map((item) => [item.path, item]));
@@ -60,7 +60,7 @@ export function appShell({ content, activePath, title }) {
   return `
     <div class="phase-app-shell" data-console-ui="compact">
       <aside class="phase-sidebar" aria-label="ناوبری محیط عملیاتی">
-        <a data-link href="/dashboard" class="phase-sidebar__brand" aria-label="داشبورد رهجو">
+        <a data-link href="/dashboard" class="phase-sidebar__brand" aria-label="داشبورد CRM">
           ${brandLogo()}
           <small>فضای کاری</small>
         </a>
@@ -73,7 +73,7 @@ export function appShell({ content, activePath, title }) {
           <div class="phase-user">
             <span>${user.initials}</span>
             <div><strong>${user.name}</strong><small>${user.role}</small></div>
-            <a data-link ${serverMode ? "data-server-logout" : "data-logout"} href="/login" aria-label="خروج از رهجو">${icon("logout", { size: 17 })}</a>
+            <a data-link ${serverMode ? "data-server-logout" : "data-logout"} href="/login" aria-label="خروج از CRM">${icon("logout", { size: 17 })}</a>
           </div>
         </div>
       </aside>
@@ -88,7 +88,7 @@ export function appShell({ content, activePath, title }) {
             <div><small>${user.organization}</small><strong>${title || routeLabel(activePath)}</strong></div>
           </div>
           <div class="phase-topbar__actions">
-            <button id="global-search" class="phase-search" type="button" aria-label="جست‌وجوی سریع">${icon("search", { size: 16 })}<span>جست‌وجو در رهجو</span><kbd>⌘ K</kbd></button>
+            <button id="global-search" class="phase-search" type="button" aria-label="جست‌وجوی سریع">${icon("search", { size: 16 })}<span>جست‌وجو در CRM</span><kbd>⌘ K</kbd></button>
             <a data-link class="button button--primary phase-topbar__primary" href="${serverMode ? "/cases/new" : "/request-service"}">${serverMode ? "پروندهٔ جدید" : "درخواست جدید"} ${icon("arrow", { size: 14 })}</a>
           </div>
         </header>
