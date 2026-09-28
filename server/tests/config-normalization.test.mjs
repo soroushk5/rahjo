@@ -32,7 +32,7 @@ test("managed web app PORT takes precedence over the local default", () => {
 });
 
 test("configuration rejects an enabled model provider and insecure public URLs", () => {
-  assert.throws(() => loadConfig({ ...validEnv, CRM_LLM_ENABLED: "true" }), /forbids/);
+  assert.throws(() => loadConfig({ ...validEnv, CRM_LLM_ENABLED: "true" }), /disabled/);
   assert.throws(() => loadConfig({ ...validEnv, CRM_PUBLIC_ORIGIN: "http://api.crm.example" }), /HTTPS/);
   assert.throws(() => loadConfig({ ...validEnv, CRM_CORS_ORIGINS: "*" }));
 });
