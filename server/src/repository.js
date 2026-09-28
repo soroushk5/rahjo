@@ -135,6 +135,59 @@ export class CrmRepository {
     };
   }
 
+  async createAccount(context, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const name = normalizePersianText(input?.name, { max: 180, required: true });
+    const account = await this.relaticle.createAccount(context.workspace_id, { name });
+
+    if (this.relaticle.mode === "native_deferred") {
+      await this.database.withWorkspace(context, async (client) => {
+        await client.query(
+          `INSERT INTO rahjo.crm_entity_refs (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+           VALUES ($1,'account',$2,$3,$4)`,
+          [context.workspace_id, publicId("ACC"), account.id, account.attributes]
+        );
+        await audit(client, context, {
+          eventType: "crm.account.created",
+          entityType: "account",
+          entityId: account.id,
+          correlationId,
+          after: { id: account.id, name, source: "crm-native-bridge" }
+        });
+      });
+    }
+
+    return { id: account.id, ...account.attributes, source: this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle" };
+  }
+
+  async createContact(context, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const name = normalizePersianText(input?.name, { max: 180, required: true });
+    const accountId = normalizePersianText(input?.accountId, { max: 180, required: true });
+    const contact = await this.relaticle.createContact(context.workspace_id, { name, accountId });
+
+    if (this.relaticle.mode === "native_deferred") {
+      await this.database.withWorkspace(context, async (client) => {
+        await client.query(
+          `INSERT INTO rahjo.crm_entity_refs (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+           VALUES ($1,'contact',$2,$3,$4)`,
+          [context.workspace_id, publicId("CON"), contact.id, contact.attributes]
+        );
+        await audit(client, context, {
+          eventType: "crm.contact.created",
+          entityType: "contact",
+          entityId: contact.id,
+          correlationId,
+          after: { id: contact.id, name, accountId, source: "crm-native-bridge" }
+        });
+      });
+    }
+
+    return { id: contact.id, ...contact.attributes, source: this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle" };
+  }
+
   async createIntake(context, input, rawIdempotencyKey, correlationId) {
     requireScope(context, "intake:write");
     requireRole(context, ["owner", "admin", "operator", "intake"]);
