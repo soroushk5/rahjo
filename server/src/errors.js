@@ -27,7 +27,7 @@ export function toProblem(error, instance, requestId) {
     status: source.status,
     headers: source.headers,
     body: {
-      type: `https://rahjo.ir/problems/${source.code.toLowerCase().replaceAll("_", "-")}`,
+      type: `urn:crm-core:problem:${source.code.toLowerCase().replaceAll("_", "-")}`,
       title: source.title,
       status: source.status,
       detail: source.message,
