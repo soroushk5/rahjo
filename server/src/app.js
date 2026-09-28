@@ -407,6 +407,53 @@ export function createCrmServer({ config, database, repository, relaticle, works
         json(response, status, { dataMode: "server", data: contact }, requestId, corsHeaders);
         return;
       }
+      if (request.method === "POST" && url.pathname === "/api/v1/opportunities") {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const opportunity = await repository.createOpportunity(context, body, requestId);
+        status = 201;
+        json(response, status, { dataMode: "server", data: opportunity }, requestId, corsHeaders);
+        return;
+      }
+      const opportunityStage = routeMatch(url.pathname, /^\/api\/v1\/opportunities\/([^/]+)\/stage$/);
+      if (request.method === "POST" && opportunityStage) {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const opportunity = await repository.updateOpportunityStage(context, decodeURIComponent(opportunityStage[1]), body, requestId);
+        status = 200;
+        json(response, status, { dataMode: "server", data: opportunity }, requestId, corsHeaders);
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/tasks") {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const task = await repository.createTask(context, body, requestId);
+        status = 201;
+        json(response, status, { dataMode: "server", data: task }, requestId, corsHeaders);
+        return;
+      }
+      const taskStatus = routeMatch(url.pathname, /^\/api\/v1\/tasks\/([^/]+)\/status$/);
+      if (request.method === "POST" && taskStatus) {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const task = await repository.updateTaskStatus(context, decodeURIComponent(taskStatus[1]), body, requestId);
+        status = 200;
+        json(response, status, { dataMode: "server", data: task }, requestId, corsHeaders);
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/interactions") {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const interaction = await repository.appendInteraction(context, body, requestId);
+        status = 201;
+        json(response, status, { dataMode: "server", data: interaction }, requestId, corsHeaders);
+        return;
+      }
       if (request.method === "POST" && url.pathname === "/api/v1/session/csrf") {
         if (context.auth_method !== "cookie") throw problems.forbidden();
         const rawSession = opaqueToken("crm_session");
