@@ -1,39 +1,85 @@
-# Hostinger production deployment
+# CRM Core production deployment
 
 ## Source-of-truth contract
 
-- `main` is the canonical source branch. It contains source, tests, build scripts, workflows, and documentation.
-- `hostinger-production` is a generated deployment branch. It contains only the static files built from a quality-checked `main` commit.
-- Hostinger production must connect to the existing `soroushk5/rahjo` repository and the `hostinger-production` branch.
-- Do not edit `hostinger-production` or production files manually. Product or deployment fixes start on `main`, pass validation, and are published by GitHub Actions.
-
-The production branch is updated with normal commits. Its history is not force-rewritten.
-The preview publication workflow follows the same history-preserving rule.
+- `main` is the canonical source branch for frontend and CRM Core BFF code.
+- `hostinger-production` is a generated static deployment branch.
+- Hostinger static production follows `hostinger-production`; the Node Web App follows `main`.
+- Do not edit generated production files manually.
 
 ## GitHub configuration
 
-The repository variable `RAHJO_PRODUCTION_ORIGIN` must contain the final HTTPS origin without a trailing slash or path.
+Use the CRM-first repository variables:
 
-After the `Quality` workflow succeeds on `main`, `Publish Hostinger Production Branch`:
+- `CRM_PRODUCTION_ORIGIN` — public HTTPS site origin.
+- `CRM_API_BASE` — Hostinger Node Web App origin.
+- `CRM_RUNTIME_MODE=server`.
 
-1. builds with `DEPLOY_MODE=production`;
-2. embeds the checked source commit in `health.json`;
-3. verifies production indexing, canonical URL, sitemap, root-relative assets, and SPA fallback;
-4. commits the generated files to `hostinger-production`.
+Legacy `RAHJO_*` repository variables are temporary compatibility fallbacks only.
+
+After `Quality` succeeds on `main`, the production workflow:
+
+1. builds and smoke-tests the static frontend;
+2. proves the Node BFF has converged to the current CRM contract;
+3. verifies live login abuse rate limiting (`429` + `Retry-After`);
+4. verifies public Website → CRM intake with an idempotent replay;
+5. publishes `hostinger-production`;
+6. verifies `health.json` exposes the intended source SHA.
+
+## Public intake
+
+Public intake does **not** require a browser or Hostinger intake token.
+
+Routing is server-owned in PostgreSQL:
+
+```text
+exact HTTPS origin
+→ private public_intake_routes row
+→ dedicated intake membership
+→ target workspace
+→ target service
+```
+
+The runtime role has no direct `SELECT` privilege on the routing table. It can only execute the private resolver function. Unknown origins or missing routes fail closed.
+
+Provision or repair a route with:
+
+```bash
+cd server
+CRM_MIGRATION_DATABASE_URL='postgresql://...' \
+  node scripts/provision-public-intake.mjs \
+  --workspace-slug <workspace> \
+  --origin https://example.com \
+  --service-id SVC-WEBSITE-INTAKE \
+  --service-name "Website Intake"
+```
+
+No PAT, API token, or intake secret is generated or printed.
 
 ## Hostinger configuration
 
-- Repository: `git@github.com:soroushk5/rahjo.git` or the equivalent HTTPS repository URL
+Static site:
+- Repository: `soroushk5/rahjo`
 - Branch: `hostinger-production`
-- Target directory: the website document root (`public_html`)
-- Build/install command: none; the generated branch already contains the deployable static site
-- Runtime: static Apache hosting with `.htaccess`
-- Database: none
+- Target directory: document root
+- Build command: none
 
-Enable Hostinger automatic deployment for pushes to `hostinger-production` when the plan exposes a branch-scoped webhook. Otherwise, use Hostinger's Git deployment action against that same branch.
+Node BFF:
+- Repository: `soroushk5/rahjo`
+- Branch: `main`
+- Runtime directory: `server`
+- Start command: `npm start`
+- The database connection and token pepper remain backend secrets.
+- Provider credentials remain server-side only.
 
 ## Acceptance
 
-Verify `/health.json` reports `status: ok`, `deploymentMode: production`, and the intended `main` source commit. Then test direct refreshes for the public routes `/`, `/product`, `/services`, `/use-cases`, `/how-it-works`, `/pilot`, `/trust`, `/about`, and `/contact`; the entry routes `/login`, `/request-service`, and `/track-request`; and the protected product routes `/dashboard`, `/customers/detail`, and `/requests/detail`. Also verify HTTPS, assets, console output, mobile RTL, and network requests.
+A production release is accepted only when:
 
-This release is an interactive phase-one product demonstration. Production hosting does not turn browser-local authentication, synthetic payments, local documents, or demo operations into real backend capabilities.
+- BFF `/healthz` reports the expected CRM contract;
+- live `429` / `Retry-After` abuse evidence passes;
+- public intake returns `received` and the same Idempotency-Key replays without a duplicate side effect;
+- public `health.json` reports the intended `main` SHA;
+- direct route refreshes, assets, mobile RTL and console/network checks pass.
+
+The legacy PostgreSQL `rahjo` schema/role names remain a compatibility boundary until the dedicated storage namespace cutover is backed by a fresh full backup/restore receipt.
