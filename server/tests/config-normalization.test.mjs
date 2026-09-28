@@ -24,6 +24,8 @@ test("production configuration is server-only and no-LLM", () => {
   assert.deepEqual(config.corsOrigins, ["https://crm.example", "https://app.crm.example"]);
   assert.equal(config.relaticleBaseUrl, "http://relaticle-app:8080/api/v1");
   assert.equal(config.relaticleMcpUrl, "http://relaticle-app:8080/mcp");
+  assert.equal(config.publicIntakeEnabled, true);
+  assert.equal(Object.hasOwn(config, "publicIntakeToken"), false);
 });
 
 test("managed web app PORT takes precedence over the local default", () => {
