@@ -76,7 +76,7 @@ function renderDashboard() {
   const cases = list("cases");
   const approvals = list("approvals");
   const pending = cases.filter((item) => !["resolved", "rejected"].includes(item.status));
-  const content = `${pageHeader(`سلام، ${text(state.user?.name || "همکار رهجو")}`, "وضعیت واقعی مشتری تا نتیجه؛ تمام اعداد از سرور همین فضای کاری خوانده شده‌اند.", `<a data-link class="button button--primary" href="/cases/new">پروندهٔ جدید ${icon("arrow", { size: 15 })}</a>`)}
+  const content = `${pageHeader(`سلام، ${text(state.user?.name || "همکار CRM")}`, "وضعیت واقعی مشتری تا نتیجه؛ تمام اعداد از سرور همین فضای کاری خوانده شده‌اند.", `<a data-link class="button button--primary" href="/cases/new">پروندهٔ جدید ${icon("arrow", { size: 15 })}</a>`)}
     ${serverNotice()}
     <div class="ops-metrics">
       ${metric("Caseهای باز", pending.length, "نیازمند اقدام", "requests")}
@@ -302,7 +302,7 @@ export function mountServerOperationalRoute() {
         body: {
           organization: String(fields.get("organization") || ""), contactName: String(fields.get("contactName") || ""),
           email, phone, purpose: String(fields.get("purpose") || ""), serviceId: String(fields.get("serviceId") || ""),
-          sourceChannel: String(fields.get("sourceChannel") || "operator"), attribution: { entry: "rahjo-server-ui" }
+          sourceChannel: String(fields.get("sourceChannel") || "operator"), attribution: { entry: "crm-server-ui" }
         },
         idempotencyKey: `ui-intake-${crypto.randomUUID()}`
       });
