@@ -11,7 +11,7 @@ import {
   serviceCatalog
 } from "../data/phaseOneData.js";
 
-const STORAGE_KEY = "rahjo.phase-one.demo.v2";
+const STORAGE_KEY = "crm.phase-one.demo.v2";
 const MAX_COLLECTION_SIZE = 500;
 const unsafeMarkupPattern = /[<>"'`]/g;
 
