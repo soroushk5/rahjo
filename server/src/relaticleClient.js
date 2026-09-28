@@ -217,6 +217,10 @@ export class RelaticleClient {
     return this.listCollection(workspaceId, "tasks", "?cursor=true&per_page=100");
   }
 
+  async listInteractions(workspaceId) {
+    return this.listCollection(workspaceId, "notes", "?cursor=true&per_page=100");
+  }
+
   async createAccount(workspaceId, { name }) {
     const payload = await this.request(workspaceId, "POST", "/companies", { name });
     return cleanEntity(entityData(payload));
@@ -224,6 +228,60 @@ export class RelaticleClient {
 
   async createContact(workspaceId, { name, accountId }) {
     const payload = await this.request(workspaceId, "POST", "/people", { name, company_id: accountId });
+    return cleanEntity(entityData(payload));
+  }
+
+  async createOpportunity(workspaceId, { name, accountId = "", contactId = "", stage = "" }) {
+    const body = {
+      name,
+      ...(accountId ? { company_id: accountId } : {}),
+      ...(contactId ? { contact_id: contactId } : {}),
+      ...(stage ? { custom_fields: { stage } } : {})
+    };
+    const payload = await this.request(workspaceId, "POST", "/opportunities", body);
+    return cleanEntity(entityData(payload));
+  }
+
+  async updateOpportunityStage(workspaceId, opportunityId, { stage }) {
+    const payload = await this.request(
+      workspaceId,
+      "PUT",
+      `/opportunities/${encodeURIComponent(opportunityId)}`,
+      { custom_fields: { stage } }
+    );
+    return cleanEntity(entityData(payload));
+  }
+
+  async createTask(workspaceId, { title, accountId = "", contactId = "", opportunityId = "", status = "" }) {
+    const body = {
+      title,
+      ...(accountId ? { company_ids: [accountId] } : {}),
+      ...(contactId ? { people_ids: [contactId] } : {}),
+      ...(opportunityId ? { opportunity_ids: [opportunityId] } : {}),
+      ...(status ? { custom_fields: { status } } : {})
+    };
+    const payload = await this.request(workspaceId, "POST", "/tasks", body);
+    return cleanEntity(entityData(payload));
+  }
+
+  async updateTaskStatus(workspaceId, taskId, { status }) {
+    const payload = await this.request(
+      workspaceId,
+      "PUT",
+      `/tasks/${encodeURIComponent(taskId)}`,
+      { custom_fields: { status } }
+    );
+    return cleanEntity(entityData(payload));
+  }
+
+  async createInteraction(workspaceId, { title, body = "", accountId = "", contactId = "", opportunityId = "" }) {
+    const payload = await this.request(workspaceId, "POST", "/notes", {
+      title,
+      ...(accountId ? { company_ids: [accountId] } : {}),
+      ...(contactId ? { people_ids: [contactId] } : {}),
+      ...(opportunityId ? { opportunity_ids: [opportunityId] } : {}),
+      ...(body ? { custom_fields: { body } } : {})
+    });
     return cleanEntity(entityData(payload));
   }
 }
