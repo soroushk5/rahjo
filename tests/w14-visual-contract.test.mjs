@@ -50,11 +50,11 @@ test("landing uses compact product storytelling instead of stacked screenshots",
 test("canonical public destinations include the real Start flow", () => {
   assert.deepEqual(publicNavigation.map((item) => item.path), ["/", "/product", "/contact"]);
   const login = utilityDestinations.find((item) => item.path === "/login");
-  assert.equal(login?.label, "ورود به رهجو");
+  assert.equal(login?.label, "ورود به CRM");
   assert.doesNotMatch(login?.meta ?? "", /مهمان|دمو/);
   const start = renderPublicIntakePage();
   assert.match(start, /data-public-intake-page/);
-  assert.match(start, /id="rahjo-public-intake"/);
+  assert.match(start, /id="crm-public-intake"/);
 });
 
 test("product page explains three connected product pillars", () => {
