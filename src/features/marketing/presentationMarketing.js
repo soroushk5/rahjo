@@ -39,7 +39,7 @@ function operationalPreview() {
       </aside>
       <div class="public-cockpit__main">
         <header>
-          <div><small>رهجو / داشبورد</small><strong>مرکز عملیات</strong></div>
+          <div><small>CRM / داشبورد</small><strong>مرکز عملیات</strong></div>
           <em><i></i> Demo / Synthetic</em>
         </header>
         <div class="public-cockpit__metrics">
@@ -72,7 +72,7 @@ export function renderPresentationMarketingPage() {
         <div class="public-hero__copy">
           <span class="public-kicker"><i></i>PHASE 1 · OPERATIONAL FOUNDATION</span>
           <h1>عملیات تجاری امروز؛<br><span>زیرساخت هوشمندی فردا.</span></h1>
-          <p>رهجو ورودی‌های دیجیتال، CRM، فروش، پرونده‌ها، سرویس‌ها، گردش‌کار و ممیزی را روی یک حافظه عملیاتی مشترک جمع می‌کند؛ طوری که محصول با AI خاموش هم ارزش واقعی داشته باشد و Think Room بعداً روی همان داده و Outcome ساخته شود.</p>
+          <p>CRM ورودی‌های دیجیتال، CRM، فروش، پرونده‌ها، سرویس‌ها، گردش‌کار و ممیزی را روی یک حافظه عملیاتی مشترک جمع می‌کند؛ طوری که محصول با AI خاموش هم ارزش واقعی داشته باشد و Think Room بعداً روی همان داده و Outcome ساخته شود.</p>
           <div class="public-hero__actions">
             <a data-link class="button button--primary" href="/login">دیدن دموی محصول ${icon("arrow", { size: 15 })}</a>
             <a data-link class="button button--secondary" href="/platform">محصول چگونه کار می‌کند؟</a>
