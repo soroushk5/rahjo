@@ -351,16 +351,16 @@ export function createCrmServer({ config, database, repository, relaticle, works
       }
 
       if (request.method === "POST" && url.pathname === "/api/v1/public/intakes") {
-        assertPublicIntakeOrigin(config, origin);
-        const limited = publicIntakeLimit(`${request.socket?.remoteAddress ?? "unknown"}|${origin}`);
+        const publicOrigin = assertPublicIntakeOrigin(config, origin);
+        const limited = publicIntakeLimit(`${request.socket?.remoteAddress ?? "unknown"}|${publicOrigin}`);
         if (limited) throw limited;
         const idempotencyKey = publicIntakeIdempotencyKey(request.headers["idempotency-key"]);
         const body = await readJson(request, config.bodyLimit);
         rejectWorkspaceOverride(request, body);
-        const publicContext = await resolvePublicIntakeContext(config, database);
+        const publicRoute = await resolvePublicIntakeContext(config, database, publicOrigin);
         const result = await repository.createIntake(
-          publicContext,
-          publicIntakeInput(config, body),
+          publicRoute.context,
+          publicIntakeInput(publicRoute.serviceId, body),
           idempotencyKey,
           requestId
         );
