@@ -21,9 +21,9 @@ const systemLayers = Object.freeze([
 
 function productCanvas() {
   return `
-    <div class="rv-product" aria-label="نمای محیط عملیاتی رهجو">
+    <div class="rv-product" aria-label="نمای محیط عملیاتی CRM">
       <div class="rv-product__bar">
-        <div><span class="rv-product__dot"></span><strong>رهجو</strong><small>محیط عملیاتی</small></div>
+        <div><span class="rv-product__dot"></span><strong>CRM</strong><small>محیط عملیاتی</small></div>
         <span>آریا صنعت / عملیات فروش</span>
       </div>
       <div class="rv-product__shell">
@@ -66,7 +66,7 @@ function productCanvas() {
 
 function operatingMap() {
   return `
-    <div class="rv-spine" aria-label="نقشهٔ مسیر عملیاتی رهجو">
+    <div class="rv-spine" aria-label="نقشهٔ مسیر عملیاتی CRM">
       <div class="rv-spine__groups" aria-hidden="true">
         <span class="rv-spine__group rv-spine__group--memory">حافظهٔ رابطه</span>
         <span class="rv-spine__group rv-spine__group--work">فروش و خدمت</span>
@@ -90,12 +90,12 @@ export function renderHomePageV2() {
         <div class="container rv-hero__grid">
           <div class="rv-hero__copy">
             <h1>مشتری را از اولین درخواست تا نتیجه، در یک مسیر نگه دارید.</h1>
-            <p>رهجو فروش، پروندهٔ خدمت، تأیید انسانی، اجرا و نتیجه را روی همان سابقهٔ مشتری به هم وصل می‌کند؛ بدون اینکه کار اصلی به AI وابسته باشد.</p>
+            <p>CRM فروش، پروندهٔ خدمت، تأیید انسانی، اجرا و نتیجه را روی همان سابقهٔ مشتری به هم وصل می‌کند؛ بدون اینکه کار اصلی به AI وابسته باشد.</p>
             <div class="button-row rv-hero__actions">
               <a data-link class="button button--primary button--large" href="/contact">بررسی فرایند کسب‌وکار من ${icon("arrow")}</a>
               <a data-link class="button button--outline button--large" href="/how-it-works">دیدن مسیر کار</a>
             </div>
-            <div class="rv-hero__facts" aria-label="ویژگی‌های هستهٔ رهجو">
+            <div class="rv-hero__facts" aria-label="ویژگی‌های هستهٔ CRM">
               <span>${icon("shield", { size: 15 })} تأیید انسانی</span>
               <span>${icon("check", { size: 15 })} مسیر اصلی بدون AI</span>
               <span>${icon("signal", { size: 15 })} سابقهٔ قابل ممیزی</span>
@@ -127,7 +127,7 @@ export function renderHomePageV2() {
           <div class="rv-system-copy">
             <p>مدل عملیاتی</p>
             <h2>CRM زمانی مفید است که به تصمیم و اجرای واقعی وصل باشد.</h2>
-            <span>رهجو فقط اطلاعات مشتری را نگه نمی‌دارد. همان اطلاعات باید مشخص کند چه کاری باز است، چه کسی مسئول است، چه چیزی نیازمند تأیید است و خروجی نهایی چه بوده.</span>
+            <span>CRM فقط اطلاعات مشتری را نگه نمی‌دارد. همان اطلاعات باید مشخص کند چه کاری باز است، چه کسی مسئول است، چه چیزی نیازمند تأیید است و خروجی نهایی چه بوده.</span>
             <a data-link class="text-link" href="/product">ساختار محصول ${icon("arrow", { size: 16 })}</a>
           </div>
           <div class="rv-layer-list">${systemLayers.map(([index, title, desc, glyph]) => `
