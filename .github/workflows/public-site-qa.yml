@@ -1,4 +1,4 @@
-name: Public + Console QA — W14 Visual Rebaseline
+name: CRM Core — Public + Console QA
 
 on:
   workflow_dispatch:
@@ -49,17 +49,17 @@ jobs:
           npm install --no-save --ignore-scripts playwright@1.55.0
           npx playwright install --with-deps chromium
 
-      - name: Start local Rahjo server
+      - name: Start local CRM Core server
         run: |
-          node scripts/serve.mjs > /tmp/rahjo-public-server.log 2>&1 &
-          echo $! > /tmp/rahjo-public-server.pid
+          node scripts/serve.mjs > /tmp/crm-core-public-server.log 2>&1 &
+          echo $! > /tmp/crm-core-public-server.pid
           for i in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/rahjo-public-server.log
+          cat /tmp/crm-core-public-server.log
           exit 1
 
       - name: Render desktop and mobile public pages
@@ -72,10 +72,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rahjo-public-console-qa
+          name: crm-core-public-console-qa
           path: |
             qa-artifacts/public-site
             qa-artifacts/console
-            /tmp/rahjo-public-server.log
+            /tmp/crm-core-public-server.log
           if-no-files-found: warn
           retention-days: 14
