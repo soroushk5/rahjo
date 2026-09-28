@@ -8,7 +8,7 @@ import {
 } from "../src/services/runtimeDataFacade.js";
 
 const demoConfig = { mode: "demo", apiBase: "", buildSha: "demo-sha" };
-const serverConfig = { mode: "server", apiBase: "https://api.rahjo.example", buildSha: "server-sha" };
+const serverConfig = { mode: "server", apiBase: "https://api.crm.example", buildSha: "server-sha" };
 
 test("invalid runtime configuration is an explicit validation state", async () => {
   const facade = createRuntimeDataFacade();
@@ -102,7 +102,7 @@ test("server login exchanges only credentials, then validates the cookie-backed 
   const fetchImpl = async (url, options) => {
     calls.push({ url: String(url), options });
     if (String(url).endsWith(SERVER_SESSION_PATH)) {
-      return new Response(JSON.stringify({ dataMode: "server", csrfToken: "rahjo_csrf_abcdefghijklmnopqrstuvwxyz" }), {
+      return new Response(JSON.stringify({ dataMode: "server", csrfToken: "crm_csrf_abcdefghijklmnopqrstuvwxyz" }), {
         status: 201,
         headers: { "Content-Type": "application/json" }
       });
@@ -131,7 +131,7 @@ test("server login exchanges only credentials, then validates the cookie-backed 
   assert.equal(calls[1].options.credentials, "include");
   assert.equal("csrfToken" in state, false);
   assert.equal(JSON.stringify(state).includes("server-only-password"), false);
-  assert.equal(JSON.stringify(state).includes("rahjo_csrf_"), false);
+  assert.equal(JSON.stringify(state).includes("crm_csrf_"), false);
 });
 
 test("failed server login remains explicit and has no projection", async () => {
@@ -153,16 +153,16 @@ test("server commands use the rotated CSRF token, keep workspace scope server-ow
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url: String(url), options });
     if (String(url).endsWith("/runtime")) return new Response(JSON.stringify({
-      dataMode: "server", version: 1, workspace: { id: "workspace-a", name: "رهجو" }, projection: { cases: [] }
+      dataMode: "server", version: 1, workspace: { id: "workspace-a", name: "CRM" }, projection: { cases: [] }
     }), { status: 200, headers: { "Content-Type": "application/json" } });
-    if (String(url).endsWith("/csrf")) return new Response(JSON.stringify({ dataMode: "server", csrfToken: "rahjo_csrf_rotated_abcdefghijklmnopqrstuvwxyz" }), { status: 200 });
+    if (String(url).endsWith("/csrf")) return new Response(JSON.stringify({ dataMode: "server", csrfToken: "crm_csrf_rotated_abcdefghijklmnopqrstuvwxyz" }), { status: 200 });
     return new Response(JSON.stringify({ dataMode: "server", data: { status: "approved" } }), { status: 200 });
   };
   await facade.initialize(serverConfig, { fetchImpl });
   await facade.command("/api/v1/approvals/APR-1/decision", { body: { decision: "approved" }, fetchImpl });
   const command = calls.find((item) => item.url.endsWith("/decision"));
   assert.equal(command.options.credentials, "include");
-  assert.equal(command.options.headers["X-CSRF-Token"], "rahjo_csrf_rotated_abcdefghijklmnopqrstuvwxyz");
+  assert.equal(command.options.headers["X-CSRF-Token"], "crm_csrf_rotated_abcdefghijklmnopqrstuvwxyz");
   assert.equal("workspaceId" in JSON.parse(command.options.body), false);
   assert.equal(calls.filter((item) => item.url.endsWith("/runtime")).length, 2);
 });
