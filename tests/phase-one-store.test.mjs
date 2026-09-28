@@ -68,7 +68,7 @@ test("golden workflow advances one request from intake through payment, executio
 
 test("malformed storage falls back to a valid seeded state", () => {
   storage.clear();
-  storage.setItem("rahjo.phase-one.demo.v2", "{bad-json");
+  storage.setItem("crm.phase-one.demo.v2", "{bad-json");
   const state = store.readDemoState();
   assert.equal(state.version, 2);
   assert.ok(Array.isArray(state.customers));
@@ -89,7 +89,7 @@ test("persisted phase-one entities are schema-normalized and markup cannot survi
   poisoned.customers[0].unexpected = `<script>bad</script>`;
   poisoned.requestDraft = { step: 99, payload: { ...newRequestPayload(), organization: `<em>پیش‌نویس</em>` } };
   poisoned.contactSubmissions = [{ id: "CONTACT-1", createdAt: "now", name: `<b>نام</b>`, organization: "نمونه", need: `<script>bad</script>`, unexpected: "kept?" }];
-  storage.setItem("rahjo.phase-one.demo.v2", JSON.stringify(poisoned));
+  storage.setItem("crm.phase-one.demo.v2", JSON.stringify(poisoned));
 
   const state = store.readDemoState();
   const exposedStrings = [
