@@ -14,30 +14,30 @@ const releaseBase = `/releases/${assetVersion}`;
 const assetBase = `${siteBasePath}${releaseBase}`;
 const releaseRoot = join(output, 'releases', assetVersion);
 const generatedAt = new Date().toISOString();
-const runtimeMode = process.env.RAHJO_RUNTIME_MODE || (mode === 'preview' ? 'demo' : '');
-const rawApiBase = (process.env.RAHJO_API_BASE || '').trim();
+const runtimeMode = process.env.CRM_RUNTIME_MODE || process.env.CRM_RUNTIME_MODE || (mode === 'preview' ? 'demo' : '');
+const rawApiBase = (process.env.CRM_API_BASE || process.env.CRM_API_BASE || '').trim();
 
 if (!['demo', 'server'].includes(runtimeMode)) {
-  throw new Error('RAHJO_RUNTIME_MODE must be explicitly set to demo or server for production builds');
+  throw new Error('CRM_RUNTIME_MODE must be explicitly set to demo or server for production builds');
 }
 
 if (runtimeMode === 'demo' && rawApiBase) {
-  throw new Error('RAHJO_API_BASE must be empty in demo mode');
+  throw new Error('CRM_API_BASE must be empty in demo mode');
 }
 
 let apiBase = '';
 if (runtimeMode === 'server') {
-  if (!rawApiBase) throw new Error('RAHJO_API_BASE is required in server mode');
+  if (!rawApiBase) throw new Error('CRM_API_BASE is required in server mode');
   const apiUrl = new URL(rawApiBase);
   if (apiUrl.username || apiUrl.password || apiUrl.search || apiUrl.hash) {
-    throw new Error('RAHJO_API_BASE cannot contain credentials, a query, or a fragment');
+    throw new Error('CRM_API_BASE cannot contain credentials, a query, or a fragment');
   }
   const localHttp = apiUrl.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(apiUrl.hostname);
   if (apiUrl.protocol !== 'https:' && !localHttp) {
-    throw new Error('RAHJO_API_BASE must use HTTPS; HTTP is allowed only for localhost');
+    throw new Error('CRM_API_BASE must use HTTPS; HTTP is allowed only for localhost');
   }
   if (mode === 'production' && apiUrl.protocol !== 'https:') {
-    throw new Error('Production server mode requires an HTTPS RAHJO_API_BASE');
+    throw new Error('Production server mode requires an HTTPS CRM_API_BASE');
   }
   apiBase = apiUrl.toString().replace(/\/$/, '');
 }
@@ -113,8 +113,8 @@ const robots = mode === 'preview'
 await writeFile(join(output, 'robots.txt'), robots);
 
 const manifest = {
-  name: 'رهجو',
-  short_name: 'رهجو',
+  name: 'CRM Core',
+  short_name: 'CRM',
   lang: 'fa',
   dir: 'rtl',
   start_url: `${siteBasePath || ''}/`,
@@ -130,7 +130,7 @@ await writeFile(join(releaseRoot, 'assets/site.webmanifest'), manifestJson);
 
 const health = {
   status: 'ok',
-  application: 'rahjo-web-platform',
+  application: 'crm-core-platform',
   deploymentMode: mode,
   ...runtimeHealthFields(runtimeConfig),
   commit: commitSha,
