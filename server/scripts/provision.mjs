@@ -28,7 +28,7 @@ const displayName = normalizePersianText(args.get("display-name"), { max: 160, r
 const role = args.get("role") ?? "owner";
 const relaticleTeamId = args.get("relaticle-team-id");
 const label = normalizePersianText(args.get("token-label") ?? "initial API token", { max: 120, required: true });
-const scopes = (args.get("scopes") ?? "read,intake:write,approval:decide,action:write,action:execute,outcome:write").split(",").filter(Boolean);
+const scopes = (args.get("scopes") ?? "read,crm:write,intake:write,approval:decide,action:write,action:execute,outcome:write").split(",").filter(Boolean);
 if (!slug || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) throw new Error("--workspace-slug is invalid");
 if (!relaticleTeamId) throw new Error("--relaticle-team-id is required");
 if (!new Set(["owner", "admin", "operator", "viewer", "intake"]).has(role)) throw new Error("--role is invalid");
