@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 /**
  * Explicit zero-cost bridge used while the separated Relaticle service is not
- * deployable. Records are persisted in Rahjo's PostgreSQL crm_entity_refs and
+ * deployable. Records are persisted in the CRM PostgreSQL compatibility store and
  * are visibly marked pending_relaticle; this is never a silent fallback.
  */
 export class NativeDeferredCrmClient {
@@ -18,23 +18,24 @@ export class NativeDeferredCrmClient {
     return { teamId: `deferred:${workspaceId}`, abilities: ["read", "create"], protocolVersion: "deferred" };
   }
 
-  async list() {
-    return [];
-  }
+  async listAccounts() { return []; }
+  async listContacts() { return []; }
+  async listOpportunities() { return []; }
+  async listTasks() { return []; }
 
-  async createCompany(_workspaceId, { name }) {
+  async createAccount(_workspaceId, { name }) {
     return {
-      id: `NATIVE-COMPANY-${randomUUID()}`,
-      type: "companies",
-      attributes: { name, source: "rahjo-native-bridge", sync_state: "pending_relaticle" }
+      id: `NATIVE-ACCOUNT-${randomUUID()}`,
+      type: "accounts",
+      attributes: { name, source: "crm-native-bridge", sync_state: "pending_relaticle" }
     };
   }
 
-  async createPerson(_workspaceId, { name, companyId }) {
+  async createContact(_workspaceId, { name, accountId }) {
     return {
-      id: `NATIVE-PERSON-${randomUUID()}`,
-      type: "people",
-      attributes: { name, company_id: companyId, source: "rahjo-native-bridge", sync_state: "pending_relaticle" }
+      id: `NATIVE-CONTACT-${randomUUID()}`,
+      type: "contacts",
+      attributes: { name, account_id: accountId, source: "crm-native-bridge", sync_state: "pending_relaticle" }
     };
   }
 }
