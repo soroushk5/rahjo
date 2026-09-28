@@ -60,7 +60,7 @@ test("canonical public destinations include the real Start flow", () => {
 test("product page explains three connected product pillars", () => {
   const html = renderMinimalProductPage();
   assert.match(html, /CRM را با پیگیری کارهای واقعی تیم در یک مسیر نگه دارید/);
-  for (const phrase of ["حافظهٔ مشتری", "فروش و پیگیری", "پرونده و اجرا", "اقدام بعدی"]) {
+  for (const phrase of ["حافظهٔ مشتری", "فروش و پیگیری", "وظایف و فعالیت‌ها", "اقدام بعدی"]) {
     assert.match(html, new RegExp(phrase));
   }
   assert.match(html, /sw-pillar-grid/);
