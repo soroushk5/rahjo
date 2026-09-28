@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { once } from "node:events";
-import { createRahjoServer } from "../src/app.js";
+import { createCrmServer } from "../src/app.js";
 import { passwordCredential, secretDigest } from "../src/security.js";
 
 const credential = passwordCredential("a correct long password");
@@ -63,7 +63,7 @@ async function fixture() {
     crmMode: "native_deferred",
     interim: true
   };
-  const server = createRahjoServer({ config, database, repository, relaticle: {}, workspaceTokens: new Map(), logger: { info() {}, error() {} } });
+  const server = createCrmServer({ config, database, repository, relaticle: {}, workspaceTokens: new Map(), logger: { info() {}, error() {} } });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const base = `http://127.0.0.1:${server.address().port}`;
