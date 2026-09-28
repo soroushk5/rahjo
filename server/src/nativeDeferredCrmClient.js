@@ -22,6 +22,7 @@ export class NativeDeferredCrmClient {
   async listContacts() { return []; }
   async listOpportunities() { return []; }
   async listTasks() { return []; }
+  async listInteractions() { return []; }
 
   async createAccount(_workspaceId, { name }) {
     return {
@@ -36,6 +37,69 @@ export class NativeDeferredCrmClient {
       id: `NATIVE-CONTACT-${randomUUID()}`,
       type: "contacts",
       attributes: { name, account_id: accountId, source: "crm-native-bridge", sync_state: "pending_relaticle" }
+    };
+  }
+
+  async createOpportunity(_workspaceId, { name, accountId = "", contactId = "", stage = "" }) {
+    return {
+      id: `NATIVE-OPPORTUNITY-${randomUUID()}`,
+      type: "opportunities",
+      attributes: {
+        name,
+        ...(accountId ? { account_id: accountId } : {}),
+        ...(contactId ? { contact_id: contactId } : {}),
+        ...(stage ? { stage } : {}),
+        source: "crm-native-bridge",
+        sync_state: "pending_relaticle"
+      }
+    };
+  }
+
+  async updateOpportunityStage(_workspaceId, opportunityId, { stage }) {
+    return {
+      id: opportunityId,
+      type: "opportunities",
+      attributes: { stage, source: "crm-native-bridge", sync_state: "pending_relaticle" }
+    };
+  }
+
+  async createTask(_workspaceId, { title, accountId = "", contactId = "", opportunityId = "", status = "" }) {
+    return {
+      id: `NATIVE-TASK-${randomUUID()}`,
+      type: "tasks",
+      attributes: {
+        title,
+        ...(accountId ? { account_id: accountId } : {}),
+        ...(contactId ? { contact_id: contactId } : {}),
+        ...(opportunityId ? { opportunity_id: opportunityId } : {}),
+        status: status || "open",
+        source: "crm-native-bridge",
+        sync_state: "pending_relaticle"
+      }
+    };
+  }
+
+  async updateTaskStatus(_workspaceId, taskId, { status }) {
+    return {
+      id: taskId,
+      type: "tasks",
+      attributes: { status, source: "crm-native-bridge", sync_state: "pending_relaticle" }
+    };
+  }
+
+  async createInteraction(_workspaceId, { title, body = "", accountId = "", contactId = "", opportunityId = "" }) {
+    return {
+      id: `NATIVE-INTERACTION-${randomUUID()}`,
+      type: "interactions",
+      attributes: {
+        title,
+        ...(body ? { body } : {}),
+        ...(accountId ? { account_id: accountId } : {}),
+        ...(contactId ? { contact_id: contactId } : {}),
+        ...(opportunityId ? { opportunity_id: opportunityId } : {}),
+        source: "crm-native-bridge",
+        sync_state: "pending_relaticle"
+      }
     };
   }
 }
