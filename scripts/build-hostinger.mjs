@@ -14,8 +14,8 @@ const releaseBase = `/releases/${assetVersion}`;
 const assetBase = `${siteBasePath}${releaseBase}`;
 const releaseRoot = join(output, 'releases', assetVersion);
 const generatedAt = new Date().toISOString();
-const runtimeMode = process.env.CRM_RUNTIME_MODE || process.env.CRM_RUNTIME_MODE || (mode === 'preview' ? 'demo' : '');
-const rawApiBase = (process.env.CRM_API_BASE || process.env.CRM_API_BASE || '').trim();
+const runtimeMode = process.env.CRM_RUNTIME_MODE || process.env.RAHJO_RUNTIME_MODE || (mode === 'preview' ? 'demo' : '');
+const rawApiBase = (process.env.CRM_API_BASE || process.env.RAHJO_API_BASE || '').trim();
 
 if (!['demo', 'server'].includes(runtimeMode)) {
   throw new Error('CRM_RUNTIME_MODE must be explicitly set to demo or server for production builds');
