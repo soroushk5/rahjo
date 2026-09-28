@@ -20,13 +20,13 @@ test("all primary phase-one routes render meaningful safe markup", () => {
     const html = render();
     assert.match(html, /<h1>|<h2>/);
     assert.doesNotMatch(html, />undefined<|>null</);
-    assert.match(html, /رهجو/);
+    assert.match(html, /CRM/);
   }
 });
 
-test("homepage communicates the concise customer-to-outcome promise", () => {
+test("homepage communicates the concise standard CRM promise", () => {
   const html = renderMinimalHomePage();
-  for (const phrase of ["مشتری", "پرونده", "تأیید", "اقدام", "نتیجه"]) assert.match(html, new RegExp(phrase));
+  for (const phrase of ["مشتری", "فرصت", "فعالیت", "اقدام بعدی"]) assert.match(html, new RegExp(phrase));
   for (const path of ["/product", "/contact", "/login"]) {
     assert.match(html, new RegExp(`href="${path}"`));
   }
