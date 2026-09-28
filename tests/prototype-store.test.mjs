@@ -44,7 +44,7 @@ test("prototype store persists cluster, draft and submitted request", () => {
 
 test("prototype store falls back safely when persisted data is malformed", () => {
   storage.clear();
-  storage.setItem("rahjo.prototype.v1", JSON.stringify({
+  storage.setItem("crm.prototype.v1", JSON.stringify({
     preferredClusterId: 42,
     requestDraft: { step: "made-up", payload: null },
     accessRequests: [{ referenceId: null }, { referenceId: "RA-X", serviceId: "vehicle", purpose: 20 }],
