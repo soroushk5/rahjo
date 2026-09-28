@@ -1,13 +1,13 @@
 {
   "status": "ok",
-  "application": "rahjo-web-platform",
+  "application": "crm-core-platform",
   "deploymentMode": "preview",
   "runtimeMode": "demo",
   "apiBase": "",
-  "buildSha": "95a2d9855dc0c91b0438d35c4e063a994bd317f8",
-  "commit": "95a2d9855dc0c91b0438d35c4e063a994bd317f8",
-  "assetVersion": "95a2d9855dc0c91b0438d35c4e063a994bd317f8",
-  "assetBase": "/releases/95a2d9855dc0c91b0438d35c4e063a994bd317f8",
+  "buildSha": "ff57f6c53d43db8c4a17c35b7dbe0440e7843edc",
+  "commit": "ff57f6c53d43db8c4a17c35b7dbe0440e7843edc",
+  "assetVersion": "ff57f6c53d43db8c4a17c35b7dbe0440e7843edc",
+  "assetBase": "/releases/ff57f6c53d43db8c4a17c35b7dbe0440e7843edc",
   "siteBasePath": "",
-  "generatedAt": "2026-09-15T00:03:37.982Z"
+  "generatedAt": "2026-09-28T23:10:00.950Z"
 }
