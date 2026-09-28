@@ -9,14 +9,14 @@ export function siteShell({ content, activePath }) {
     ? runtime.state === RUNTIME_DATA_STATES.READY && Boolean(runtime.user?.id)
     : isAuthenticated();
   const accessHref = signedIn ? "/dashboard" : "/login";
-  const accessLabel = signedIn ? "باز کردن رهجو" : "ورود به رهجو";
+  const accessLabel = signedIn ? "باز کردن CRM" : "ورود به CRM";
   const link = (path, label) => `<a data-link href="${path}" ${activePath === path ? 'aria-current="page"' : ""}>${label}</a>`;
 
   return `
     <div class="page phase-site rv-site mp-site">
       <header class="phase-header rv-header mp-header">
         <div class="container phase-header__inner rv-header__inner mp-header__inner mp-header__inner--minimal">
-          <a data-link href="/" class="site-brand-link rv-brand mp-brand" aria-label="صفحهٔ اصلی رهجو">${brandLogo()}</a>
+          <a data-link href="/" class="site-brand-link rv-brand mp-brand" aria-label="صفحهٔ اصلی CRM">${brandLogo()}</a>
           <div class="phase-header__actions rv-header__actions mp-header__actions">
             ${activePath === "/contact" ? "" : '<a data-link data-cta="header-start" class="button button--outline mp-header__secondary" href="/contact">شروع</a>'}
             <a data-link data-cta="header-access" class="button button--primary mp-header__primary" href="${accessHref}">${accessLabel}</a>
@@ -33,7 +33,7 @@ export function siteShell({ content, activePath }) {
             ${link("/product", "محصول")}${link("/contact", "شروع")}${link("/login", "ورود")}${link("/privacy", "حریم خصوصی")}${link("/terms", "شرایط استفاده")}
           </nav>
         </div>
-        <div class="container mp-footer__bottom"><span>Rahjo / رهجو</span><span>© ۱۴۰۵</span></div>
+        <div class="container mp-footer__bottom"><span>CRM Core</span><span>© ۱۴۰۵</span></div>
       </footer>
     </div>`;
 }
