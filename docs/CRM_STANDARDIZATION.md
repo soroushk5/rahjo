@@ -61,17 +61,27 @@ The Relaticle adapter maps these to its upstream collections. No upstream naming
 Core write routes:
 - `POST /api/v1/accounts`
 - `POST /api/v1/contacts`
+- `POST /api/v1/opportunities`
+- `POST /api/v1/opportunities/:id/stage`
+- `POST /api/v1/tasks`
+- `POST /api/v1/tasks/:id/status`
+- `POST /api/v1/interactions`
 
 Required authorization:
 - scope: `crm:write`
 - role: owner, admin or operator
 
-Planned next core routes:
-- Opportunity create/update-stage
-- Task create/update/complete
-- Activity append/list
-- Account/Contact update
-- import/dedupe review
+Current core slice:
+- Opportunity create/update-stage;
+- Task create/update-status;
+- Activity/Interaction append using the provider Note contract;
+- all writes are crm:write + tenant scoped + audited.
+
+Next core routes:
+- Account/Contact update and search;
+- Task due-date/assignee UX after custom-field provisioning;
+- Activity list/filter UX;
+- import/dedupe review.
 
 These routes must only be implemented after their provider contracts are verified; do not guess upstream field shapes.
 
