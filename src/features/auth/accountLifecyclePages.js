@@ -7,7 +7,7 @@ function shell(title, lead, body) {
   return `<div class="phase-site server-auth-page">
     <main id="main-content" class="server-auth-layout">
       <section class="server-auth-story">
-        <a data-link href="/" class="server-auth-brand">رهجو <small>RAHJO</small></a>
+        <a data-link href="/" class="server-auth-brand">CRM <small>CRM</small></a>
         <div><span class="server-live-pill">حساب امن</span><h1>${escapeHtml(title)}</h1><p>${escapeHtml(lead)}</p>
         <ul><li>نشست سروری روی هر دستگاه</li><li>دعوت یک‌بارمصرف</li><li>بازیابی بدون نمایش رمز</li></ul></div>
       </section>
@@ -26,9 +26,9 @@ function passwordFields(prefix = "") {
 }
 
 export function renderAcceptInvitePage() {
-  return shell("فعال‌کردن حساب رهجو", "دعوت را روی هر دستگاهی باز کنید و برای حساب خود گذرواژه تعیین کنید.", `
+  return shell("فعال‌کردن حساب CRM", "دعوت را روی هر دستگاهی باز کنید و برای حساب خود گذرواژه تعیین کنید.", `
     <header><small>دعوت فضای کاری</small><h2>ساخت حساب</h2><p>لینک دعوت یک‌بارمصرف و زمان‌دار است.</p></header>
-    <form id="rahjo-invite-accept" class="auth-form server-login-form" novalidate>
+    <form id="crm-invite-accept" class="auth-form server-login-form" novalidate>
       ${passwordFields()}
       ${feedback("invite-feedback")}
       <button class="button button--primary button--large" type="submit">فعال‌کردن حساب</button>
@@ -39,9 +39,9 @@ export function renderAcceptInvitePage() {
 export function renderRecoverAccountPage() {
   return shell("بازیابی دسترسی", "با لینک بازیابی یک‌بارمصرف یا یکی از کدهای بازیابی ذخیره‌شده، گذرواژه جدید تعیین کنید.", `
     <header><small>بازیابی حساب</small><h2>تعیین گذرواژه جدید</h2><p id="recovery-mode-copy">اگر لینک بازیابی دارید همان لینک را باز کنید؛ در غیر این صورت از کد بازیابی استفاده کنید.</p></header>
-    <form id="rahjo-account-recovery" class="auth-form server-login-form" novalidate>
+    <form id="crm-account-recovery" class="auth-form server-login-form" novalidate>
       <div data-recovery-identity>
-        <label>فضای کاری<input name="workspaceSlug" value="rahjo" autocomplete="organization" required /></label>
+        <label>فضای کاری<input name="workspaceSlug" value="crm" autocomplete="organization" required /></label>
         <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
         <label>کد بازیابی<input name="recoveryCode" autocomplete="one-time-code" /></label>
       </div>
@@ -58,7 +58,7 @@ export function renderAccountSecurityPage() {
     ${feedback("account-feedback")}
     <section class="workspace-panel" data-account-admin hidden>
       <header><h3>دعوت عضو جدید</h3><p>ثبت‌نام عمومی باز نیست؛ مالک یا مدیر لینک دعوت یک‌بارمصرف می‌سازد.</p></header>
-      <form id="rahjo-member-invite" class="auth-form" novalidate>
+      <form id="crm-member-invite" class="auth-form" novalidate>
         <label>نام<input name="displayName" maxlength="160" required /></label>
         <label>ایمیل<input name="email" type="email" autocomplete="email" required /></label>
         <label>نقش<select name="role"><option value="operator">کاربر عملیاتی</option><option value="admin">مدیر</option><option value="viewer">فقط مشاهده</option></select></label>
@@ -69,7 +69,7 @@ export function renderAccountSecurityPage() {
     </section>
     <section class="workspace-panel">
       <header><h3>تغییر گذرواژه</h3><p>با تغییر گذرواژه، نشست‌های قبلی باطل می‌شوند.</p></header>
-      <form id="rahjo-password-change" class="auth-form" novalidate>
+      <form id="crm-password-change" class="auth-form" novalidate>
         <label>گذرواژه فعلی<input name="currentPassword" type="password" autocomplete="current-password" required /></label>
         ${passwordFields("change-")}
         <button class="button button--outline" type="submit">تغییر گذرواژه</button>
@@ -77,7 +77,7 @@ export function renderAccountSecurityPage() {
     </section>
     <section class="workspace-panel">
       <header><h3>کدهای بازیابی</h3><p>کدها فقط یک‌بار نمایش داده می‌شوند. آن‌ها را در یک محل امن ذخیره کنید.</p></header>
-      <button id="rahjo-generate-recovery" class="button button--outline" type="button">ساخت کدهای جدید</button>
+      <button id="crm-generate-recovery" class="button button--outline" type="button">ساخت کدهای جدید</button>
       <pre id="recovery-codes-output" hidden></pre>
     </section>
     <a data-link class="text-link" href="/dashboard">بازگشت به محیط کار</a>`);
@@ -85,7 +85,7 @@ export function renderAccountSecurityPage() {
 
 function lifecycleConfig() {
   const config = readRuntimeConfig(document);
-  if (config.mode !== "server" || !config.apiBase) throw new Error("این قابلیت فقط در محیط سروری رهجو فعال است.");
+  if (config.mode !== "server" || !config.apiBase) throw new Error("این قابلیت فقط در محیط سروری CRM فعال است.");
   return config;
 }
 
@@ -129,7 +129,7 @@ function setText(id, message, tone = "") {
 }
 
 export function mountAcceptInvitePage() {
-  const form = document.querySelector("#rahjo-invite-accept");
+  const form = document.querySelector("#crm-invite-accept");
   if (!(form instanceof HTMLFormElement)) return;
   const { token } = tokenFromFragment();
   if (!token) {
@@ -155,7 +155,7 @@ export function mountAcceptInvitePage() {
 }
 
 export function mountRecoverAccountPage() {
-  const form = document.querySelector("#rahjo-account-recovery");
+  const form = document.querySelector("#crm-account-recovery");
   if (!(form instanceof HTMLFormElement)) return;
   const { token, mode } = tokenFromFragment("reset");
   const identity = form.querySelector("[data-recovery-identity]");
@@ -226,7 +226,7 @@ export async function mountAccountSecurityPage() {
       memberTable(members.members || []);
     }
 
-    const invite = document.querySelector("#rahjo-member-invite");
+    const invite = document.querySelector("#crm-member-invite");
     invite?.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!(invite instanceof HTMLFormElement) || !invite.reportValidity()) return;
@@ -252,7 +252,7 @@ export async function mountAccountSecurityPage() {
       }
     });
 
-    const passwordForm = document.querySelector("#rahjo-password-change");
+    const passwordForm = document.querySelector("#crm-password-change");
     passwordForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!(passwordForm instanceof HTMLFormElement)) return;
@@ -269,7 +269,7 @@ export async function mountAccountSecurityPage() {
       }
     });
 
-    document.getElementById("rahjo-generate-recovery")?.addEventListener("click", async (event) => {
+    document.getElementById("crm-generate-recovery")?.addEventListener("click", async (event) => {
       const button = event.currentTarget;
       try {
         button.disabled = true;
