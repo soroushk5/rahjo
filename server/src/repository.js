@@ -113,10 +113,10 @@ export class CrmRepository {
           []
         ]
       : await Promise.all([
-          this.relaticle.list(context.workspace_id, "companies", "?cursor=true&per_page=100"),
-          this.relaticle.list(context.workspace_id, "people", "?cursor=true&per_page=100"),
-          this.relaticle.list(context.workspace_id, "opportunities", "?cursor=true&per_page=100"),
-          this.relaticle.list(context.workspace_id, "tasks", "?cursor=true&per_page=100")
+          this.relaticle.listAccounts(context.workspace_id),
+          this.relaticle.listContacts(context.workspace_id),
+          this.relaticle.listOpportunities(context.workspace_id),
+          this.relaticle.listTasks(context.workspace_id)
         ]);
     delete extension.crmRefs;
 
@@ -175,8 +175,8 @@ export class CrmRepository {
     let company;
     let person;
     try {
-      company = await this.relaticle.createCompany(context.workspace_id, { name: payload.organization });
-      person = await this.relaticle.createPerson(context.workspace_id, { name: payload.contactName, companyId: company.id });
+      company = await this.relaticle.createAccount(context.workspace_id, { name: payload.organization });
+      person = await this.relaticle.createContact(context.workspace_id, { name: payload.contactName, accountId: company.id });
     } catch (error) {
       await this.database.withWorkspace(context, async (client) => {
         await client.query(
