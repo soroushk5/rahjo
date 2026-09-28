@@ -3,10 +3,10 @@ import postgres from "postgres";
 import { Database } from "../src/database.js";
 import { tokenDigest, verifyPassword } from "../src/security.js";
 
-const adminUrl = process.env.RAHJO_RESTORE_ADMIN_DATABASE_URL;
-const runtimeUrl = process.env.RAHJO_RESTORE_RUNTIME_DATABASE_URL;
-const pepper = process.env.RAHJO_TOKEN_PEPPER;
-const apiToken = process.env.RAHJO_RESTORE_TEST_TOKEN;
+const adminUrl = process.env.CRM_RESTORE_ADMIN_DATABASE_URL || process.env.RAHJO_RESTORE_ADMIN_DATABASE_URL;
+const runtimeUrl = process.env.CRM_RESTORE_RUNTIME_DATABASE_URL || process.env.RAHJO_RESTORE_RUNTIME_DATABASE_URL;
+const pepper = process.env.CRM_TOKEN_PEPPER || process.env.RAHJO_TOKEN_PEPPER;
+const apiToken = process.env.CRM_RESTORE_TEST_TOKEN || process.env.RAHJO_RESTORE_TEST_TOKEN;
 if (!adminUrl || !runtimeUrl || !pepper || !apiToken) throw new Error("Restore smoke environment is incomplete");
 
 const admin = postgres(adminUrl, { max: 1 });
