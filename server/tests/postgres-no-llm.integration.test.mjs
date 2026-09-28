@@ -120,7 +120,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
   for (const key of Object.keys(process.env)) assert.equal(/^((OPENAI|ANTHROPIC|GEMINI|GOOGLE_AI|MISTRAL|COHERE)_.*|RAHJO_LLM_ENABLED)$/.test(key), false, `model variable must be absent: ${key}`);
   const [
     { default: postgres }, { Database }, { CrmRepository }, { RelaticleClient },
-    { createRahjoServer }, { passwordCredential, tokenDigest }
+    { createCrmServer }, { passwordCredential, tokenDigest }
   ] = await Promise.all([
     import("postgres"), import("../src/database.js"), import("../src/repository.js"),
     import("../src/relaticleClient.js"), import("../src/app.js"), import("../src/security.js")
@@ -201,7 +201,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       appEnv: "development", publicOrigin: "http://localhost", corsOrigins: ["http://localhost"],
       tokenPepper: pepper, bodyLimit: 64 * 1024, sessionHours: 12
     };
-    app = createRahjoServer({ config, database, repository, relaticle, workspaceTokens, logger: { info() {}, error() {} } });
+    app = createCrmServer({ config, database, repository, relaticle, workspaceTokens, logger: { info() {}, error() {} } });
     app.listen(0, "127.0.0.1");
     await once(app, "listening");
     t.after(() => app?.close());
