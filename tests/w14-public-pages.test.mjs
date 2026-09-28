@@ -40,7 +40,7 @@ test("public home explains a broad CRM category without narrowing to one industr
   for (const phrase of ["فروش B2B", "بازرگانی", "خدمات و پروژه", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
     assert.match(html, new RegExp(phrase));
   }
-  for (const area of ["حافظهٔ مشتری", "فروش و پیگیری", "پرونده و اجرا", "اقدام بعدی"]) {
+  for (const area of ["حافظهٔ مشتری", "فروش و پیگیری", "وظایف و فعالیت‌ها", "اقدام بعدی"]) {
     assert.match(html, new RegExp(area));
   }
   assert.doesNotMatch(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی|شروع بررسی|sw-showcases/);
