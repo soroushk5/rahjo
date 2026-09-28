@@ -17,21 +17,21 @@ test("explicit demo mode remains isolated from every server API base", () => {
     { mode: "demo", apiBase: "", buildSha: "demo-sha" }
   );
   assert.throws(
-    () => parseRuntimeConfig({ mode: "demo", apiBase: "https://api.rahjo.example", buildSha: "demo-sha" }),
+    () => parseRuntimeConfig({ mode: "demo", apiBase: "https://api.crm.example", buildSha: "demo-sha" }),
     (error) => error instanceof RuntimeConfigurationError && error.code === "mixed-runtime-mode"
   );
 });
 
 test("server mode requires a safe absolute API base", () => {
   assert.equal(
-    parseRuntimeConfig({ mode: "server", apiBase: "https://api.rahjo.example/", buildSha: "server-sha" }).apiBase,
-    "https://api.rahjo.example"
+    parseRuntimeConfig({ mode: "server", apiBase: "https://api.crm.example/", buildSha: "server-sha" }).apiBase,
+    "https://api.crm.example"
   );
   assert.equal(
     parseRuntimeConfig({ mode: "server", apiBase: "http://localhost:8787/", buildSha: "local-sha" }).apiBase,
     "http://localhost:8787"
   );
-  for (const apiBase of ["", "api.rahjo.example", "http://api.rahjo.example", "https://token@api.rahjo.example", "https://api.rahjo.example?token=x"]) {
+  for (const apiBase of ["", "api.crm.example", "http://api.crm.example", "https://token@api.crm.example", "https://api.crm.example?token=x"]) {
     assert.throws(() => parseRuntimeConfig({ mode: "server", apiBase, buildSha: "server-sha" }));
   }
 });
