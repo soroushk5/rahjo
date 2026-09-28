@@ -116,5 +116,5 @@ router = new Router({
   ].map(applyRuntimeBoundary)
 });
 
-window.addEventListener("rahjo:runtime-data", () => router.handleNavigation());
+window.addEventListener("crm:runtime-data", () => router.handleNavigation());
 router.start();
