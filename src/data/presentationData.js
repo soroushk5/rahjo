@@ -49,7 +49,7 @@ export const demoPolicyChecks = Object.freeze([
 ]);
 
 export const demoWorkspace = Object.freeze({
-  name: "محیط نمایشی رهجو",
+  name: "محیط نمایشی CRM",
   organization: "شرکت نمونه سازمانی",
   environment: "Sandbox",
   disclaimer: "تمام اعداد، درخواست‌ها و رخدادهای این محیط نمایشی‌اند و به داده واقعی متصل نیستند."
