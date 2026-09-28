@@ -240,7 +240,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     const csrfBootstrap = await browserCall("/api/v1/session/csrf", { method: "POST", csrf: false });
     assert.equal(csrfBootstrap.status, 200);
     const csrfBootstrapData = await csrfBootstrap.json();
-    assert.match(csrfBootstrapData.csrfToken, /^rahjo_csrf_/);
+    assert.match(csrfBootstrapData.csrfToken, /^crm_csrf_/);
     loginData = { ...loginData, csrfToken: csrfBootstrapData.csrfToken };
     sessionCookie = csrfBootstrap.headers.get("set-cookie").split(";")[0];
     assert.notEqual(sessionCookie, staleSessionCookie);
