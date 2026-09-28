@@ -16,7 +16,7 @@ export class Database {
       max: 12,
       idle_timeout: 30,
       connect_timeout: 5,
-      connection: { application_name: "rahjo-crm-bff" }
+      connection: { application_name: "crm-core-bff" }
     });
     this.executor = executor(this.sql);
   }
