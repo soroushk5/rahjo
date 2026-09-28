@@ -26,15 +26,15 @@ jobs:
           node-version: 22
       - name: Require the production origin
         env:
-          SITE_ORIGIN: ${{ vars.RAHJO_PRODUCTION_ORIGIN }}
+          SITE_ORIGIN: ${{ vars.CRM_PRODUCTION_ORIGIN || vars.RAHJO_PRODUCTION_ORIGIN }}
         run: test -n "$SITE_ORIGIN"
       - name: Build and verify production public files
         env:
           DEPLOY_MODE: production
-          SITE_ORIGIN: ${{ vars.RAHJO_PRODUCTION_ORIGIN }}
+          SITE_ORIGIN: ${{ vars.CRM_PRODUCTION_ORIGIN || vars.RAHJO_PRODUCTION_ORIGIN }}
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
-          RAHJO_RUNTIME_MODE: ${{ vars.RAHJO_RUNTIME_MODE }}
-          RAHJO_API_BASE: ${{ vars.RAHJO_API_BASE }}
+          CRM_RUNTIME_MODE: ${{ vars.CRM_RUNTIME_MODE || vars.RAHJO_RUNTIME_MODE }}
+          CRM_API_BASE: ${{ vars.CRM_API_BASE || vars.RAHJO_API_BASE }}
         run: |
           node scripts/build-hostinger.mjs
           node scripts/smoke-hostinger.mjs
@@ -67,7 +67,7 @@ jobs:
           fi
       - name: Verify the public Hostinger origin actually deployed this source SHA
         env:
-          SITE_ORIGIN: ${{ vars.RAHJO_PRODUCTION_ORIGIN }}
+          SITE_ORIGIN: ${{ vars.CRM_PRODUCTION_ORIGIN || vars.RAHJO_PRODUCTION_ORIGIN }}
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
