@@ -118,3 +118,94 @@ test("MCP identity fails closed for a swapped team token or missing ability", as
     (error) => error.status === 503 && error.code === "RELATICLE_TOKEN_ABILITY_MISMATCH"
   );
 });
+
+
+test("Relaticle adapter maps standard Opportunity Task and Interaction writes to documented REST fields", async () => {
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    const parsed = new URL(String(url));
+    const body = options.body ? JSON.parse(options.body) : undefined;
+    calls.push({ path: parsed.pathname, method: options.method, body });
+    const type = parsed.pathname.includes("/opportunities") ? "opportunities"
+      : parsed.pathname.includes("/tasks") ? "tasks"
+        : "notes";
+    const id = type === "opportunities" ? "OPP-REL-1" : type === "tasks" ? "TASK-REL-1" : "NOTE-REL-1";
+    return new Response(JSON.stringify({ data: { id, type, attributes: body ?? {} } }), {
+      status: options.method === "POST" ? 201 : 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  };
+  const client = new RelaticleClient({
+    baseUrl: "https://crm.example.test/api/v1",
+    workspaceTokens,
+    fetchImpl
+  });
+
+  await client.createOpportunity(workspaceId, {
+    name: "Enterprise Deal",
+    accountId: "COMPANY-1",
+    contactId: "PERSON-1",
+    stage: "Proposal"
+  });
+  await client.updateOpportunityStage(workspaceId, "OPP-REL-1", { stage: "Negotiation" });
+  await client.createTask(workspaceId, {
+    title: "Follow up",
+    accountId: "COMPANY-1",
+    contactId: "PERSON-1",
+    opportunityId: "OPP-REL-1",
+    status: "To do"
+  });
+  await client.updateTaskStatus(workspaceId, "TASK-REL-1", { status: "Done" });
+  await client.createInteraction(workspaceId, {
+    title: "Call note",
+    body: "Customer asked for revised proposal",
+    accountId: "COMPANY-1",
+    contactId: "PERSON-1",
+    opportunityId: "OPP-REL-1"
+  });
+
+  assert.deepEqual(calls, [
+    {
+      path: "/api/v1/opportunities",
+      method: "POST",
+      body: {
+        name: "Enterprise Deal",
+        company_id: "COMPANY-1",
+        contact_id: "PERSON-1",
+        custom_fields: { stage: "Proposal" }
+      }
+    },
+    {
+      path: "/api/v1/opportunities/OPP-REL-1",
+      method: "PUT",
+      body: { custom_fields: { stage: "Negotiation" } }
+    },
+    {
+      path: "/api/v1/tasks",
+      method: "POST",
+      body: {
+        title: "Follow up",
+        company_ids: ["COMPANY-1"],
+        people_ids: ["PERSON-1"],
+        opportunity_ids: ["OPP-REL-1"],
+        custom_fields: { status: "To do" }
+      }
+    },
+    {
+      path: "/api/v1/tasks/TASK-REL-1",
+      method: "PUT",
+      body: { custom_fields: { status: "Done" } }
+    },
+    {
+      path: "/api/v1/notes",
+      method: "POST",
+      body: {
+        title: "Call note",
+        company_ids: ["COMPANY-1"],
+        people_ids: ["PERSON-1"],
+        opportunity_ids: ["OPP-REL-1"],
+        custom_fields: { body: "Customer asked for revised proposal" }
+      }
+    }
+  ]);
+});
