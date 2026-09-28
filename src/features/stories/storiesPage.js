@@ -90,7 +90,7 @@ export function renderDataCatalogPage() {
       <div class="container split-heading">
         <div>
           <p class="eyebrow">DATA ATLAS</p>
-          <h1>اطلس داده رهجو</h1>
+          <h1>اطلس داده CRM</h1>
         </div>
         <p>
           یک نمای طبقه‌بندی‌شده از حوزه‌های داده‌ای، سطح حساسیت و مدل دسترسی.
