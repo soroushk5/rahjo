@@ -10,7 +10,7 @@ test("compact landing makes category, audience and flow concrete", () => {
   for (const phrase of ["فروش B2B", "بازرگانی", "خدمات و پروژه", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
     assert.match(html, new RegExp(phrase));
   }
-  for (const phrase of ["مشتری", "فرصت", "پرونده", "نتیجه", "اقدام بعدی"]) {
+  for (const phrase of ["مشتری", "فرصت", "فعالیت", "پیگیری", "اقدام بعدی"]) {
     assert.match(html, new RegExp(phrase));
   }
   assert.match(html, /sw-hero-card/);
