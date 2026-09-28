@@ -1,4 +1,4 @@
-const STORAGE_KEY = "rahjo.prototype.v1";
+const STORAGE_KEY = "crm.prototype.v1";
 
 /** @typedef {{step: "service" | "details" | "review" | "result", payload: {serviceId: string | null, organization: string, purpose: string, monthlyVolume: string}, referenceId: string | null}} RequestDraft */
 /** @typedef {{referenceId: string, serviceId: string, organization: string, purpose: string, monthlyVolume: string, status: string, createdAt: string}} PrototypeAccessRequest */
