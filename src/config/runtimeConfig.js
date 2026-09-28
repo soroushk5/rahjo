@@ -12,7 +12,7 @@ export class RuntimeConfigurationError extends Error {
 /** @param {unknown} value */
 function requirePlainObject(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new RuntimeConfigurationError("Rahjo runtime configuration must be an object.", "invalid-config");
+    throw new RuntimeConfigurationError("CRM runtime configuration must be an object.", "invalid-config");
   }
   return /** @type {Record<string, unknown>} */ (value);
 }
@@ -78,15 +78,15 @@ export function parseRuntimeConfig(value) {
 
 /** @param {Document} [target] */
 export function readRuntimeConfig(target = document) {
-  const node = target.querySelector("#rahjo-runtime-config");
+  const node = target.querySelector("#crm-runtime-config");
   if (!node) {
-    throw new RuntimeConfigurationError("Rahjo runtime configuration is missing.", "missing-config");
+    throw new RuntimeConfigurationError("CRM runtime configuration is missing.", "missing-config");
   }
 
   try {
     return parseRuntimeConfig(JSON.parse(node.textContent ?? ""));
   } catch (error) {
     if (error instanceof RuntimeConfigurationError) throw error;
-    throw new RuntimeConfigurationError("Rahjo runtime configuration is not valid JSON.", "invalid-json");
+    throw new RuntimeConfigurationError("CRM runtime configuration is not valid JSON.", "invalid-json");
   }
 }
