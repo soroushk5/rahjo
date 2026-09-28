@@ -38,6 +38,80 @@ jobs:
         run: |
           node scripts/build-hostinger.mjs
           node scripts/smoke-hostinger.mjs
+      - name: Verify tracked CRM API deployment reached this contract
+        env:
+          API_BASE: ${{ vars.CRM_API_BASE || vars.RAHJO_API_BASE }}
+        run: |
+          set -euo pipefail
+          api="${API_BASE%/}"
+          test -n "$api"
+          for attempt in $(seq 1 24); do
+            health="$(curl --fail --silent --show-error --location               --connect-timeout 10 --max-time 20               -H 'Cache-Control: no-cache' -H 'Pragma: no-cache'               "$api/healthz?contract=2&attempt=$attempt" || true)"
+            if HEALTH="$health" node --input-type=module -e '
+              const health = JSON.parse(process.env.HEALTH || "{}");
+              if (health.service === "crm-core-bff" && Number(health.contractVersion) >= 2) process.exit(0);
+              process.exit(1);
+            '; then
+              echo "Live CRM API contract v2 verified."
+              break
+            fi
+            if [ "$attempt" = 24 ]; then
+              echo "::error::Hostinger Node Web App has not converged to CRM API contract v2."
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: Verify live API rate limiting contract
+        env:
+          API_BASE: ${{ vars.CRM_API_BASE || vars.RAHJO_API_BASE }}
+          SITE_ORIGIN: ${{ vars.CRM_PRODUCTION_ORIGIN || vars.RAHJO_PRODUCTION_ORIGIN }}
+        run: |
+          set -euo pipefail
+          api="${API_BASE%/}"
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          trap 'rm -f "$headers" "$body"' EXIT
+          got_429=0
+          for attempt in $(seq 1 12); do
+            code="$(curl --silent --show-error --location               --connect-timeout 10 --max-time 20               -D "$headers" -o "$body" -w '%{http_code}'               -X POST "$api/api/v1/session"               -H "Origin: $SITE_ORIGIN"               -H 'Content-Type: application/json'               --data '{"workspaceSlug":"rate-limit-probe","email":"probe@example.invalid","password":"invalid-password"}')"
+            if [ "$code" = 429 ]; then
+              got_429=1
+              break
+            fi
+            test "$code" = 401
+          done
+          test "$got_429" = 1
+          grep -qi '^retry-after:' "$headers"
+          BODY="$(cat "$body")" node --input-type=module -e '
+            const body = JSON.parse(process.env.BODY || "{}");
+            if (body.code !== "RATE_LIMITED") process.exit(1);
+          '
+          echo "Live 429 + Retry-After contract verified."
+
+      - name: Verify live public intake idempotency
+        env:
+          API_BASE: ${{ vars.CRM_API_BASE || vars.RAHJO_API_BASE }}
+          SITE_ORIGIN: ${{ vars.CRM_PRODUCTION_ORIGIN || vars.RAHJO_PRODUCTION_ORIGIN }}
+        run: |
+          set -euo pipefail
+          api="${API_BASE%/}"
+          key="crm-core-live-acceptance-v1"
+          payload='{"organization":"CRM Core Acceptance Probe","contactName":"CI Acceptance","email":"crm-core-acceptance@example.test","purpose":"Automated live public-intake acceptance; safe to ignore."}'
+          first="$(mktemp)"
+          second="$(mktemp)"
+          trap 'rm -f "$first" "$second"' EXIT
+          first_code="$(curl --silent --show-error --location             --connect-timeout 10 --max-time 20             -o "$first" -w '%{http_code}'             -X POST "$api/api/v1/public/intakes"             -H "Origin: $SITE_ORIGIN"             -H 'Content-Type: application/json'             -H "Idempotency-Key: $key"             --data "$payload")"
+          case "$first_code" in 200|201) ;; *) cat "$first"; exit 1 ;; esac
+          second_code="$(curl --silent --show-error --location             --connect-timeout 10 --max-time 20             -o "$second" -w '%{http_code}'             -X POST "$api/api/v1/public/intakes"             -H "Origin: $SITE_ORIGIN"             -H 'Content-Type: application/json'             -H "Idempotency-Key: $key"             --data "$payload")"
+          test "$second_code" = 200
+          FIRST="$(cat "$first")" SECOND="$(cat "$second")" node --input-type=module -e '
+            const first = JSON.parse(process.env.FIRST || "{}");
+            const second = JSON.parse(process.env.SECOND || "{}");
+            if (first.status !== "received" || second.status !== "received" || second.replayed !== true) process.exit(1);
+          '
+          echo "Live public intake + idempotent replay verified."
+
       - name: Publish generated branch without rewriting history
         env:
           GH_TOKEN: ${{ github.token }}
