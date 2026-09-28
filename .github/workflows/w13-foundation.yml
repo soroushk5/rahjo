@@ -72,6 +72,7 @@ jobs:
           TEST_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:5432/relaticle
           TEST_RAHJO_DATABASE_URL: postgresql://rahjo_app:rahjo-runtime-ci-only-password-00000001@127.0.0.1:5432/relaticle
           CRM_TOKEN_PEPPER: crm-ci-token-pepper-0000000000000001
+          RAHJO_TOKEN_PEPPER: crm-ci-token-pepper-0000000000000001
         run: node --test tests/postgres-no-llm.integration.test.mjs
 
       - name: Audit runtime role and RLS policy inventory
@@ -92,8 +93,10 @@ jobs:
           DB_PASSWORD: relaticle-compose-ci-only
           RAHJO_SOURCE_SHA: ${{ github.sha }}
           CRM_MIGRATION_DATABASE_URL: postgresql://relaticle:relaticle-compose-ci-only@postgres:5432/relaticle
+          RAHJO_MIGRATION_DATABASE_URL: postgresql://relaticle:relaticle-compose-ci-only@postgres:5432/relaticle
           RAHJO_DATABASE_URL: postgresql://rahjo_app:rahjo-compose-runtime-ci-only-00000001@postgres:5432/relaticle
           CRM_DB_RUNTIME_PASSWORD: rahjo-compose-runtime-ci-only-00000001
+          RAHJO_DB_RUNTIME_PASSWORD: rahjo-compose-runtime-ci-only-00000001
           RAHJO_PUBLIC_ORIGIN: https://api.example.test
           RAHJO_CORS_ORIGINS: https://rahjo.example.test
           RAHJO_TOKEN_PEPPER: rahjo-compose-pepper-0000000000000001
@@ -127,8 +130,10 @@ jobs:
           DB_PASSWORD: relaticle-compose-ci-only
           RAHJO_SOURCE_SHA: ${{ github.sha }}
           CRM_MIGRATION_DATABASE_URL: postgresql://relaticle:relaticle-compose-ci-only@postgres:5432/relaticle
+          RAHJO_MIGRATION_DATABASE_URL: postgresql://relaticle:relaticle-compose-ci-only@postgres:5432/relaticle
           RAHJO_DATABASE_URL: postgresql://rahjo_app:rahjo-compose-runtime-ci-only-00000001@postgres:5432/relaticle
           CRM_DB_RUNTIME_PASSWORD: rahjo-compose-runtime-ci-only-00000001
+          RAHJO_DB_RUNTIME_PASSWORD: rahjo-compose-runtime-ci-only-00000001
           RAHJO_PUBLIC_ORIGIN: https://api.example.test
           RAHJO_CORS_ORIGINS: https://rahjo.example.test
           RAHJO_TOKEN_PEPPER: rahjo-compose-pepper-0000000000000001
@@ -139,8 +144,9 @@ jobs:
       - name: Disposable legacy-schema backup and restore drill
         env:
           PGPASSWORD: postgres-ci-only
-          RAHJO_TOKEN_PEPPER: rahjo-ci-token-pepper-0000000000000001
-          CRM_RESTORE_TEST_TOKEN: crm_test_workspace_a_12345678901234567890
+          CRM_TOKEN_PEPPER: crm-ci-token-pepper-0000000000000001
+          RAHJO_TOKEN_PEPPER: crm-ci-token-pepper-0000000000000001
+          CRM_RESTORE_TEST_TOKEN: rahjo_test_workspace_a_12345678901234567890
           CRM_RESTORE_ADMIN_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:55432/rahjo_restore_drill
           CRM_RESTORE_RUNTIME_DATABASE_URL: postgresql://rahjo_app:rahjo-runtime-ci-only-password-00000001@127.0.0.1:55432/rahjo_restore_drill
         run: |
