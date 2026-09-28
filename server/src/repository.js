@@ -7,7 +7,7 @@ function record(row) {
   return row ?? null;
 }
 
-async function audit(client, context, { eventType, entityType, entityId, correlationId, before = null, after = null, source = "rahjo-bff" }) {
+async function audit(client, context, { eventType, entityType, entityId, correlationId, before = null, after = null, source = "crm-bff" }) {
   await client.query(
     `INSERT INTO rahjo.audit_events
        (workspace_id, event_type, entity_type, entity_id, actor_membership_id, source, correlation_id, before_state, after_state)
@@ -16,7 +16,7 @@ async function audit(client, context, { eventType, entityType, entityId, correla
   );
 }
 
-export class RahjoRepository {
+export class CrmRepository {
   constructor({ database, relaticle }) {
     this.database = database;
     this.relaticle = relaticle;
@@ -126,8 +126,8 @@ export class RahjoRepository {
       workspace: { id: context.workspace_id, slug: context.workspace_slug, name: context.workspace_name },
       user: { id: context.user_id, email: context.user_email, name: context.display_name, role: context.role },
       projection: {
-        accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "rahjo-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
-        contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "rahjo-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
         opportunities: opportunities.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
         tasks: tasks.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
         ...extension
