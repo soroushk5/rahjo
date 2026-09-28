@@ -6,14 +6,14 @@ import { passwordCredential, payloadDigest, verifyPassword } from "../src/securi
 
 const validEnv = {
   NODE_ENV: "production",
-  RAHJO_DATABASE_URL: "postgresql://rahjo_app:secret@postgres/relaticle",
-  RAHJO_TOKEN_PEPPER: "p".repeat(32),
+  CRM_DATABASE_URL: "postgresql://rahjo_app:secret@postgres/relaticle",
+  CRM_TOKEN_PEPPER: "p".repeat(32),
   RELATICLE_BASE_URL: "http://relaticle-app:8080/api/v1",
   RELATICLE_MCP_URL: "http://relaticle-app:8080/mcp",
   RELATICLE_TOKEN_FILE: "/run/secrets/map.json",
-  RAHJO_CORS_ORIGINS: "https://rahjo.ir,https://app.rahjo.ir",
-  RAHJO_PUBLIC_ORIGIN: "https://api.rahjo.ir",
-  RAHJO_ALLOW_INTERNAL_HTTP: "true"
+  CRM_CORS_ORIGINS: "https://crm.example,https://app.crm.example",
+  CRM_PUBLIC_ORIGIN: "https://api.crm.example",
+  CRM_ALLOW_INTERNAL_HTTP: "true"
 };
 
 test("production configuration is server-only and no-LLM", () => {
@@ -21,28 +21,28 @@ test("production configuration is server-only and no-LLM", () => {
   assert.equal(config.dataMode, "server");
   assert.equal(config.llmEnabled, false);
   assert.equal(config.port, 8787);
-  assert.deepEqual(config.corsOrigins, ["https://rahjo.ir", "https://app.rahjo.ir"]);
+  assert.deepEqual(config.corsOrigins, ["https://crm.example", "https://app.crm.example"]);
   assert.equal(config.relaticleBaseUrl, "http://relaticle-app:8080/api/v1");
   assert.equal(config.relaticleMcpUrl, "http://relaticle-app:8080/mcp");
 });
 
 test("managed web app PORT takes precedence over the local default", () => {
-  const config = loadConfig({ ...validEnv, PORT: "3100", RAHJO_API_PORT: "8787" });
+  const config = loadConfig({ ...validEnv, PORT: "3100", CRM_API_PORT: "8787" });
   assert.equal(config.port, 3100);
 });
 
 test("configuration rejects an enabled model provider and insecure public URLs", () => {
-  assert.throws(() => loadConfig({ ...validEnv, RAHJO_LLM_ENABLED: "true" }), /forbids/);
-  assert.throws(() => loadConfig({ ...validEnv, RAHJO_PUBLIC_ORIGIN: "http://api.rahjo.ir" }), /HTTPS/);
-  assert.throws(() => loadConfig({ ...validEnv, RAHJO_CORS_ORIGINS: "*" }));
+  assert.throws(() => loadConfig({ ...validEnv, CRM_LLM_ENABLED: "true" }), /forbids/);
+  assert.throws(() => loadConfig({ ...validEnv, CRM_PUBLIC_ORIGIN: "http://api.crm.example" }), /HTTPS/);
+  assert.throws(() => loadConfig({ ...validEnv, CRM_CORS_ORIGINS: "*" }));
 });
 
 test("native deferred bridge is explicit and cannot activate accidentally", () => {
-  assert.throws(() => loadConfig({ ...validEnv, RAHJO_CRM_MODE: "native_deferred" }), /INTERIM_ACK/);
+  assert.throws(() => loadConfig({ ...validEnv, CRM_MODE: "native_deferred" }), /INTERIM_ACK/);
   const config = loadConfig({
     ...validEnv,
-    RAHJO_CRM_MODE: "native_deferred",
-    RAHJO_INTERIM_ACK: "true",
+    CRM_MODE: "native_deferred",
+    CRM_INTERIM_ACK: "true",
     RELATICLE_BASE_URL: "",
     RELATICLE_MCP_URL: "",
     RELATICLE_TOKEN_FILE: ""
