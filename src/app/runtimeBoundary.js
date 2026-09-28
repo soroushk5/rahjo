@@ -9,7 +9,7 @@ const PUBLIC_SERVER_PATHS = new Set(["/", "/product", "/services", "/use-cases",
 /** @param {{render:() => string}} route */
 function renderServerPublicRoute(route) {
   return route.render()
-    .replaceAll("ورود به CRM", "ورود به رهجو")
+    .replaceAll("ورود به CRM", "ورود به CRM")
     .replaceAll("دیدن در دمو", "ورود به محیط عملیاتی")
     .replaceAll("دموی تعاملی", "محیط عملیاتی");
 }
