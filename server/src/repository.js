@@ -16,6 +16,39 @@ async function audit(client, context, { eventType, entityType, entityId, correla
   );
 }
 
+async function persistCrmEntity(client, context, {
+  entityType,
+  corePrefix,
+  entity,
+  eventType,
+  correlationId,
+  source
+}) {
+  const coreId = publicId(corePrefix);
+  const persisted = await client.query(
+    `INSERT INTO rahjo.crm_entity_refs
+       (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+     VALUES ($1,$2,$3,$4,$5)
+     ON CONFLICT (workspace_id, entity_type, relaticle_id)
+     DO UPDATE SET
+       snapshot = rahjo.crm_entity_refs.snapshot || EXCLUDED.snapshot,
+       synced_at = now(),
+       updated_at = now()
+     RETURNING rahjo_id`,
+    [context.workspace_id, entityType, coreId, entity.id, entity.attributes]
+  );
+  const stableCoreId = persisted.rows[0]?.rahjo_id ?? coreId;
+  await audit(client, context, {
+    eventType,
+    entityType,
+    entityId: stableCoreId,
+    correlationId,
+    after: { id: entity.id, coreId: stableCoreId, ...entity.attributes },
+    source
+  });
+  return stableCoreId;
+}
+
 export class CrmRepository {
   constructor({ database, relaticle }) {
     this.database = database;
@@ -26,7 +59,7 @@ export class CrmRepository {
     requireScope(context, "read");
     const extension = await this.database.withWorkspace(context, async (client) => {
       const queries = await Promise.all([
-        client.query("SELECT entity_type, relaticle_id AS id, snapshot, created_at, updated_at FROM rahjo.crm_entity_refs WHERE workspace_id=$1 AND entity_type IN ('account','contact') ORDER BY updated_at DESC, id DESC LIMIT 400", [context.workspace_id]),
+        client.query("SELECT entity_type, rahjo_id AS core_id, relaticle_id AS id, snapshot, created_at, updated_at FROM rahjo.crm_entity_refs WHERE workspace_id=$1 AND entity_type IN ('account','contact','opportunity','task','interaction') ORDER BY updated_at DESC, id DESC LIMIT 800", [context.workspace_id]),
         client.query("SELECT public_id AS id, name, description, capability_status, execution_mode, version, updated_at FROM rahjo.services WHERE workspace_id=$1 ORDER BY updated_at DESC, id DESC LIMIT 200", [context.workspace_id]),
         client.query(`SELECT capability.public_id AS id, service.public_id AS service_id,
                              capability.capability_code, capability.eligibility_status,
@@ -105,18 +138,20 @@ export class CrmRepository {
     });
 
     const deferred = this.relaticle.mode === "native_deferred";
-    const [companies, people, opportunities, tasks] = deferred
+    const [companies, people, opportunities, tasks, interactions] = deferred
       ? [
-          extension.crmRefs.filter((item) => item.entity_type === "account").map((item) => ({ id: item.id, type: "companies", attributes: item.snapshot })),
-          extension.crmRefs.filter((item) => item.entity_type === "contact").map((item) => ({ id: item.id, type: "people", attributes: item.snapshot })),
-          [],
-          []
+          extension.crmRefs.filter((item) => item.entity_type === "account").map((item) => ({ id: item.id, coreId: item.core_id, type: "companies", attributes: item.snapshot })),
+          extension.crmRefs.filter((item) => item.entity_type === "contact").map((item) => ({ id: item.id, coreId: item.core_id, type: "people", attributes: item.snapshot })),
+          extension.crmRefs.filter((item) => item.entity_type === "opportunity").map((item) => ({ id: item.id, coreId: item.core_id, type: "opportunities", attributes: item.snapshot })),
+          extension.crmRefs.filter((item) => item.entity_type === "task").map((item) => ({ id: item.id, coreId: item.core_id, type: "tasks", attributes: item.snapshot })),
+          extension.crmRefs.filter((item) => item.entity_type === "interaction").map((item) => ({ id: item.id, coreId: item.core_id, type: "notes", attributes: item.snapshot }))
         ]
       : await Promise.all([
           this.relaticle.listAccounts(context.workspace_id),
           this.relaticle.listContacts(context.workspace_id),
           this.relaticle.listOpportunities(context.workspace_id),
-          this.relaticle.listTasks(context.workspace_id)
+          this.relaticle.listTasks(context.workspace_id),
+          this.relaticle.listInteractions(context.workspace_id)
         ]);
     delete extension.crmRefs;
 
@@ -128,8 +163,9 @@ export class CrmRepository {
       projection: {
         accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
         contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
-        opportunities: opportunities.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
-        tasks: tasks.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
+        opportunities: opportunities.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        tasks: tasks.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        interactions: interactions.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
         ...extension
       }
     };
@@ -141,24 +177,17 @@ export class CrmRepository {
     const name = normalizePersianText(input?.name, { max: 180, required: true });
     const account = await this.relaticle.createAccount(context.workspace_id, { name });
 
-    if (this.relaticle.mode === "native_deferred") {
-      await this.database.withWorkspace(context, async (client) => {
-        await client.query(
-          `INSERT INTO rahjo.crm_entity_refs (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
-           VALUES ($1,'account',$2,$3,$4)`,
-          [context.workspace_id, publicId("ACC"), account.id, account.attributes]
-        );
-        await audit(client, context, {
-          eventType: "crm.account.created",
-          entityType: "account",
-          entityId: account.id,
-          correlationId,
-          after: { id: account.id, name, source: "crm-native-bridge" }
-        });
-      });
-    }
+    const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
+    const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
+      entityType: "account",
+      corePrefix: "ACC",
+      entity: account,
+      eventType: "crm.account.created",
+      correlationId,
+      source
+    }));
 
-    return { id: account.id, ...account.attributes, source: this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle" };
+    return { id: account.id, coreId, ...account.attributes, source };
   }
 
   async createContact(context, input, correlationId) {
@@ -168,24 +197,118 @@ export class CrmRepository {
     const accountId = normalizePersianText(input?.accountId, { max: 180, required: true });
     const contact = await this.relaticle.createContact(context.workspace_id, { name, accountId });
 
-    if (this.relaticle.mode === "native_deferred") {
-      await this.database.withWorkspace(context, async (client) => {
-        await client.query(
-          `INSERT INTO rahjo.crm_entity_refs (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
-           VALUES ($1,'contact',$2,$3,$4)`,
-          [context.workspace_id, publicId("CON"), contact.id, contact.attributes]
-        );
-        await audit(client, context, {
-          eventType: "crm.contact.created",
-          entityType: "contact",
-          entityId: contact.id,
-          correlationId,
-          after: { id: contact.id, name, accountId, source: "crm-native-bridge" }
-        });
-      });
-    }
+    const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
+    const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
+      entityType: "contact",
+      corePrefix: "CON",
+      entity: contact,
+      eventType: "crm.contact.created",
+      correlationId,
+      source
+    }));
 
-    return { id: contact.id, ...contact.attributes, source: this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle" };
+    return { id: contact.id, coreId, ...contact.attributes, source };
+  }
+
+  async createOpportunity(context, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const name = normalizePersianText(input?.name, { max: 255, required: true });
+    const accountId = normalizePersianText(input?.accountId, { max: 180 });
+    const contactId = normalizePersianText(input?.contactId, { max: 180 });
+    const stage = normalizePersianText(input?.stage, { max: 120 });
+    const opportunity = await this.relaticle.createOpportunity(context.workspace_id, { name, accountId, contactId, stage });
+    const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
+    const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
+      entityType: "opportunity",
+      corePrefix: "OPP",
+      entity: opportunity,
+      eventType: "crm.opportunity.created",
+      correlationId,
+      source
+    }));
+    return { id: opportunity.id, coreId, ...opportunity.attributes, source };
+  }
+
+  async updateOpportunityStage(context, opportunityId, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const id = normalizePersianText(opportunityId, { max: 180, required: true });
+    const stage = normalizePersianText(input?.stage, { max: 120, required: true });
+    const opportunity = await this.relaticle.updateOpportunityStage(context.workspace_id, id, { stage });
+    const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
+    const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
+      entityType: "opportunity",
+      corePrefix: "OPP",
+      entity: opportunity,
+      eventType: "crm.opportunity.stage_changed",
+      correlationId,
+      source
+    }));
+    return { id: opportunity.id, coreId, ...opportunity.attributes, source };
+  }
+
+  async createTask(context, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const title = normalizePersianText(input?.title, { max: 255, required: true });
+    const accountId = normalizePersianText(input?.accountId, { max: 180 });
+    const contactId = normalizePersianText(input?.contactId, { max: 180 });
+    const opportunityId = normalizePersianText(input?.opportunityId, { max: 180 });
+    const status = normalizePersianText(input?.status, { max: 120 });
+    const task = await this.relaticle.createTask(context.workspace_id, { title, accountId, contactId, opportunityId, status });
+    const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
+    const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
+      entityType: "task",
+      corePrefix: "TSK",
+      entity: task,
+      eventType: "crm.task.created",
+      correlationId,
+      source
+    }));
+    return { id: task.id, coreId, ...task.attributes, source };
+  }
+
+  async updateTaskStatus(context, taskId, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const id = normalizePersianText(taskId, { max: 180, required: true });
+    const status = normalizePersianText(input?.status, { max: 120, required: true });
+    const task = await this.relaticle.updateTaskStatus(context.workspace_id, id, { status });
+    const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
+    const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
+      entityType: "task",
+      corePrefix: "TSK",
+      entity: task,
+      eventType: "crm.task.status_changed",
+      correlationId,
+      source
+    }));
+    return { id: task.id, coreId, ...task.attributes, source };
+  }
+
+  async appendInteraction(context, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const title = normalizePersianText(input?.title, { max: 255, required: true });
+    const body = normalizePersianText(input?.body, { max: 8000 });
+    const accountId = normalizePersianText(input?.accountId, { max: 180 });
+    const contactId = normalizePersianText(input?.contactId, { max: 180 });
+    const opportunityId = normalizePersianText(input?.opportunityId, { max: 180 });
+    if (!accountId && !contactId && !opportunityId) {
+      throw problems.validation("Interaction must be linked to an account, contact, or opportunity");
+    }
+    const interaction = await this.relaticle.createInteraction(context.workspace_id, { title, body, accountId, contactId, opportunityId });
+    const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
+    const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
+      entityType: "interaction",
+      corePrefix: "INT",
+      entity: interaction,
+      eventType: "crm.interaction.created",
+      correlationId,
+      source
+    }));
+    return { id: interaction.id, coreId, ...interaction.attributes, source };
   }
 
   async createIntake(context, input, rawIdempotencyKey, correlationId) {
