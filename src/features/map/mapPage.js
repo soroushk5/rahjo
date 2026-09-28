@@ -84,7 +84,7 @@ export function renderMapPage() {
       <div class="container split-heading">
         <div>
           <p class="eyebrow">DATA ECOSYSTEM MAP</p>
-          <h1>نقشه اکوسیستم داده رهجو</h1>
+          <h1>نقشه اکوسیستم داده CRM</h1>
         </div>
         <p>
           منابع در بالا، لایه کنترل در میانه، کانال‌های تحویل پایین‌تر و صنایع مصرف‌کننده در انتها قرار گرفته‌اند.
@@ -96,7 +96,7 @@ export function renderMapPage() {
     <section class="container ecosystem-layout">
       <div class="ecosystem-map" aria-label="نقشه تعاملی اکوسیستم داده">
         <div class="ecosystem-band ecosystem-band--sources"><span>منابع داده</span></div>
-        <div class="ecosystem-band ecosystem-band--control"><span>لایه کنترل رهجو</span></div>
+        <div class="ecosystem-band ecosystem-band--control"><span>لایه کنترل CRM</span></div>
         <div class="ecosystem-band ecosystem-band--delivery"><span>تحویل و عملیات</span></div>
         <div class="ecosystem-band ecosystem-band--industry"><span>کاربرد سازمانی</span></div>
         <svg class="ecosystem-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
