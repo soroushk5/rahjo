@@ -108,8 +108,8 @@ function fragmentUrl(origin, path, values) {
   return target.toString();
 }
 
-export function createRahjoServer({ config, database, repository, relaticle, workspaceTokens, logger = console }) {
-  const sessionCookie = config.appEnv === "production" ? "__Host-rahjo_session" : "rahjo_session";
+export function createCrmServer({ config, database, repository, relaticle, workspaceTokens, logger = console }) {
+  const sessionCookie = config.appEnv === "production" ? "__Host-crm_session" : "crm_session";
   const dummyCredential = passwordCredential("not-a-real-password-value");
   const loginWindows = new Map();
   const accountWindows = new Map();
@@ -164,8 +164,8 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
   }
 
   async function issueBrowserSession(membershipId, response, requestId, corsHeaders) {
-    const rawSession = opaqueToken("rahjo_session");
-    const csrfToken = opaqueToken("rahjo_csrf");
+    const rawSession = opaqueToken("crm_session");
+    const csrfToken = opaqueToken("crm_csrf");
     const expiresAt = new Date(Date.now() + config.sessionHours * 60 * 60_000);
     const created = await database.createSession(
       membershipId,
@@ -217,7 +217,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
         status = 200;
         json(response, status, {
           status: "ok",
-          service: "rahjo-crm-bff",
+          service: "crm-core-bff",
           dataMode: "server",
           crmMode: config.crmMode,
           interim: config.interim,
@@ -265,7 +265,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
       // Hostinger's edge may require a one-time top-level JavaScript challenge
       // before credentialed API calls are allowed. This endpoint is deliberately
       // data-free: after the edge has established its browser cookie, it redirects
-      // only to an explicitly allowlisted Rahjo UI origin.
+      // only to an explicitly allowlisted CRM UI origin.
       if (request.method === "GET" && url.pathname === "/browser-bootstrap") {
         const rawReturn = url.searchParams.get("return");
         let returnUrl;
@@ -391,8 +391,8 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
       }
       if (request.method === "POST" && url.pathname === "/api/v1/session/csrf") {
         if (context.auth_method !== "cookie") throw problems.forbidden();
-        const rawSession = opaqueToken("rahjo_session");
-        const csrfToken = opaqueToken("rahjo_csrf");
+        const rawSession = opaqueToken("crm_session");
+        const csrfToken = opaqueToken("crm_csrf");
         const expiresAt = new Date(Date.now() + config.sessionHours * 60 * 60_000);
         const renewed = await database.renewSession(
           context.membership_id,
@@ -439,7 +439,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
         const displayName = normalizePersianText(body.displayName, { max: 160, required: true });
         const role = typeof body.role === "string" ? body.role : "viewer";
         if (!new Set(["admin", "operator", "viewer"]).has(role)) throw problems.validation("Invitation role is invalid");
-        const rawToken = opaqueToken("rahjo_invite");
+        const rawToken = opaqueToken("crm_invite");
         const expiresAt = new Date(Date.now() + 48 * 60 * 60_000);
         const invitation = await database.createMemberInvitation(
           context.workspace_id, context.membership_id, email, displayName, role, secretDigest(rawToken), expiresAt
@@ -465,7 +465,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
         requireRole(context, ["owner", "admin"]);
         requireCsrf(request, context);
         const membershipId = decodeURIComponent(memberReset[1]);
-        const rawToken = opaqueToken("rahjo_reset");
+        const rawToken = opaqueToken("crm_reset");
         const expiresAt = new Date(Date.now() + 30 * 60_000);
         const created = await database.createPasswordResetToken(
           context.workspace_id, membershipId, context.membership_id, secretDigest(rawToken), expiresAt
@@ -502,7 +502,7 @@ export function createRahjoServer({ config, database, repository, relaticle, wor
 
       if (request.method === "POST" && url.pathname === "/api/v1/account/recovery-codes") {
         requireCsrf(request, context);
-        const codes = Array.from({ length: 8 }, () => opaqueToken("rahjo_recovery"));
+        const codes = Array.from({ length: 8 }, () => opaqueToken("crm_recovery"));
         const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60_000);
         const count = await database.replaceRecoveryCodes(context.workspace_id, context.membership_id, codes.map(secretDigest), expiresAt);
         if (count !== codes.length) throw problems.unavailable("RECOVERY_CODES_FAILED", "Recovery codes could not be generated");
