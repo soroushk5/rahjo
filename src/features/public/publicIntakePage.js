@@ -16,7 +16,7 @@ export function renderPublicIntakePage() {
           <div class="public-intake__intro">
             <p class="sw-kicker">شروع</p>
             <h1>از یک جریان واقعی مشتری شروع کنید.</h1>
-            <p class="sw-lead">کوتاه بگویید چه کاری را می‌خواهید منظم‌تر جلو ببرید. درخواست شما مستقیم وارد مسیر عملیاتی رهجو می‌شود.</p>
+            <p class="sw-lead">کوتاه بگویید چه کاری را می‌خواهید منظم‌تر جلو ببرید. درخواست شما مستقیم وارد CRM می‌شود.</p>
             <ol class="public-intake__steps">
               <li><span>۱</span><div><strong>درخواست</strong><small>نیاز و راه تماس را ثبت می‌کنید.</small></div></li>
               <li><span>۲</span><div><strong>بررسی</strong><small>درخواست داخل فضای کاری بررسی می‌شود.</small></div></li>
@@ -25,7 +25,7 @@ export function renderPublicIntakePage() {
           </div>
 
           <div class="public-intake__card">
-            <form id="rahjo-public-intake" class="public-intake-form" novalidate>
+            <form id="crm-public-intake" class="public-intake-form" novalidate>
               <div class="public-intake-form__row">
                 ${field("organization", "نام شرکت یا مجموعه", "text", "organization")}
                 ${field("contactName", "نام شما", "text", "name")}
@@ -75,7 +75,7 @@ function feedbackMessage(status, code) {
 }
 
 export function mountPublicIntakePage() {
-  const form = document.querySelector("#rahjo-public-intake");
+  const form = document.querySelector("#crm-public-intake");
   if (!(form instanceof HTMLFormElement)) return;
   const button = form.querySelector("button[type=submit]");
   const feedback = document.querySelector("#public-intake-feedback");

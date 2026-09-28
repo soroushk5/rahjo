@@ -1,9 +1,9 @@
 {
-  "name": "rahjo-web-platform",
+  "name": "crm-core-platform",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Rahjo phase-one customer, sales, service, and operations platform.",
+  "description": "Standard CRM platform for customer, contact, lead, opportunity, task, activity, and extensible workflow management.",
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "check": "tsc -p jsconfig.json",

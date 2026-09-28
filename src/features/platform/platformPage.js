@@ -39,7 +39,7 @@ export function renderPlatformPage() {
       <div class="container public-page-hero__grid">
         <div>
           <span class="public-kicker"><i></i>PRODUCT ARCHITECTURE</span>
-          <h1>رهجو یک Dashboard نیست؛<br><span>یک زنجیره عملیاتی مشترک است.</span></h1>
+          <h1>CRM یک Dashboard نیست؛<br><span>یک زنجیره عملیاتی مشترک است.</span></h1>
         </div>
         <div><p>Website، CRM، فروش، Service/API، Workflow، Governance و Dashboard قرار نیست ابزارهای جدا باشند. همه روی یک identity، Case spine، event model و Outcome کار می‌کنند.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن Workspace</a><a data-link class="button button--secondary" href="/map">دیدن جریان انتها‌به‌انتها</a></div></div>
       </div>
@@ -57,7 +57,7 @@ export function renderPlatformPage() {
         <div>
           <span class="public-kicker public-kicker--plain">SHARED SPINE</span>
           <h2>Account → Case → Decision/Approval → Action → Outcome</h2>
-          <p>این spine به رهجو اجازه می‌دهد CRM، سرویس، اتوماسیون، ممیزی و هوشمندی آینده بدون ساختن شناسه و حافظه‌های جدا با هم کار کنند.</p>
+          <p>این spine به CRM اجازه می‌دهد CRM، سرویس، اتوماسیون، ممیزی و هوشمندی آینده بدون ساختن شناسه و حافظه‌های جدا با هم کار کنند.</p>
           <div class="public-spine">
             ${["Account", "Case", "Decision / Approval", "Action", "Outcome"].map((item, index) => `<span><i>0${index + 1}</i><strong>${item}</strong></span>`).join("")}
           </div>

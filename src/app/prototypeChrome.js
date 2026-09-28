@@ -45,7 +45,7 @@ export function commandItems(entities = searchIndex()) {
 export function commandResultsMarkup(items = commandItems()) {
   const results = items.map((item) => {
     const href = String(item.href || "/dashboard");
-    return `<a data-link data-command-item data-command-kind="${escapeHtml(item.resultKind || "entity")}" data-command-text="${escapeHtml(itemSearchText(item))}" data-route-path="${escapeHtml(href)}" href="${escapeHtml(href)}"><strong>${escapeHtml(item.label || item.id || "نتیجه")}</strong><small>${escapeHtml(item.meta || "رکورد رهجو")}</small><span>${icon("arrow")}</span></a>`;
+    return `<a data-link data-command-item data-command-kind="${escapeHtml(item.resultKind || "entity")}" data-command-text="${escapeHtml(itemSearchText(item))}" data-route-path="${escapeHtml(href)}" href="${escapeHtml(href)}"><strong>${escapeHtml(item.label || item.id || "نتیجه")}</strong><small>${escapeHtml(item.meta || "رکورد CRM")}</small><span>${icon("arrow")}</span></a>`;
   }).join("");
   return `${results}<p class="command-empty" data-command-empty role="status" hidden>نتیجه‌ای برای این عبارت پیدا نشد.</p>`;
 }

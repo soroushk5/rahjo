@@ -18,7 +18,7 @@ export function journeyRail(activePath) {
     <section class="journey-rail-section" aria-label="مسیر پیشنهادی مشاهده محصول">
       <div class="container journey-rail">
         <header class="journey-rail__head">
-          <div><small>PRODUCT WALKTHROUGH</small><strong>مسیر پیشنهادی مشاهده رهجو</strong></div>
+          <div><small>PRODUCT WALKTHROUGH</small><strong>مسیر پیشنهادی مشاهده CRM</strong></div>
           <span>${currentIndex + 1} از ${publicJourney.length}</span>
         </header>
         <nav class="journey-rail__steps">${steps}</nav>

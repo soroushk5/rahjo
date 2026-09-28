@@ -8,7 +8,7 @@ export function renderLoginPage(options = {}) {
   return `
     <main id="main-content" class="guest-login mp-demo-login">
       <section class="guest-login__story mp-demo-login__story">
-        <a data-link href="/" class="guest-login__brand" aria-label="بازگشت به رهجو">${brandLogo({ inverted: true })}</a>
+        <a data-link href="/" class="guest-login__brand" aria-label="بازگشت به CRM">${brandLogo({ inverted: true })}</a>
         <div class="guest-login__copy">
           <span class="mp-demo-login__label">Golden Demo</span>
           <h1>یک مسیر کامل را با دادهٔ نمایشی امتحان کنید.</h1>
@@ -26,7 +26,7 @@ export function renderLoginPage(options = {}) {
         <div class="guest-login__panel-inner">
           <div class="guest-login__mobile-brand">${brandLogo()}</div>
           <h2>ورود به Golden Demo</h2>
-          <p>بدون ساخت حساب، محیط نمایشی رهجو را باز کنید.</p>
+          <p>بدون ساخت حساب، محیط نمایشی CRM را باز کنید.</p>
           <button id="guest-login-button" class="button button--primary button--large guest-login__button" type="button" data-return-to="${returnTo}">باز کردن دمو ${icon("arrow")}</button>
           <p class="guest-login__note">تمام داده‌ها ساختگی‌اند و فقط برای ارزیابی تجربهٔ محصول استفاده می‌شوند.</p>
           <a data-link class="text-link" href="/">بازگشت به سایت ${icon("arrow", { size: 16 })}</a>

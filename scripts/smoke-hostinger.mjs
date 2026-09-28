@@ -31,7 +31,7 @@ const index = await readFile(join(output, 'index.html'), 'utf8');
 const htaccess = await readFile(join(output, '.htaccess'), 'utf8');
 const robots = await readFile(join(output, 'robots.txt'), 'utf8');
 const health = JSON.parse(await readFile(join(output, 'health.json'), 'utf8'));
-const runtimeConfigMatch = index.match(/<script id="rahjo-runtime-config" type="application\/json">([\s\S]*?)<\/script>/);
+const runtimeConfigMatch = index.match(/<script id="crm-runtime-config" type="application\/json">([\s\S]*?)<\/script>/);
 if (!runtimeConfigMatch) throw new Error('Runtime configuration is missing from deployment HTML');
 const runtimeConfig = JSON.parse(runtimeConfigMatch[1]);
 const assetBase = health.assetBase;

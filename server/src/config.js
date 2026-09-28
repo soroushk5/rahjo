@@ -1,8 +1,34 @@
 import { readFile } from "node:fs/promises";
 import { problems } from "./errors.js";
 
+const LEGACY_ENV = Object.freeze({
+  CRM_LLM_ENABLED: "RAHJO_LLM_ENABLED",
+  CRM_ALLOW_INTERNAL_HTTP: "RAHJO_ALLOW_INTERNAL_HTTP",
+  CRM_MODE: "RAHJO_CRM_MODE",
+  CRM_INTERIM_ACK: "RAHJO_INTERIM_ACK",
+  CRM_CORS_ORIGINS: "RAHJO_CORS_ORIGINS",
+  CRM_PUBLIC_INTAKE_ENABLED: "RAHJO_PUBLIC_INTAKE_ENABLED",
+  CRM_PUBLIC_INTAKE_WORKSPACE_SLUG: "RAHJO_PUBLIC_INTAKE_WORKSPACE_SLUG",
+  CRM_PUBLIC_INTAKE_ORIGIN: "RAHJO_PUBLIC_INTAKE_ORIGIN",
+  CRM_PUBLIC_INTAKE_TOKEN: "RAHJO_PUBLIC_INTAKE_TOKEN",
+  CRM_PUBLIC_INTAKE_SERVICE_ID: "RAHJO_PUBLIC_INTAKE_SERVICE_ID",
+  CRM_API_PORT: "RAHJO_API_PORT",
+  CRM_DATABASE_URL: "RAHJO_DATABASE_URL",
+  CRM_TOKEN_PEPPER: "RAHJO_TOKEN_PEPPER",
+  CRM_PUBLIC_ORIGIN: "RAHJO_PUBLIC_ORIGIN",
+  CRM_PUBLIC_INTAKE_MAX_REQUESTS: "RAHJO_PUBLIC_INTAKE_MAX_REQUESTS",
+  CRM_PUBLIC_INTAKE_WINDOW_MS: "RAHJO_PUBLIC_INTAKE_WINDOW_MS",
+  CRM_REQUEST_TIMEOUT_MS: "RAHJO_REQUEST_TIMEOUT_MS",
+  CRM_SESSION_HOURS: "RAHJO_SESSION_HOURS"
+});
+
+function envValue(env, name) {
+  const legacy = LEGACY_ENV[name];
+  return env[name] ?? (legacy ? env[legacy] : undefined);
+}
+
 function required(env, name, minimum = 1) {
-  const value = env[name]?.trim();
+  const value = envValue(env, name)?.trim();
   if (!value || value.length < minimum) throw new Error(`${name} is required${minimum > 1 ? ` and must be at least ${minimum} characters` : ""}`);
   return value;
 }
@@ -15,7 +41,7 @@ function absoluteUrl(value, name, { allowHttpLocalhost = false } = {}) {
 }
 
 function optionalPositiveInteger(env, name, fallback) {
-  const raw = env[name]?.trim();
+  const raw = envValue(env, name)?.trim();
   if (!raw) return fallback;
   const value = Number(raw);
   if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`${name} must be a positive integer`);
@@ -23,53 +49,59 @@ function optionalPositiveInteger(env, name, fallback) {
 }
 
 export function loadConfig(env = process.env) {
-  if (env.RAHJO_LLM_ENABLED && env.RAHJO_LLM_ENABLED !== "false") {
-    throw new Error("Phase-1 server forbids RAHJO_LLM_ENABLED; the critical path is no-LLM");
+  const llmEnabled = envValue(env, "CRM_LLM_ENABLED");
+  if (llmEnabled && llmEnabled !== "false") {
+    throw new Error("CRM_LLM_ENABLED is disabled for the deterministic core runtime");
   }
   const appEnv = env.NODE_ENV === "production" ? "production" : "development";
-  const allowHttpLocalhost = appEnv !== "production" || env.RAHJO_ALLOW_INTERNAL_HTTP === "true";
-  const crmMode = env.RAHJO_CRM_MODE?.trim() || "relaticle";
-  if (!new Set(["relaticle", "native_deferred"]).has(crmMode)) throw new Error("RAHJO_CRM_MODE must be relaticle or native_deferred");
-  if (crmMode === "native_deferred" && env.RAHJO_INTERIM_ACK !== "true") {
-    throw new Error("native_deferred requires explicit RAHJO_INTERIM_ACK=true");
+  const allowHttpLocalhost = appEnv !== "production" || envValue(env, "CRM_ALLOW_INTERNAL_HTTP") === "true";
+  const crmMode = envValue(env, "CRM_MODE")?.trim() || "relaticle";
+  if (!new Set(["relaticle", "native_deferred"]).has(crmMode)) throw new Error("CRM_MODE must be relaticle or native_deferred");
+  if (crmMode === "native_deferred" && envValue(env, "CRM_INTERIM_ACK") !== "true") {
+    throw new Error("native_deferred requires explicit CRM_INTERIM_ACK=true");
   }
-  const corsOrigins = required(env, "RAHJO_CORS_ORIGINS").split(",").map((item) => absoluteUrl(item.trim(), "RAHJO_CORS_ORIGINS", { allowHttpLocalhost }));
-  const publicIntakeEnabled = env.RAHJO_PUBLIC_INTAKE_ENABLED === "true";
-  const publicIntakeWorkspaceSlug = publicIntakeEnabled ? required(env, "RAHJO_PUBLIC_INTAKE_WORKSPACE_SLUG") : "";
+
+  const corsOrigins = required(env, "CRM_CORS_ORIGINS")
+    .split(",")
+    .map((item) => absoluteUrl(item.trim(), "CRM_CORS_ORIGINS", { allowHttpLocalhost }));
+
+  const publicIntakeEnabled = envValue(env, "CRM_PUBLIC_INTAKE_ENABLED") === "true";
+  const publicIntakeWorkspaceSlug = publicIntakeEnabled ? required(env, "CRM_PUBLIC_INTAKE_WORKSPACE_SLUG") : "";
   if (publicIntakeWorkspaceSlug && !/^[a-z0-9][a-z0-9-]{1,62}$/.test(publicIntakeWorkspaceSlug)) {
-    throw new Error("RAHJO_PUBLIC_INTAKE_WORKSPACE_SLUG is invalid");
+    throw new Error("CRM_PUBLIC_INTAKE_WORKSPACE_SLUG is invalid");
   }
   const publicIntakeOrigin = publicIntakeEnabled
-    ? absoluteUrl(required(env, "RAHJO_PUBLIC_INTAKE_ORIGIN"), "RAHJO_PUBLIC_INTAKE_ORIGIN", { allowHttpLocalhost })
+    ? absoluteUrl(required(env, "CRM_PUBLIC_INTAKE_ORIGIN"), "CRM_PUBLIC_INTAKE_ORIGIN", { allowHttpLocalhost })
     : "";
   if (publicIntakeOrigin && !corsOrigins.includes(publicIntakeOrigin)) {
-    throw new Error("RAHJO_PUBLIC_INTAKE_ORIGIN must also be present in RAHJO_CORS_ORIGINS");
+    throw new Error("CRM_PUBLIC_INTAKE_ORIGIN must also be present in CRM_CORS_ORIGINS");
   }
-  const publicIntakeToken = publicIntakeEnabled ? required(env, "RAHJO_PUBLIC_INTAKE_TOKEN", 32) : "";
-  const publicIntakeServiceId = publicIntakeEnabled ? required(env, "RAHJO_PUBLIC_INTAKE_SERVICE_ID", 4) : "";
+
+  const publicIntakeToken = publicIntakeEnabled ? required(env, "CRM_PUBLIC_INTAKE_TOKEN", 32) : "";
+  const publicIntakeServiceId = publicIntakeEnabled ? required(env, "CRM_PUBLIC_INTAKE_SERVICE_ID", 4) : "";
 
   return Object.freeze({
     appEnv,
-    port: Number(env.PORT || env.RAHJO_API_PORT || 8787),
-    databaseUrl: required(env, "RAHJO_DATABASE_URL"),
-    tokenPepper: required(env, "RAHJO_TOKEN_PEPPER", 32),
+    port: Number(env.PORT || envValue(env, "CRM_API_PORT") || 8787),
+    databaseUrl: required(env, "CRM_DATABASE_URL"),
+    tokenPepper: required(env, "CRM_TOKEN_PEPPER", 32),
     crmMode,
     interim: crmMode === "native_deferred",
     relaticleBaseUrl: crmMode === "relaticle" ? absoluteUrl(required(env, "RELATICLE_BASE_URL"), "RELATICLE_BASE_URL", { allowHttpLocalhost }) : "",
     relaticleMcpUrl: crmMode === "relaticle" ? absoluteUrl(required(env, "RELATICLE_MCP_URL"), "RELATICLE_MCP_URL", { allowHttpLocalhost }) : "",
     relaticleTokenFile: crmMode === "relaticle" ? required(env, "RELATICLE_TOKEN_FILE") : "",
     corsOrigins,
-    publicOrigin: absoluteUrl(required(env, "RAHJO_PUBLIC_ORIGIN"), "RAHJO_PUBLIC_ORIGIN", { allowHttpLocalhost }),
+    publicOrigin: absoluteUrl(required(env, "CRM_PUBLIC_ORIGIN"), "CRM_PUBLIC_ORIGIN", { allowHttpLocalhost }),
     publicIntakeEnabled,
     publicIntakeWorkspaceSlug,
     publicIntakeOrigin,
     publicIntakeToken,
     publicIntakeServiceId,
-    publicIntakeMaxRequests: optionalPositiveInteger(env, "RAHJO_PUBLIC_INTAKE_MAX_REQUESTS", 20),
-    publicIntakeWindowMs: optionalPositiveInteger(env, "RAHJO_PUBLIC_INTAKE_WINDOW_MS", 10 * 60 * 1000),
+    publicIntakeMaxRequests: optionalPositiveInteger(env, "CRM_PUBLIC_INTAKE_MAX_REQUESTS", 20),
+    publicIntakeWindowMs: optionalPositiveInteger(env, "CRM_PUBLIC_INTAKE_WINDOW_MS", 10 * 60 * 1000),
     bodyLimit: 64 * 1024,
-    requestTimeoutMs: Number(env.RAHJO_REQUEST_TIMEOUT_MS || 8000),
-    sessionHours: Number(env.RAHJO_SESSION_HOURS || 12),
+    requestTimeoutMs: Number(envValue(env, "CRM_REQUEST_TIMEOUT_MS") || 8000),
+    sessionHours: Number(envValue(env, "CRM_SESSION_HOURS") || 12),
     dataMode: "server",
     llmEnabled: false
   });

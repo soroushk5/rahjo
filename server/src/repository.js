@@ -7,7 +7,7 @@ function record(row) {
   return row ?? null;
 }
 
-async function audit(client, context, { eventType, entityType, entityId, correlationId, before = null, after = null, source = "rahjo-bff" }) {
+async function audit(client, context, { eventType, entityType, entityId, correlationId, before = null, after = null, source = "crm-bff" }) {
   await client.query(
     `INSERT INTO rahjo.audit_events
        (workspace_id, event_type, entity_type, entity_id, actor_membership_id, source, correlation_id, before_state, after_state)
@@ -16,7 +16,7 @@ async function audit(client, context, { eventType, entityType, entityId, correla
   );
 }
 
-export class RahjoRepository {
+export class CrmRepository {
   constructor({ database, relaticle }) {
     this.database = database;
     this.relaticle = relaticle;
@@ -113,10 +113,10 @@ export class RahjoRepository {
           []
         ]
       : await Promise.all([
-          this.relaticle.list(context.workspace_id, "companies", "?cursor=true&per_page=100"),
-          this.relaticle.list(context.workspace_id, "people", "?cursor=true&per_page=100"),
-          this.relaticle.list(context.workspace_id, "opportunities", "?cursor=true&per_page=100"),
-          this.relaticle.list(context.workspace_id, "tasks", "?cursor=true&per_page=100")
+          this.relaticle.listAccounts(context.workspace_id),
+          this.relaticle.listContacts(context.workspace_id),
+          this.relaticle.listOpportunities(context.workspace_id),
+          this.relaticle.listTasks(context.workspace_id)
         ]);
     delete extension.crmRefs;
 
@@ -126,13 +126,66 @@ export class RahjoRepository {
       workspace: { id: context.workspace_id, slug: context.workspace_slug, name: context.workspace_name },
       user: { id: context.user_id, email: context.user_email, name: context.display_name, role: context.role },
       projection: {
-        accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "rahjo-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
-        contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "rahjo-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
         opportunities: opportunities.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
         tasks: tasks.map((item) => ({ id: item.id, ...item.attributes, source: "relaticle", syncState: "verified" })),
         ...extension
       }
     };
+  }
+
+  async createAccount(context, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const name = normalizePersianText(input?.name, { max: 180, required: true });
+    const account = await this.relaticle.createAccount(context.workspace_id, { name });
+
+    if (this.relaticle.mode === "native_deferred") {
+      await this.database.withWorkspace(context, async (client) => {
+        await client.query(
+          `INSERT INTO rahjo.crm_entity_refs (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+           VALUES ($1,'account',$2,$3,$4)`,
+          [context.workspace_id, publicId("ACC"), account.id, account.attributes]
+        );
+        await audit(client, context, {
+          eventType: "crm.account.created",
+          entityType: "account",
+          entityId: account.id,
+          correlationId,
+          after: { id: account.id, name, source: "crm-native-bridge" }
+        });
+      });
+    }
+
+    return { id: account.id, ...account.attributes, source: this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle" };
+  }
+
+  async createContact(context, input, correlationId) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const name = normalizePersianText(input?.name, { max: 180, required: true });
+    const accountId = normalizePersianText(input?.accountId, { max: 180, required: true });
+    const contact = await this.relaticle.createContact(context.workspace_id, { name, accountId });
+
+    if (this.relaticle.mode === "native_deferred") {
+      await this.database.withWorkspace(context, async (client) => {
+        await client.query(
+          `INSERT INTO rahjo.crm_entity_refs (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+           VALUES ($1,'contact',$2,$3,$4)`,
+          [context.workspace_id, publicId("CON"), contact.id, contact.attributes]
+        );
+        await audit(client, context, {
+          eventType: "crm.contact.created",
+          entityType: "contact",
+          entityId: contact.id,
+          correlationId,
+          after: { id: contact.id, name, accountId, source: "crm-native-bridge" }
+        });
+      });
+    }
+
+    return { id: contact.id, ...contact.attributes, source: this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle" };
   }
 
   async createIntake(context, input, rawIdempotencyKey, correlationId) {
@@ -175,8 +228,8 @@ export class RahjoRepository {
     let company;
     let person;
     try {
-      company = await this.relaticle.createCompany(context.workspace_id, { name: payload.organization });
-      person = await this.relaticle.createPerson(context.workspace_id, { name: payload.contactName, companyId: company.id });
+      company = await this.relaticle.createAccount(context.workspace_id, { name: payload.organization });
+      person = await this.relaticle.createContact(context.workspace_id, { name: payload.contactName, accountId: company.id });
     } catch (error) {
       await this.database.withWorkspace(context, async (client) => {
         await client.query(

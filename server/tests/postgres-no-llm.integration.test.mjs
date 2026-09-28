@@ -119,8 +119,8 @@ test("mandatory two-workspace RLS and no-context isolation", { skip: !enabled },
 test("server-backed intake-to-outcome path passes with every model provider absent", { skip: !enabled }, async (t) => {
   for (const key of Object.keys(process.env)) assert.equal(/^((OPENAI|ANTHROPIC|GEMINI|GOOGLE_AI|MISTRAL|COHERE)_.*|RAHJO_LLM_ENABLED)$/.test(key), false, `model variable must be absent: ${key}`);
   const [
-    { default: postgres }, { Database }, { RahjoRepository }, { RelaticleClient },
-    { createRahjoServer }, { passwordCredential, tokenDigest }
+    { default: postgres }, { Database }, { CrmRepository }, { RelaticleClient },
+    { createCrmServer }, { passwordCredential, tokenDigest }
   ] = await Promise.all([
     import("postgres"), import("../src/database.js"), import("../src/repository.js"),
     import("../src/relaticleClient.js"), import("../src/app.js"), import("../src/security.js")
@@ -196,12 +196,12 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       [workspaceB.id, { token: "relaticle-beta-token", expectedTeamId: `E2E-TEAM-B-${workspaceSuffix}` }]
     ]);
     const relaticle = new RelaticleClient({ baseUrl: `http://127.0.0.1:${upstream.address().port}/api/v1`, workspaceTokens });
-    const repository = new RahjoRepository({ database, relaticle });
+    const repository = new CrmRepository({ database, relaticle });
     const config = {
       appEnv: "development", publicOrigin: "http://localhost", corsOrigins: ["http://localhost"],
       tokenPepper: pepper, bodyLimit: 64 * 1024, sessionHours: 12
     };
-    app = createRahjoServer({ config, database, repository, relaticle, workspaceTokens, logger: { info() {}, error() {} } });
+    app = createCrmServer({ config, database, repository, relaticle, workspaceTokens, logger: { info() {}, error() {} } });
     app.listen(0, "127.0.0.1");
     await once(app, "listening");
     t.after(() => app?.close());
@@ -240,7 +240,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     const csrfBootstrap = await browserCall("/api/v1/session/csrf", { method: "POST", csrf: false });
     assert.equal(csrfBootstrap.status, 200);
     const csrfBootstrapData = await csrfBootstrap.json();
-    assert.match(csrfBootstrapData.csrfToken, /^rahjo_csrf_/);
+    assert.match(csrfBootstrapData.csrfToken, /^crm_csrf_/);
     loginData = { ...loginData, csrfToken: csrfBootstrapData.csrfToken };
     sessionCookie = csrfBootstrap.headers.get("set-cookie").split(";")[0];
     assert.notEqual(sessionCookie, staleSessionCookie);

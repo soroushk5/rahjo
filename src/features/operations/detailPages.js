@@ -28,7 +28,7 @@ function missingDetailPage({ kind, id, recovery, activePath, title }) {
 }
 
 function relationSummary(customer, requests, opportunities) {
-  return `<section class="relation-summary"><h2>خلاصهٔ رابطه</h2><p>${customer.name} از سال ${customer.since} با رهجو همکاری دارد. تمرکز فعلی روی ${requests.filter((item) => !item.closedAt).length} درخواست باز و ${opportunities.length} فرصت فروش است.</p><div><span>مشتری کلیدی</span><span>پتانسیل رشد بالا</span><span>${customer.status}</span></div></section>`;
+  return `<section class="relation-summary"><h2>خلاصهٔ رابطه</h2><p>${customer.name} از سال ${customer.since} با CRM همکاری دارد. تمرکز فعلی روی ${requests.filter((item) => !item.closedAt).length} درخواست باز و ${opportunities.length} فرصت فروش است.</p><div><span>مشتری کلیدی</span><span>پتانسیل رشد بالا</span><span>${customer.status}</span></div></section>`;
 }
 
 function accountRequests(state, requests) {

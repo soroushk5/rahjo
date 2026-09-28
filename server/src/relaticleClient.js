@@ -140,7 +140,7 @@ export class RelaticleClient {
         params: {
           protocolVersion: "2025-11-25",
           capabilities: {},
-          clientInfo: { name: "rahjo-crm-bff", version: "0.1.0" }
+          clientInfo: { name: "crm-core-bff", version: "0.1.0" }
         }
       });
       sessionId = initialized.sessionId;
@@ -193,7 +193,7 @@ export class RelaticleClient {
     }
   }
 
-  async list(workspaceId, collection, query = "") {
+  async listCollection(workspaceId, collection, query = "") {
     if (!allowedCollections.has(collection)) throw new TypeError("Unsupported Relaticle collection");
     const payload = await this.request(workspaceId, "GET", `/${collection}${query}`);
     const data = entityData(payload);
@@ -201,13 +201,29 @@ export class RelaticleClient {
     return data.map(cleanEntity);
   }
 
-  async createCompany(workspaceId, { name }) {
+  async listAccounts(workspaceId) {
+    return this.listCollection(workspaceId, "companies", "?cursor=true&per_page=100");
+  }
+
+  async listContacts(workspaceId) {
+    return this.listCollection(workspaceId, "people", "?cursor=true&per_page=100");
+  }
+
+  async listOpportunities(workspaceId) {
+    return this.listCollection(workspaceId, "opportunities", "?cursor=true&per_page=100");
+  }
+
+  async listTasks(workspaceId) {
+    return this.listCollection(workspaceId, "tasks", "?cursor=true&per_page=100");
+  }
+
+  async createAccount(workspaceId, { name }) {
     const payload = await this.request(workspaceId, "POST", "/companies", { name });
     return cleanEntity(entityData(payload));
   }
 
-  async createPerson(workspaceId, { name, companyId }) {
-    const payload = await this.request(workspaceId, "POST", "/people", { name, company_id: companyId });
+  async createContact(workspaceId, { name, accountId }) {
+    const payload = await this.request(workspaceId, "POST", "/people", { name, company_id: accountId });
     return cleanEntity(entityData(payload));
   }
 }

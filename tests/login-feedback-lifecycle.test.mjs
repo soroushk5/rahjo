@@ -23,7 +23,7 @@ test("login mount re-queries the current form after authenticate can rerender th
   const source = await readFile(new URL("../src/app/runtimeBoundary.js", import.meta.url), "utf8");
   const authenticateIndex = source.indexOf("const result = await runtimeData.authenticate");
   const syncIndex = source.indexOf("syncCurrentLoginForm(submitted, result)", authenticateIndex);
-  const currentFormIndex = source.indexOf('document.querySelector("#rahjo-server-login")');
+  const currentFormIndex = source.indexOf('document.querySelector("#crm-server-login")');
 
   assert.ok(authenticateIndex >= 0, "authenticate call must remain explicit");
   assert.ok(syncIndex > authenticateIndex, "failed login must repair the current DOM after authenticate resolves");

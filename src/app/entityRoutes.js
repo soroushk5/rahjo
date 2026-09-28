@@ -22,9 +22,9 @@ export function routeWithContext(path, context = {}) {
 export function readRouteContext(source) {
   const browserHref = typeof window !== "undefined" && window.location?.href
     ? window.location.href
-    : "http://rahjo.local/";
-  const url = new URL(source ?? browserHref, "http://rahjo.local");
-  const hashRoute = url.hash.startsWith("#/") ? new URL(url.hash.slice(1), "http://rahjo.local") : null;
+    : "http://crm.local/";
+  const url = new URL(source ?? browserHref, "http://crm.local");
+  const hashRoute = url.hash.startsWith("#/") ? new URL(url.hash.slice(1), "http://crm.local") : null;
   const routeUrl = hashRoute ?? url;
   /** @type {RouteContext} */
   const context = { path: routeUrl.pathname };
@@ -66,5 +66,5 @@ export function entityHref(entity) {
 
 /** @param {string} path */
 export function requestNavigation(path) {
-  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("rahjo:navigate", { detail: path }));
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("crm:navigate", { detail: path }));
 }

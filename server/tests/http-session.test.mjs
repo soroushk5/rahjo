@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { once } from "node:events";
-import { createRahjoServer } from "../src/app.js";
+import { createCrmServer } from "../src/app.js";
 import { passwordCredential, tokenDigest } from "../src/security.js";
 
 const pepper = "p".repeat(32);
@@ -40,13 +40,13 @@ async function fixture({ appEnv = "development" } = {}) {
     appEnv,
     port: 0,
     publicOrigin: "http://localhost",
-    corsOrigins: ["https://rahjo.example.test"],
+    corsOrigins: ["https://crm.example.test"],
     tokenPepper: pepper,
     bodyLimit: 64 * 1024,
     sessionHours: 12
   };
   const logger = { info() {}, error() {} };
-  const server = createRahjoServer({ config, database, repository, relaticle, workspaceTokens: new Map([[context.workspace_id, {}]]), logger });
+  const server = createCrmServer({ config, database, repository, relaticle, workspaceTokens: new Map([[context.workspace_id, {}]]), logger });
   do {
     server.listen(0, "127.0.0.1");
     await once(server, "listening");
@@ -57,26 +57,26 @@ async function fixture({ appEnv = "development" } = {}) {
   return { server, base };
 }
 
-test("browser login issues an HttpOnly Rahjo session and runtime uses it with credentialed CORS", async (t) => {
+test("browser login issues an HttpOnly CRM session and runtime uses it with credentialed CORS", async (t) => {
   const { server, base } = await fixture();
   t.after(() => server.close());
   const login = await fetch(`${base}/api/v1/session`, {
     method: "POST",
-    headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
     body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "a correct long password" })
   });
   assert.equal(login.status, 201);
   assert.equal(login.headers.get("access-control-allow-credentials"), "true");
   const cookie = login.headers.get("set-cookie");
-  assert.match(cookie, /^rahjo_session=/);
+  assert.match(cookie, /^crm_session=/);
   assert.match(cookie, /HttpOnly/);
   assert.match(cookie, /SameSite=Lax/);
   const loginBody = await login.json();
-  assert.ok(loginBody.csrfToken.startsWith("rahjo_csrf_"));
-  assert.equal(JSON.stringify(loginBody).includes("rahjo_session_"), false);
+  assert.ok(loginBody.csrfToken.startsWith("crm_csrf_"));
+  assert.equal(JSON.stringify(loginBody).includes("crm_session_"), false);
 
   const runtime = await fetch(`${base}/api/v1/runtime`, {
-    headers: { Origin: "https://rahjo.example.test", Cookie: cookie.split(";")[0] }
+    headers: { Origin: "https://crm.example.test", Cookie: cookie.split(";")[0] }
   });
   assert.equal(runtime.status, 200);
   assert.equal(runtime.headers.get("access-control-allow-credentials"), "true");
@@ -87,24 +87,24 @@ test("an authenticated browser session can rotate a non-persistent CSRF token af
   const { server, base } = await fixture();
   t.after(() => server.close());
   const login = await fetch(`${base}/api/v1/session`, {
-    method: "POST", headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    method: "POST", headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
     body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "a correct long password" })
   });
   const cookie = login.headers.get("set-cookie").split(";")[0];
-  const response = await fetch(`${base}/api/v1/session/csrf`, { method: "POST", headers: { Origin: "https://rahjo.example.test", Cookie: cookie } });
+  const response = await fetch(`${base}/api/v1/session/csrf`, { method: "POST", headers: { Origin: "https://crm.example.test", Cookie: cookie } });
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.dataMode, "server");
-  assert.match(body.csrfToken, /^rahjo_csrf_/);
+  assert.match(body.csrfToken, /^crm_csrf_/);
   assert.ok(body.expiresAt);
   const renewedCookie = response.headers.get("set-cookie").split(";")[0];
   assert.notEqual(renewedCookie, cookie);
   const renewedRuntime = await fetch(`${base}/api/v1/runtime`, {
-    headers: { Origin: "https://rahjo.example.test", Cookie: renewedCookie }
+    headers: { Origin: "https://crm.example.test", Cookie: renewedCookie }
   });
   assert.equal(renewedRuntime.status, 200);
   const staleRuntime = await fetch(`${base}/api/v1/runtime`, {
-    headers: { Origin: "https://rahjo.example.test", Cookie: cookie }
+    headers: { Origin: "https://crm.example.test", Cookie: cookie }
   });
   assert.equal(staleRuntime.status, 401);
 });
@@ -114,12 +114,12 @@ test("production browser session uses the locked __Host cookie boundary", async 
   t.after(() => server.close());
   const response = await fetch(`${base}/api/v1/session`, {
     method: "POST",
-    headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
     body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "a correct long password" })
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
-  assert.match(cookie, /^__Host-rahjo_session=/);
+  assert.match(cookie, /^__Host-crm_session=/);
   assert.match(cookie, /; Path=\/;/);
   assert.match(cookie, /; HttpOnly;/);
   assert.match(cookie, /; Secure;/);
@@ -149,11 +149,11 @@ test("untrusted browser origins are denied before authentication", async (t) => 
   assert.equal(response.headers.get("access-control-allow-origin"), null);
 });
 
-test("browser bootstrap redirects only to an allowlisted Rahjo UI origin", async (t) => {
+test("browser bootstrap redirects only to an allowlisted CRM UI origin", async (t) => {
   const { server, base } = await fixture();
   t.after(() => server.close());
 
-  const trustedReturn = "https://rahjo.example.test/dashboard?rahjoApiBootstrap=1";
+  const trustedReturn = "https://crm.example.test/dashboard?crmApiBootstrap=1";
   const trusted = await fetch(`${base}/browser-bootstrap?return=${encodeURIComponent(trustedReturn)}`, { redirect: "manual" });
   assert.equal(trusted.status, 302);
   assert.equal(trusted.headers.get("location"), trustedReturn);
@@ -165,4 +165,27 @@ test("browser bootstrap redirects only to an allowlisted Rahjo UI origin", async
 
   const invalid = await fetch(`${base}/browser-bootstrap?return=not-a-url`, { redirect: "manual" });
   assert.equal(invalid.status, 422);
+});
+
+
+test("repeated login abuse is rate limited with a Retry-After contract", async (t) => {
+  const { server, base } = await fixture();
+  t.after(() => server.close());
+
+  let response;
+  for (let attempt = 1; attempt <= 11; attempt += 1) {
+    response = await fetch(`${base}/api/v1/session`, {
+      method: "POST",
+      headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
+      body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "wrong password" })
+    });
+    if (attempt <= 10) assert.equal(response.status, 401);
+  }
+
+  assert.equal(response.status, 429);
+  assert.match(response.headers.get("retry-after") ?? "", /^\d+$/);
+  const problem = await response.json();
+  assert.equal(problem.code, "RATE_LIMITED");
+  assert.equal(problem.dataMode, "server");
+  assert.equal(Object.hasOwn(problem, "projection"), false);
 });

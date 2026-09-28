@@ -52,14 +52,14 @@ function dataNetwork() {
     .join("");
 
   return `
-    <div class="data-network" aria-label="خوشه‌های داده رهجو">
+    <div class="data-network" aria-label="خوشه‌های داده CRM">
       <svg class="data-network__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         ${networkLines()}
         <circle cx="50" cy="50" r="24" />
       </svg>
       <div class="network-core">
         <span>${icon("lock", { size: 26 })}</span>
-        <strong>رهجو</strong>
+        <strong>CRM</strong>
         <small>کنترل دسترسی</small>
       </div>
       ${nodes}
@@ -171,7 +171,7 @@ export function renderMarketingPage() {
           <p class="eyebrow">CONTROLLED DATA ACCESS PLATFORM</p>
           <h1>داده‌های دشوار، برای استفاده سازمانی قابل‌کنترل می‌شوند.</h1>
           <p class="hero__lead">
-            رهجو لایه‌ای میان منابع داده حساس و فرایندهای کسب‌وکار می‌سازد؛
+            CRM لایه‌ای میان منابع داده حساس و فرایندهای کسب‌وکار می‌سازد؛
             منبع را روشن می‌کند، دسترسی را محدود می‌کند و مصرف را قابل ممیزی نگه می‌دارد.
           </p>
           <div class="hero__actions">
@@ -203,7 +203,7 @@ export function renderMarketingPage() {
     <section class="positioning-band">
       <div class="container positioning-grid">
         <div>
-          <p class="eyebrow eyebrow--light">جایگاه رهجو</p>
+          <p class="eyebrow eyebrow--light">جایگاه CRM</p>
           <h2>واسط کنترل‌شده میان منبع داده و کاربرد سازمانی</h2>
         </div>
         <p>

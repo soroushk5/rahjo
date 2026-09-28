@@ -10,7 +10,7 @@ test("compact landing makes category, audience and flow concrete", () => {
   for (const phrase of ["فروش B2B", "بازرگانی", "خدمات و پروژه", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
     assert.match(html, new RegExp(phrase));
   }
-  for (const phrase of ["مشتری", "فرصت", "پرونده", "نتیجه", "اقدام بعدی"]) {
+  for (const phrase of ["مشتری", "فرصت", "فعالیت", "پیگیری", "اقدام بعدی"]) {
     assert.match(html, new RegExp(phrase));
   }
   assert.match(html, /sw-hero-card/);
@@ -30,8 +30,8 @@ test("public CTAs target real product, Start or login destinations", () => {
   assert.match(home, /data-cta="home-final-product"[^>]+href="\/product"/);
   assert.match(product, /data-cta="product-login"[^>]+href="\/login"/);
   assert.match(product, /data-cta="product-home"[^>]+href="\/"/);
-  assert.match(start, /id="rahjo-public-intake"/);
-  assert.doesNotMatch(`${home}\n${product}\n${start}`, /شروع بررسی|دیدن دموی رهجو/);
+  assert.match(start, /id="crm-public-intake"/);
+  assert.doesNotMatch(`${home}\n${product}\n${start}`, /شروع بررسی|دیدن دموی CRM/);
 });
 
 test("public canonical surfaces contain no intelligence marketing language", () => {

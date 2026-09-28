@@ -15,14 +15,14 @@ function hero({ activePath, eyebrow, title, description, actions = "" }) {
     </section>`;
 }
 
-function workspaceAction(label = "ورود به محیط رهجو") {
+function workspaceAction(label = "ورود به محیط CRM") {
   return `<a data-link class="button button--primary button--large" href="/cases/new">${label} ${icon("arrow")}</a>`;
 }
 
 export function renderAlignedContactPage() {
   const serverMode = runtimeData.read().mode === "server";
   const modeNote = serverMode
-    ? "در نسخهٔ زنده، درخواست عملیاتی از مسیر امن رهجو ثبت می‌شود و هیچ فرم عمومی با دادهٔ مرورگر جایگزین آن نمی‌شود."
+    ? "در نسخهٔ زنده، درخواست عملیاتی از مسیر امن CRM ثبت می‌شود و هیچ فرم عمومی با دادهٔ مرورگر جایگزین آن نمی‌شود."
     : "در Golden Demo، داده‌ها ساختگی و مرورگرمحلی‌اند و برای ارزیابی تجربهٔ محصول استفاده می‌شوند.";
   return siteShell({
     activePath: "/contact",
@@ -31,7 +31,7 @@ export function renderAlignedContactPage() {
       eyebrow: "شروع همکاری",
       title: "از یک جریان واقعی شروع کنیم، نه از فهرست قابلیت‌ها.",
       description: "برای شروع، یک مسیر مشخص را انتخاب می‌کنیم: مشتری از کجا وارد می‌شود، چه پرونده‌ای ساخته می‌شود، کجا تصمیم انسانی لازم است و نتیجه کجا ثبت می‌شود.",
-      actions: `${workspaceAction("شروع ثبت پرونده")}<a data-link class="button button--outline button--large" href="/how-it-works">مرور مسیر رهجو</a>`
+      actions: `${workspaceAction("شروع ثبت پرونده")}<a data-link class="button button--outline button--large" href="/how-it-works">مرور مسیر CRM</a>`
     })}
       <section class="w14-page-section"><div class="container w14-start-grid">
         <article><b>01</b><div><h2>مسیر فعلی</h2><p>یک سناریوی واقعی مشتری را از ورودی تا نتیجه روی میز می‌گذاریم؛ نه نمودار سازمانی و نه لیست نرم‌افزارها.</p></div></article>
@@ -48,7 +48,7 @@ export function renderAlignedPilotPage() {
     content: `${hero({
       activePath: "/pilot",
       eyebrow: "راه‌اندازی",
-      title: "پایلوت رهجو باید یک حلقهٔ کامل را ثابت کند.",
+      title: "پایلوت CRM باید یک حلقهٔ کامل را ثابت کند.",
       description: "موفقیت پایلوت با تعداد صفحه یا تنظیمات سنجیده نمی‌شود؛ با این سنجیده می‌شود که یک ورودی واقعی بدون دوباره‌کاری تا نتیجه و سابقهٔ قابل ممیزی حرکت کند.",
       actions: `${workspaceAction("شروع جریان عملیاتی")}<a data-link class="button button--outline button--large" href="/product">ساختار محصول</a>`
     })}
@@ -69,8 +69,8 @@ export function renderAlignedTrustPage() {
       activePath: "/trust",
       eyebrow: "اعتماد و کنترل",
       title: "اعتماد از محدودکردن اختیار سیستم شروع می‌شود.",
-      description: "رهجو وضعیت، workspace، actor و مسیر تغییر را صریح نگه می‌دارد. تصمیم‌های حساس پشت تأیید انسانی می‌مانند و شکست Server mode با دادهٔ Demo پنهان نمی‌شود.",
-      actions: `<a data-link class="button button--primary button--large" href="/login">ورود امن به رهجو ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/how-it-works">نحوهٔ کار</a>`
+      description: "CRM وضعیت، workspace، actor و مسیر تغییر را صریح نگه می‌دارد. تصمیم‌های حساس پشت تأیید انسانی می‌مانند و شکست Server mode با دادهٔ Demo پنهان نمی‌شود.",
+      actions: `<a data-link class="button button--primary button--large" href="/login">ورود امن به CRM ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/how-it-works">نحوهٔ کار</a>`
     })}
       <section class="w14-page-section"><div class="container w14-trust-grid">
         <article><span>${icon("shield")}</span><h3>Workspace isolation</h3><p>scope فضای کاری در سمت سرور مشتق می‌شود و client نمی‌تواند با شناسه یا header دلخواه آن را عوض کند.</p></article>
@@ -87,16 +87,16 @@ export function renderAlignedAboutPage() {
     activePath: "/about",
     content: `${hero({
       activePath: "/about",
-      eyebrow: "دربارهٔ رهجو",
-      title: "رهجو از یک مسئلهٔ ساده شروع می‌کند: کار مشتری نباید بین ابزارها گم شود.",
-      description: "هدف رهجو ساختن یک حافظهٔ تجاری و عملیاتی مشترک است؛ جایی که تیم بداند مشتری کیست، چه چیزی خواسته، چه تصمیمی گرفته شده، چه اقدامی انجام شده و نتیجه چه بوده است.",
+      eyebrow: "دربارهٔ CRM",
+      title: "CRM از یک مسئلهٔ ساده شروع می‌کند: کار مشتری نباید بین ابزارها گم شود.",
+      description: "هدف CRM ساختن یک حافظهٔ تجاری و عملیاتی مشترک است؛ جایی که تیم بداند مشتری کیست، چه چیزی خواسته، چه تصمیمی گرفته شده، چه اقدامی انجام شده و نتیجه چه بوده است.",
       actions: `<a data-link class="button button--primary button--large" href="/product">دیدن محصول ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/contact">شروع از یک جریان واقعی</a>`
     })}
       <section class="w14-page-section"><div class="container w14-principles-grid">
         <article><b>01</b><h3>عملیات قبل از AI</h3><p>اگر هویت، داده و workflow درست نباشند، هوشمندی فقط ابهام را سریع‌تر می‌کند.</p></article>
         <article><b>02</b><h3>نتیجه قبل از صفحه</h3><p>ارزش محصول در بستن حلقهٔ مشتری تا outcome است، نه تعداد dashboardها و فرم‌ها.</p></article>
         <article><b>03</b><h3>شواهد قبل از ادعا</h3><p>قابلیت live، امنیت، backup و اتصال‌ها فقط وقتی claim می‌شوند که acceptance evidence داشته باشند.</p></article>
-        <article><b>04</b><h3>هستهٔ قابل تعویض</h3><p>Frontend با قرارداد Rahjo-native کار می‌کند تا CRM، provider یا مدل آینده بدون بازسازی تجربه جایگزین شود.</p></article>
+        <article><b>04</b><h3>هستهٔ قابل تعویض</h3><p>Frontend با قرارداد CRM Core-native کار می‌کند تا CRM، provider یا مدل آینده بدون بازسازی تجربه جایگزین شود.</p></article>
       </div></section>`
   });
 }
@@ -116,6 +116,6 @@ export function renderAlignedTrackRequestPage() {
         ? `<a data-link class="button button--primary button--large" href="/login">ورود امن برای پیگیری ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/trust">اعتماد و کنترل</a>`
         : `<a data-link class="button button--primary button--large" href="/login">ورود به Golden Demo ${icon("arrow")}</a>`
     })}
-      <section class="w14-page-section"><div class="container w14-safety-note">${icon("shield", { size: 24 })}<div><h2>عدم افشای وضعیت با شناسهٔ قابل حدس</h2><p>تا زمانی که قرارداد امن public tracking طراحی و تست نشود، رهجو Caseهای واقعی را با یک فرم عمومی و کد ساده در اختیار مرورگر ناشناس قرار نمی‌دهد.</p></div></div></section>`
+      <section class="w14-page-section"><div class="container w14-safety-note">${icon("shield", { size: 24 })}<div><h2>عدم افشای وضعیت با شناسهٔ قابل حدس</h2><p>تا زمانی که قرارداد امن public tracking طراحی و تست نشود، CRM Caseهای واقعی را با یک فرم عمومی و کد ساده در اختیار مرورگر ناشناس قرار نمی‌دهد.</p></div></div></section>`
   });
 }

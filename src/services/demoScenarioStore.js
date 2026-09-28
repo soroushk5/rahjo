@@ -15,7 +15,7 @@
  * @property {number} eventCount
  */
 
-const DEMO_STATE_KEY = "rahjo.client.demo.state.v1";
+const DEMO_STATE_KEY = "crm.client.demo.state.v1";
 /** @type {DemoState | null} */
 let memoryState = null;
 
@@ -111,7 +111,7 @@ function persist(next) {
     }
   }
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("rahjo:demo-state", { detail: normalized }));
+    window.dispatchEvent(new CustomEvent("crm:demo-state", { detail: normalized }));
   }
   return normalized;
 }
@@ -130,7 +130,7 @@ export function resetDemoScenario() {
   }
   const initial = cloneSeed();
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("rahjo:demo-state", { detail: initial }));
+    window.dispatchEvent(new CustomEvent("crm:demo-state", { detail: initial }));
   }
   return initial;
 }

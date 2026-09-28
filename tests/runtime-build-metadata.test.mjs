@@ -5,11 +5,11 @@ import { injectRuntimeMetadata, runtimeHealthFields } from "../scripts/runtime-m
 
 test("Hostinger build injects identical non-secret runtime metadata into HTML and health", () => {
   const buildSha = "0123456789abcdef0123456789abcdef01234567";
-  const apiBase = "https://api.rahjo.example";
+  const apiBase = "https://api.crm.example";
   const expected = { mode: "server", apiBase, buildSha };
   const index = injectRuntimeMetadata(readFileSync("index.html", "utf8"), expected);
   const health = { commit: buildSha, ...runtimeHealthFields(expected) };
-  const match = index.match(/<script id="rahjo-runtime-config" type="application\/json">([\s\S]*?)<\/script>/);
+  const match = index.match(/<script id="crm-runtime-config" type="application\/json">([\s\S]*?)<\/script>/);
   assert.ok(match);
   const runtime = JSON.parse(match[1]);
 

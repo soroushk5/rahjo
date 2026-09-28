@@ -33,7 +33,7 @@ export function renderPresentationMapPage() {
     <section class="public-page-hero public-page-hero--journey">
       <div class="container public-page-hero__grid">
         <div><span class="public-kicker"><i></i>END-TO-END OPERATING FLOW</span><h1>Context باید از ورودی تا نتیجه زنده بماند.</h1></div>
-        <div><p>رهجو یک مسیر مرجع می‌سازد که Website، CRM، Case، سرویس، Gate، Action، Outcome و Dashboard را به هم وصل می‌کند. هدف نهایی این است که re-entry دستی و حافظه‌های جدا کم شوند.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن جریان در Workspace</a><a data-link class="button button--secondary" href="/platform">معماری محصول</a></div></div>
+        <div><p>CRM یک مسیر مرجع می‌سازد که Website، CRM، Case، سرویس، Gate، Action، Outcome و Dashboard را به هم وصل می‌کند. هدف نهایی این است که re-entry دستی و حافظه‌های جدا کم شوند.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن جریان در Workspace</a><a data-link class="button button--secondary" href="/platform">معماری محصول</a></div></div>
       </div>
     </section>
 

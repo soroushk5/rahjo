@@ -18,12 +18,12 @@ export const DEFAULT_SERVER_TIMEOUT_MS = 30000;
 
 /** @type {Readonly<Record<string, string>>} */
 const stateMessages = Object.freeze({
-  unavailable: "سرویس دادهٔ رهجو در دسترس نیست. هیچ دادهٔ نمایشی جایگزین نشده است.",
+  unavailable: "سرویس دادهٔ CRM در دسترس نیست. هیچ دادهٔ نمایشی جایگزین نشده است.",
   auth: "نشست معتبر نیست. برای ادامه باید از مسیر امن سرور وارد شوید.",
   forbidden: "این نشست به فضای کاری درخواستی دسترسی ندارد.",
   conflict: "نسخهٔ داده تغییر کرده است. پیش از ادامه باید دادهٔ سرور دوباره خوانده شود.",
-  validation: "پاسخ سرور با قرارداد دادهٔ رهجو سازگار نیست.",
-  connecting: "در حال برقراری اتصال امن با سرویس دادهٔ رهجو…",
+  validation: "پاسخ سرور با قرارداد دادهٔ CRM سازگار نیست.",
+  connecting: "در حال برقراری اتصال امن با سرویس دادهٔ CRM…",
   ready: "اتصال سرور و فضای کاری تأیید شد.",
   demo: "حالت Golden Demo با دادهٔ ساختگی و جدا از سرور فعال است."
 });
@@ -107,7 +107,7 @@ export function createRuntimeDataFacade() {
   function publish(next) {
     current = next;
     if (typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
-      window.dispatchEvent(new CustomEvent("rahjo:runtime-data", { detail: next }));
+      window.dispatchEvent(new CustomEvent("crm:runtime-data", { detail: next }));
     }
     return next;
   }

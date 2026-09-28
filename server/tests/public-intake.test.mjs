@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRahjoServer } from "../src/app.js";
+import { createCrmServer } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { payloadDigest } from "../src/security.js";
 
-const origin = "https://www.rahjo.example";
+const origin = "https://www.crm.example";
 const pepper = "p".repeat(40);
 const token = "t".repeat(40);
 
@@ -18,7 +18,7 @@ function baseConfig(overrides = {}) {
     publicOrigin: "http://127.0.0.1:8787",
     publicIntakeEnabled: true,
     publicIntakeOrigin: origin,
-    publicIntakeWorkspaceSlug: "rahjo",
+    publicIntakeWorkspaceSlug: "default",
     publicIntakeToken: token,
     publicIntakeServiceId: "SRV-WEBSITE-INTAKE",
     publicIntakeMaxRequests: 20,
@@ -33,8 +33,8 @@ function dependencies(config = baseConfig()) {
   const captured = [];
   const context = {
     workspace_id: "ws-1",
-    workspace_slug: "rahjo",
-    workspace_name: "Rahjo",
+    workspace_slug: "default",
+    workspace_name: "CRM",
     membership_id: "mem-intake",
     user_id: "user-intake",
     role: "intake",
@@ -42,7 +42,7 @@ function dependencies(config = baseConfig()) {
   };
   const database = {
     async authenticate() { return context; },
-    async ready() { return { role: "rahjo_app" }; },
+    async ready() { return { role: "crm_app" }; },
     async authenticateSession() { return null; },
     async lookupPassword() { return null; }
   };
@@ -66,7 +66,7 @@ function dependencies(config = baseConfig()) {
 }
 
 async function withServer(deps, callback) {
-  const server = createRahjoServer({ ...deps, logger: { info() {}, error() {} } });
+  const server = createCrmServer({ ...deps, logger: { info() {}, error() {} } });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   const base = `http://127.0.0.1:${address.port}`;
@@ -181,22 +181,22 @@ test("public intake returns explicit 429 with Retry-After", async () => {
 test("public intake config is feature-gated and binds origin/workspace/service server-side", () => {
   const env = {
     NODE_ENV: "development",
-    RAHJO_CRM_MODE: "native_deferred",
-    RAHJO_INTERIM_ACK: "true",
-    RAHJO_DATABASE_URL: "postgres://example.invalid/rahjo",
-    RAHJO_TOKEN_PEPPER: pepper,
-    RAHJO_CORS_ORIGINS: origin,
-    RAHJO_PUBLIC_ORIGIN: "http://127.0.0.1:8787",
-    RAHJO_PUBLIC_INTAKE_ENABLED: "true",
-    RAHJO_PUBLIC_INTAKE_ORIGIN: origin,
-    RAHJO_PUBLIC_INTAKE_WORKSPACE_SLUG: "rahjo",
-    RAHJO_PUBLIC_INTAKE_TOKEN: token,
-    RAHJO_PUBLIC_INTAKE_SERVICE_ID: "SRV-WEBSITE-INTAKE"
+    CRM_MODE: "native_deferred",
+    CRM_INTERIM_ACK: "true",
+    CRM_DATABASE_URL: "postgres://example.invalid/crm",
+    CRM_TOKEN_PEPPER: pepper,
+    CRM_CORS_ORIGINS: origin,
+    CRM_PUBLIC_ORIGIN: "http://127.0.0.1:8787",
+    CRM_PUBLIC_INTAKE_ENABLED: "true",
+    CRM_PUBLIC_INTAKE_ORIGIN: origin,
+    CRM_PUBLIC_INTAKE_WORKSPACE_SLUG: "default",
+    CRM_PUBLIC_INTAKE_TOKEN: token,
+    CRM_PUBLIC_INTAKE_SERVICE_ID: "SRV-WEBSITE-INTAKE"
   };
   const config = loadConfig(env);
   assert.equal(config.publicIntakeEnabled, true);
   assert.equal(config.publicIntakeOrigin, origin);
-  assert.equal(config.publicIntakeWorkspaceSlug, "rahjo");
+  assert.equal(config.publicIntakeWorkspaceSlug, "default");
   assert.equal(config.publicIntakeServiceId, "SRV-WEBSITE-INTAKE");
   assert.equal(payloadDigest(config.publicIntakeToken).length, 64);
 });

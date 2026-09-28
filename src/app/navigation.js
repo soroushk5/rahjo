@@ -2,7 +2,7 @@
 // Canonical public destinations. The header stays compact; these routes define
 // the intentional public product IA and search/navigation contract.
 export const publicNavigation = Object.freeze([
-  { path: "/", label: "خانه", meta: "رهجو در یک نگاه" },
+  { path: "/", label: "خانه", meta: "CRM در یک نگاه" },
   { path: "/product", label: "محصول", meta: "مشتری، فروش و اجرای کار" },
   { path: "/contact", label: "شروع", meta: "ثبت یک جریان واقعی برای شروع" }
 ]);
@@ -23,14 +23,14 @@ export const consoleNavigation = Object.freeze([
 ]);
 
 export const utilityDestinations = Object.freeze([
-  { path: "/login", label: "ورود به رهجو", meta: "ورود به فضای کاری" },
+  { path: "/login", label: "ورود به CRM", meta: "ورود به فضای کاری" },
   { path: "/request-service", label: "درخواست خدمت", meta: "ثبت یک درخواست جدید" },
   { path: "/customers/detail", label: "پرونده مشتری", meta: "نمای ۳۶۰ درجه مشتری" },
   { path: "/requests/detail", label: "جزئیات درخواست", meta: "مدارک، اجرا، رسید و نتیجه" }
 ]);
 
 export const publicJourney = Object.freeze([
-  { path: "/", index: "01", label: "خانه", title: "رهجو در یک نگاه" },
+  { path: "/", index: "01", label: "خانه", title: "CRM در یک نگاه" },
   { path: "/product", index: "02", label: "محصول", title: "محصول چگونه کار را جلو می‌برد؟" },
   { path: "/contact", index: "03", label: "شروع", title: "ثبت یک جریان واقعی" }
 ]);
@@ -42,7 +42,7 @@ export const allDestinations = Object.freeze([
 ]);
 
 export function routeLabel(path) {
-  return allDestinations.find((item) => item.path === path)?.label ?? "رهجو";
+  return allDestinations.find((item) => item.path === path)?.label ?? "CRM";
 }
 
 export function journeyNeighbors(path) {

@@ -1,4 +1,4 @@
-export const runtimeConfigPattern = /(<script id="rahjo-runtime-config" type="application\/json">)[\s\S]*?(<\/script>)/;
+export const runtimeConfigPattern = /(<script id="crm-runtime-config" type="application\/json">)[\s\S]*?(<\/script>)/;
 
 /** @param {{mode:string, apiBase:string, buildSha:string}} config */
 export function injectRuntimeMetadata(index, config) {

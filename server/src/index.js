@@ -2,8 +2,8 @@ import { loadConfig, loadWorkspaceTokenMap } from "./config.js";
 import { Database } from "./database.js";
 import { RelaticleClient } from "./relaticleClient.js";
 import { NativeDeferredCrmClient } from "./nativeDeferredCrmClient.js";
-import { RahjoRepository } from "./repository.js";
-import { createRahjoServer } from "./app.js";
+import { CrmRepository } from "./repository.js";
+import { createCrmServer } from "./app.js";
 
 let database;
 let server;
@@ -22,7 +22,7 @@ async function start() {
         timeoutMs: config.requestTimeoutMs
       })
     : new NativeDeferredCrmClient();
-  const repository = new RahjoRepository({ database, relaticle });
+  const repository = new CrmRepository({ database, relaticle });
 
   await database.ready();
   for (const [workspaceId, mapping] of workspaceTokens) {
@@ -31,7 +31,7 @@ async function start() {
     await relaticle.verifyTeamIdentity(workspaceId);
   }
 
-  server = createRahjoServer({ config, database, repository, relaticle, workspaceTokens });
+  server = createCrmServer({ config, database, repository, relaticle, workspaceTokens });
   server.listen(config.port, "0.0.0.0", () => {
     console.log(JSON.stringify({ event: "server.started", port: config.port, dataMode: "server", crmMode: config.crmMode, interim: config.interim, llmEnabled: false }));
   });

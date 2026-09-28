@@ -37,9 +37,9 @@ function publicHero({ title, description, activePath, content = "" }) {
 
 function miniDashboard() {
   return `
-    <div class="home-product-preview" aria-label="پیش‌نمایش محیط عملیاتی رهجو">
+    <div class="home-product-preview" aria-label="پیش‌نمایش محیط عملیاتی CRM">
       <aside>
-        <strong>رهجو</strong>
+        <strong>CRM</strong>
         <span class="is-active">${icon("dashboard", { size: 16 })} داشبورد</span>
         <span>${icon("users", { size: 16 })} مشتریان</span>
         <span>${icon("reports", { size: 16 })} فروش</span>
@@ -63,8 +63,8 @@ export function renderHomePage() {
         <div class="container home-hero__grid">
           <div class="home-hero__copy">
             <h1>عملیات کسب‌وکارتان را از اولین تماس مشتری تا تحویل خدمت، یکپارچه کنید.</h1>
-            <p>رهجو مشتری، فروش، درخواست خدمت، اسناد، پیگیری، پرداخت، اجرا و نتیجه را در یک جریان واحد قرار می‌دهد.</p>
-            <div class="button-row"><a data-link class="button button--primary button--large" href="/login">دیدن دموی رهجو ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/contact">بررسی کسب‌وکار من</a></div>
+            <p>CRM مشتری، فروش، درخواست خدمت، اسناد، پیگیری، پرداخت، اجرا و نتیجه را در یک جریان واحد قرار می‌دهد.</p>
+            <div class="button-row"><a data-link class="button button--primary button--large" href="/login">دیدن دموی CRM ${icon("arrow")}</a><a data-link class="button button--outline button--large" href="/contact">بررسی کسب‌وکار من</a></div>
             <small class="hero-note">یک هستهٔ استاندارد که با فرایند واقعی کسب‌وکار شما پیکربندی می‌شود.</small>
           </div>
           <div class="home-hero__visual">${miniDashboard()}<div class="journey-line" aria-hidden="true"></div></div>
@@ -73,7 +73,7 @@ export function renderHomePage() {
 
       <section class="flow-section">
         <div class="container flow-section__grid">
-          <div class="flow-intro"><h2>از درخواست تا نتیجه، بدون گم‌شدن کار</h2><p>به‌جای چند ابزار جدا، یک مسیر روشن دارید که مسئول، وضعیت و اقدام بعدی را همیشه مشخص نگه می‌دارد.</p><a data-link class="text-link" href="/how-it-works">نحوهٔ کار رهجو ${icon("arrow", { size: 16 })}</a></div>
+          <div class="flow-intro"><h2>از درخواست تا نتیجه، بدون گم‌شدن کار</h2><p>به‌جای چند ابزار جدا، یک مسیر روشن دارید که مسئول، وضعیت و اقدام بعدی را همیشه مشخص نگه می‌دارد.</p><a data-link class="text-link" href="/how-it-works">نحوهٔ کار CRM ${icon("arrow", { size: 16 })}</a></div>
           <ol class="journey-flow">${journey.map(([title, desc, glyph]) => `<li><span>${icon(glyph, { size: 24 })}</span><strong>${title}</strong><small>${desc}</small></li>`).join("")}</ol>
         </div>
       </section>
@@ -81,7 +81,7 @@ export function renderHomePage() {
       <section class="problem-section">
         <div class="container problem-section__grid">
           <div><h2>وقتی مسیر مشتری تکه‌تکه است، هیچ‌کس تصویر کامل را ندارد.</h2><p>مشتری از یک کانال وارد می‌شود، فایل در پیام‌رسان می‌ماند، قیمت تلفنی اعلام می‌شود، پرداخت جداست و عملیات با حافظهٔ افراد پیش می‌رود. نتیجه؟ پیگیری فراموش می‌شود و سابقهٔ نهایی کامل نیست.</p></div>
-          <div class="fragment-list"><span>${icon("phone")} تماس و پیام</span><span>${icon("document")} فایل و اکسل</span><span>${icon("bank")} پرداخت جدا</span><span>${icon("clock")} پیگیری دستی</span><strong>${icon("link")} رهجو این نقاط را به یک جریان وصل می‌کند.</strong></div>
+          <div class="fragment-list"><span>${icon("phone")} تماس و پیام</span><span>${icon("document")} فایل و اکسل</span><span>${icon("bank")} پرداخت جدا</span><span>${icon("clock")} پیگیری دستی</span><strong>${icon("link")} CRM این نقاط را به یک جریان وصل می‌کند.</strong></div>
         </div>
       </section>
 
@@ -101,14 +101,14 @@ export function renderHomePage() {
       </section>
 
       <section class="scenario-section">
-        <div class="container"><header class="section-heading"><div><h2>یک سناریوی کامل، نه چند صفحهٔ جدا</h2><p>Golden Demo رهجو یک مشتری را از ثبت درخواست تا تحویل نتیجه دنبال می‌کند.</p></div></header><ol class="scenario-rail"><li><b>۱</b><span>درخواست مشتری</span></li><li><b>۲</b><span>تکمیل مدارک</span></li><li><b>۳</b><span>پیشنهاد و تأیید</span></li><li><b>۴</b><span>پرداخت</span></li><li><b>۵</b><span>اجرا و تأیید انسانی</span></li><li><b>۶</b><span>تحویل و پیگیری</span></li></ol></div>
+        <div class="container"><header class="section-heading"><div><h2>یک سناریوی کامل، نه چند صفحهٔ جدا</h2><p>Golden Demo CRM یک مشتری را از ثبت درخواست تا تحویل نتیجه دنبال می‌کند.</p></div></header><ol class="scenario-rail"><li><b>۱</b><span>درخواست مشتری</span></li><li><b>۲</b><span>تکمیل مدارک</span></li><li><b>۳</b><span>پیشنهاد و تأیید</span></li><li><b>۴</b><span>پرداخت</span></li><li><b>۵</b><span>اجرا و تأیید انسانی</span></li><li><b>۶</b><span>تحویل و پیگیری</span></li></ol></div>
       </section>
 
-      <section class="why-section"><div class="container why-section__grid"><div><h2>چرا رهجو؟</h2><p>چون سیستم باید قبل از هر چیز کار واقعی تیم را راه بیندازد.</p></div><dl><div><dt>یکپارچگی</dt><dd>یک شناسه و سابقه برای کل مسیر مشتری</dd></div><div><dt>پیگیری</dt><dd>کار، مسئول و سررسید فراموش نمی‌شود</dd></div><div><dt>کنترل</dt><dd>نقش، تأیید و تاریخچه در جای لازم</dd></div><div><dt>توسعه‌پذیری</dt><dd>اتصال و قابلیت‌های آینده بدون بازسازی هسته</dd></div></dl></div></section>
+      <section class="why-section"><div class="container why-section__grid"><div><h2>چرا CRM؟</h2><p>چون سیستم باید قبل از هر چیز کار واقعی تیم را راه بیندازد.</p></div><dl><div><dt>یکپارچگی</dt><dd>یک شناسه و سابقه برای کل مسیر مشتری</dd></div><div><dt>پیگیری</dt><dd>کار، مسئول و سررسید فراموش نمی‌شود</dd></div><div><dt>کنترل</dt><dd>نقش، تأیید و تاریخچه در جای لازم</dd></div><div><dt>توسعه‌پذیری</dt><dd>اتصال و قابلیت‌های آینده بدون بازسازی هسته</dd></div></dl></div></section>
 
-      <section class="deployment-section"><div class="container"><header class="section-heading"><div><h2>راه‌اندازی متناسب با کسب‌وکار شما</h2><p>رهجو یک هستهٔ استاندارد دارد؛ خدمات، فرم‌ها، نقش‌ها و گردش‌کارها بر اساس واقعیت عملیات شما تنظیم می‌شوند.</p></div><a data-link class="button button--outline" href="/pilot">جزئیات راه‌اندازی</a></header><ol class="implementation-row">${implementationSteps.map((step) => `<li><b>${step.number}</b><div><strong>${step.title}</strong><p>${step.description}</p></div></li>`).join("")}</ol></div></section>
+      <section class="deployment-section"><div class="container"><header class="section-heading"><div><h2>راه‌اندازی متناسب با کسب‌وکار شما</h2><p>CRM یک هستهٔ استاندارد دارد؛ خدمات، فرم‌ها، نقش‌ها و گردش‌کارها بر اساس واقعیت عملیات شما تنظیم می‌شوند.</p></div><a data-link class="button button--outline" href="/pilot">جزئیات راه‌اندازی</a></header><ol class="implementation-row">${implementationSteps.map((step) => `<li><b>${step.number}</b><div><strong>${step.title}</strong><p>${step.description}</p></div></li>`).join("")}</ol></div></section>
 
-      <section class="future-section"><div class="container future-section__inner">${icon("link", { size: 28 })}<div><h2>آماده برای اتصال و رشد آینده</h2><p>زیرساخت رهجو برای اتصال به سرویس‌های دیجیتال، اتوماسیون‌های پیچیده‌تر و قابلیت‌های هوشمند آینده طراحی شده است؛ بدون اینکه کارکرد پایه به آن‌ها وابسته باشد.</p></div></div></section>
+      <section class="future-section"><div class="container future-section__inner">${icon("link", { size: 28 })}<div><h2>آماده برای اتصال و رشد آینده</h2><p>زیرساخت CRM برای اتصال به سرویس‌های دیجیتال، اتوماسیون‌های پیچیده‌تر و قابلیت‌های هوشمند آینده طراحی شده است؛ بدون اینکه کارکرد پایه به آن‌ها وابسته باشد.</p></div></div></section>
 
       <section class="final-cta"><div class="container"><div><h2>مسیر مشتری و عملیات شما کجا از هم جدا می‌شوند؟</h2><p>در یک جلسهٔ کوتاه، جریان موجود را مرور می‌کنیم و نقطهٔ مناسب شروع را مشخص می‌کنیم.</p></div><div class="button-row"><a data-link class="button button--light button--large" href="/contact">بررسی کسب‌وکار من</a><a data-link class="button button--ghost-light button--large" href="/login">دیدن دمو</a></div></div></section>`
   });
@@ -118,10 +118,10 @@ export function renderProductPage() {
   const content = `
     <div class="public-page-actions"><a data-link class="button button--primary" href="/login">دیدن دموی تعاملی</a><a data-link class="button button--outline" href="/contact">درخواست جلسه</a></div>
     </div></section>
-    <section class="public-section public-section--first"><div class="container"><header class="section-heading"><div><h2>یک جریان واقعی از مشتری تا نتیجه</h2><p>هر اتفاق در رهجو به مشتری، خدمت و درخواست درست متصل می‌شود.</p></div></header><ol class="wide-flow">${["مشتری", "نیاز", "فرصت", "خدمت", "درخواست", "مدارک", "قیمت", "پرداخت", "اجرا", "نتیجه"].map((item, index) => `<li><b>${new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2, useGrouping: false }).format(index + 1)}</b><span>${item}</span></li>`).join("")}</ol></div></section>
+    <section class="public-section public-section--first"><div class="container"><header class="section-heading"><div><h2>یک جریان واقعی از مشتری تا نتیجه</h2><p>هر اتفاق در CRM به مشتری، خدمت و درخواست درست متصل می‌شود.</p></div></header><ol class="wide-flow">${["مشتری", "نیاز", "فرصت", "خدمت", "درخواست", "مدارک", "قیمت", "پرداخت", "اجرا", "نتیجه"].map((item, index) => `<li><b>${new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2, useGrouping: false }).format(index + 1)}</b><span>${item}</span></li>`).join("")}</ol></div></section>
     <section class="public-section public-section--tint"><div class="container"><div class="module-grid">${productModules.map(([glyph, title, desc]) => `<article><span>${icon(glyph)}</span><h3>${title}</h3><p>${desc}</p></article>`).join("")}</div></div></section>
-    <section class="public-section"><div class="container split-copy"><div><h2>فناوری در خدمت عملیات، نه برعکس</h2><p>معماری ماژولار رهجو اجازه می‌دهد خدمات، فرم‌ها، وضعیت‌ها، نقش‌ها و قواعد بدون بازنویسی هسته تغییر کنند. API و Connector در سطح داخلی آماده‌اند اما مسئلهٔ اصلی مشتری معرفی نمی‌شوند.</p></div><div class="architecture-note"><strong>هستهٔ عملیاتی</strong><span>موجودیت‌های مرتبط و تاریخچهٔ مشترک</span><i></i><strong>اتصال‌های مستقل</strong><span>پرداخت، حسابداری، پیام، ایمیل و سرویس ثالث</span><i></i><strong>آیندهٔ اختیاری</strong><span>تحلیل و قابلیت هوشمند، پس از شکل‌گیری دادهٔ درست</span></div></div></section>`;
-  return publicHero({ title: "رهجو، سیستم یکپارچهٔ مشتری، فروش و ارائهٔ خدمات", description: "از اولین تعامل تا ثبت درخواست، پرداخت، اجرا و تحویل؛ همهٔ تیم روی یک مسیر و یک سابقه کار می‌کند.", activePath: "/product", content });
+    <section class="public-section"><div class="container split-copy"><div><h2>فناوری در خدمت عملیات، نه برعکس</h2><p>معماری ماژولار CRM اجازه می‌دهد خدمات، فرم‌ها، وضعیت‌ها، نقش‌ها و قواعد بدون بازنویسی هسته تغییر کنند. API و Connector در سطح داخلی آماده‌اند اما مسئلهٔ اصلی مشتری معرفی نمی‌شوند.</p></div><div class="architecture-note"><strong>هستهٔ عملیاتی</strong><span>موجودیت‌های مرتبط و تاریخچهٔ مشترک</span><i></i><strong>اتصال‌های مستقل</strong><span>پرداخت، حسابداری، پیام، ایمیل و سرویس ثالث</span><i></i><strong>آیندهٔ اختیاری</strong><span>تحلیل و قابلیت هوشمند، پس از شکل‌گیری دادهٔ درست</span></div></div></section>`;
+  return publicHero({ title: "CRM، سیستم یکپارچهٔ مشتری، فروش و ارائهٔ خدمات", description: "از اولین تعامل تا ثبت درخواست، پرداخت، اجرا و تحویل؛ همهٔ تیم روی یک مسیر و یک سابقه کار می‌کند.", activePath: "/product", content });
 }
 
 export function renderServicesPage() {
@@ -130,12 +130,12 @@ export function renderServicesPage() {
     <div class="public-page-actions"><a data-link class="button button--primary" href="/request-service">ثبت درخواست خدمت</a></div>
     </div></section>
     <section class="public-section public-section--first"><div class="container"><div class="service-toolbar" role="group" aria-label="فیلتر دستهٔ خدمت">${categories.map((category) => `<button type="button" data-service-filter="${category}" ${category === "همه" ? 'aria-pressed="true"' : ""}>${category}</button>`).join("")}</div><div class="service-list">${serviceCatalog.map((service) => `<article data-service-card data-category="${service.category}"><div class="service-list__title"><span>${icon(service.online ? "requests" : "link")}</span><div><small>${service.category}</small><h2>${service.title}</h2></div></div><p>${service.summary}</p><dl><div><dt>زمان تقریبی</dt><dd>${service.duration}</dd></div><div><dt>قیمت</dt><dd>${service.priceLabel}</dd></div><div><dt>خروجی</dt><dd>${service.output}</dd></div></dl><div class="service-list__actions"><button type="button" class="text-link" data-service-expand="${service.id}">مشاهدهٔ الزامات ${icon("arrow", { size: 15 })}</button><a data-link class="button button--outline" href="/request-service" data-service-select="${service.id}">شروع درخواست</a></div><div class="service-requirements" data-service-requirements="${service.id}" hidden><strong>مدارک و اطلاعات موردنیاز</strong><ul>${service.documents.map((item) => `<li>${icon("check", { size: 15 })}${item}</li>`).join("")}</ul><strong>مراحل</strong><p>${service.stages.join(" ← ")}</p></div></article>`).join("")}</div></div></section>`;
-  return publicHero({ title: "خدماتی که مشتری واقعاً درخواست می‌کند", description: "هر خدمت در رهجو قیمت، زمان، مدارک، مسئول، مراحل و خروجی روشن دارد. API فقط یکی از راه‌های اجرای یک خدمت است.", activePath: "/services", content });
+  return publicHero({ title: "خدماتی که مشتری واقعاً درخواست می‌کند", description: "هر خدمت در CRM قیمت، زمان، مدارک، مسئول، مراحل و خروجی روشن دارد. API فقط یکی از راه‌های اجرای یک خدمت است.", activePath: "/services", content });
 }
 
 export function renderUseCasesPage() {
-  const content = `</div></section><section class="public-section public-section--first"><div class="container"><div class="use-case-list">${useCaseCatalog.map((item, index) => `<article><b>${new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2 }).format(index + 1)}</b><div><h2>${item.title}</h2><p>${item.problem}</p></div><strong>${icon("arrow", { size: 17 })}${item.outcome}</strong></article>`).join("")}</div><div class="inline-cta"><div><h2>مسئلهٔ شما دقیقاً در این فهرست نیست؟</h2><p>رهجو بر اساس فرایند واقعی پیکربندی می‌شود، نه بر اساس یک قالب ثابت.</p></div><a data-link class="button button--primary" href="/contact">مسئله‌ام را بررسی کنید</a></div></div></section>`;
-  return publicHero({ title: "رهجو برای چه کسب‌وکاری مناسب است؟", description: "اگر مشتری، درخواست، فایل، پرداخت و عملیات شما در ابزارهای جدا حرکت می‌کند، یکی از این سناریوها احتمالاً آشناست.", activePath: "/use-cases", content });
+  const content = `</div></section><section class="public-section public-section--first"><div class="container"><div class="use-case-list">${useCaseCatalog.map((item, index) => `<article><b>${new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2 }).format(index + 1)}</b><div><h2>${item.title}</h2><p>${item.problem}</p></div><strong>${icon("arrow", { size: 17 })}${item.outcome}</strong></article>`).join("")}</div><div class="inline-cta"><div><h2>مسئلهٔ شما دقیقاً در این فهرست نیست؟</h2><p>CRM بر اساس فرایند واقعی پیکربندی می‌شود، نه بر اساس یک قالب ثابت.</p></div><a data-link class="button button--primary" href="/contact">مسئله‌ام را بررسی کنید</a></div></div></section>`;
+  return publicHero({ title: "CRM برای چه کسب‌وکاری مناسب است؟", description: "اگر مشتری، درخواست، فایل، پرداخت و عملیات شما در ابزارهای جدا حرکت می‌کند، یکی از این سناریوها احتمالاً آشناست.", activePath: "/use-cases", content });
 }
 
 export function renderHowItWorksPage() {
@@ -143,7 +143,7 @@ export function renderHowItWorksPage() {
   const content = `
     <div class="public-page-actions"><a data-link class="button button--primary" href="/login">اجرای مسیر در دمو</a></div>
     </div></section><section class="public-section public-section--first"><div class="container how-steps">${steps.map((item, index) => `<article><b>${new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2 }).format(index + 1)}</b><p>${item}</p></article>`).join("")}</div></section><section class="public-section public-section--tint"><div class="container split-copy"><div><h2>در هر مرحله سه سؤال جواب دارد</h2><p>چه وضعیتی داریم؟ مسئول اقدام بعدی کیست؟ آخرین تغییر چه زمانی و چرا رخ داده است؟</p></div><ul class="big-checks"><li>${icon("check")} وضعیت روشن</li><li>${icon("users")} مسئول مشخص</li><li>${icon("timeline")} سابقهٔ قابل بازبینی</li></ul></div></section>`;
-  return publicHero({ title: "رهجو چگونه کار می‌کند؟", description: "یک مسیر روشن و قابل‌پیگیری از ورود مشتری تا نتیجه و فروش مجدد.", activePath: "/how-it-works", content });
+  return publicHero({ title: "CRM چگونه کار می‌کند؟", description: "یک مسیر روشن و قابل‌پیگیری از ورود مشتری تا نتیجه و فروش مجدد.", activePath: "/how-it-works", content });
 }
 
 export function renderPilotPage() {
@@ -157,19 +157,19 @@ export function renderPilotPage() {
   ];
   const content = `
     <div class="public-page-actions"><a data-link class="button button--primary" href="/contact">درخواست بررسی کسب‌وکار</a></div>
-    </div></section><section class="public-section public-section--first"><div class="container pilot-timeline">${detailed.map(([title, desc], index) => `<article><b>${new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2 }).format(index + 1)}</b><div><h2>${title}</h2><p>${desc}</p></div></article>`).join("")}</div></section><section class="public-section public-section--tint"><div class="container split-copy"><div><h2>هستهٔ استاندارد، پیکربندی اختصاصی</h2><p>رهجو یک نرم‌افزار بستهٔ یکسان برای همه نیست. موجودیت‌ها و کنترل‌های پایه ثابت‌اند؛ خدمات، فرم‌ها، نقش‌ها و جریان اجرا بر اساس کسب‌وکار تنظیم می‌شوند.</p></div><div class="scope-pair"><div><strong>ثابت</strong><span>مشتری، درخواست، کار، پرداخت، نتیجه، تاریخچه</span></div><div><strong>قابل‌پیکربندی</strong><span>خدمت، فرم، مرحله، نقش، SLA، پیام، تأیید</span></div></div></div></section>`;
-  return publicHero({ title: "راه‌اندازی رهجو برای کسب‌وکار شما", description: "از شناخت عملیات موجود شروع می‌کنیم، یک مسیر محدود را پایلوت می‌کنیم و فقط پس از پذیرش تیم گسترش می‌دهیم.", activePath: "/pilot", content });
+    </div></section><section class="public-section public-section--first"><div class="container pilot-timeline">${detailed.map(([title, desc], index) => `<article><b>${new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2 }).format(index + 1)}</b><div><h2>${title}</h2><p>${desc}</p></div></article>`).join("")}</div></section><section class="public-section public-section--tint"><div class="container split-copy"><div><h2>هستهٔ استاندارد، پیکربندی اختصاصی</h2><p>CRM یک نرم‌افزار بستهٔ یکسان برای همه نیست. موجودیت‌ها و کنترل‌های پایه ثابت‌اند؛ خدمات، فرم‌ها، نقش‌ها و جریان اجرا بر اساس کسب‌وکار تنظیم می‌شوند.</p></div><div class="scope-pair"><div><strong>ثابت</strong><span>مشتری، درخواست، کار، پرداخت، نتیجه، تاریخچه</span></div><div><strong>قابل‌پیکربندی</strong><span>خدمت، فرم، مرحله، نقش، SLA، پیام، تأیید</span></div></div></div></section>`;
+  return publicHero({ title: "راه‌اندازی CRM برای کسب‌وکار شما", description: "از شناخت عملیات موجود شروع می‌کنیم، یک مسیر محدود را پایلوت می‌کنیم و فقط پس از پذیرش تیم گسترش می‌دهیم.", activePath: "/pilot", content });
 }
 
 export function renderTrustPage() {
   const controls = [["users", "سطح دسترسی", "هر نقش فقط اطلاعات و عملیات لازم را می‌بیند."], ["check", "تأیید انسانی", "تخفیف، استرداد یا اقدام حساس در نقطهٔ لازم متوقف می‌شود."], ["timeline", "ثبت تغییرات", "مشخص است چه کسی، چه زمانی و چه چیزی را تغییر داده است."], ["shield", "حفاظت اطلاعات", "احراز هویت، مجوز، نشست، فایل و Secret مرزهای جدا دارند."], ["audit", "قابلیت بازبینی", "رخدادهای مهم به رکورد و مسئول درست متصل‌اند."], ["document", "کیفیت داده", "نقص، رکورد تکراری و ارتباط گمشده به کار اصلاحی تبدیل می‌شوند."]];
-  const content = `</div></section><section class="public-section public-section--first"><div class="container control-grid">${controls.map(([glyph, title, desc]) => `<article><span>${icon(glyph)}</span><h2>${title}</h2><p>${desc}</p></article>`).join("")}</div></section><section class="public-section public-section--tint"><div class="container split-copy"><div><h2>کنترل جایی ظاهر می‌شود که لازم است</h2><p>کار روزمره نباید با هشدارهای تکراری کند شود. رهجو کنترل را در نقاط مهم—تغییر حساس، پرداخت، تأیید و تحویل—اعمال و در تاریخچه ثبت می‌کند.</p></div><a data-link class="button button--outline" href="/login">دیدن ممیزی در دمو</a></div></section>`;
+  const content = `</div></section><section class="public-section public-section--first"><div class="container control-grid">${controls.map(([glyph, title, desc]) => `<article><span>${icon(glyph)}</span><h2>${title}</h2><p>${desc}</p></article>`).join("")}</div></section><section class="public-section public-section--tint"><div class="container split-copy"><div><h2>کنترل جایی ظاهر می‌شود که لازم است</h2><p>کار روزمره نباید با هشدارهای تکراری کند شود. CRM کنترل را در نقاط مهم—تغییر حساس، پرداخت، تأیید و تحویل—اعمال و در تاریخچه ثبت می‌کند.</p></div><a data-link class="button button--outline" href="/login">دیدن ممیزی در دمو</a></div></section>`;
   return publicHero({ title: "اعتماد از مسئولیت روشن و سابقهٔ قابل بازبینی می‌آید", description: "زبان ساده، دسترسی متناسب، تأیید انسانی در نقطهٔ لازم و تاریخچه‌ای که پاسخ می‌دهد چه اتفاقی افتاد.", activePath: "/trust", content });
 }
 
 export function renderAboutPage() {
-  const content = `</div></section><section class="public-section public-section--first"><div class="container editorial-copy"><h2>رهجو چه مسئله‌ای را حل می‌کند؟</h2><p>بسیاری از کسب‌وکارها پیش از نیاز به فناوری پیشرفته، به یک سیستم منظم برای مشتری، فروش، خدمت، درخواست، پرداخت و عملیات نیاز دارند. رهجو همان زیرساخت را می‌سازد.</p><h2>رویکرد توسعه</h2><p>محصول از فرایند واقعی شروع می‌شود؛ ماژولار و قابل‌پیکربندی می‌ماند و بدون وابستگی به هوش مصنوعی ارزش کامل ارائه می‌دهد.</p><blockquote>اول نظم عملیاتی. بعد اتوماسیون. بعد اتصال. بعد هوشمندی.</blockquote><h2>توسعهٔ تدریجی</h2><p>وقتی دادهٔ عملیاتی درست و ساخت‌یافته شکل گرفت، اتصال‌ها و قابلیت‌های آینده می‌توانند روی همان هسته اضافه شوند؛ بدون شروع دوباره از صفر.</p><div class="inline-cta"><div><h2>برای شناختن رهجو از خود محصول شروع کنید.</h2><p>سناریوی کامل مشتری تا نتیجه را در دموی تعاملی ببینید.</p></div><a data-link class="button button--primary" href="/login">شروع دمو</a></div></div></section>`;
-  return publicHero({ title: "رهجو برای فرایند واقعی کسب‌وکار ساخته شده است", description: "نه برای نمایش معماری پیچیده؛ برای اینکه مشتری، درخواست و کار روزانه گم نشوند.", activePath: "/about", content });
+  const content = `</div></section><section class="public-section public-section--first"><div class="container editorial-copy"><h2>CRM چه مسئله‌ای را حل می‌کند؟</h2><p>بسیاری از کسب‌وکارها پیش از نیاز به فناوری پیشرفته، به یک سیستم منظم برای مشتری، فروش، خدمت، درخواست، پرداخت و عملیات نیاز دارند. CRM همان زیرساخت را می‌سازد.</p><h2>رویکرد توسعه</h2><p>محصول از فرایند واقعی شروع می‌شود؛ ماژولار و قابل‌پیکربندی می‌ماند و بدون وابستگی به هوش مصنوعی ارزش کامل ارائه می‌دهد.</p><blockquote>اول نظم عملیاتی. بعد اتوماسیون. بعد اتصال. بعد هوشمندی.</blockquote><h2>توسعهٔ تدریجی</h2><p>وقتی دادهٔ عملیاتی درست و ساخت‌یافته شکل گرفت، اتصال‌ها و قابلیت‌های آینده می‌توانند روی همان هسته اضافه شوند؛ بدون شروع دوباره از صفر.</p><div class="inline-cta"><div><h2>برای شناختن CRM از خود محصول شروع کنید.</h2><p>سناریوی کامل مشتری تا نتیجه را در دموی تعاملی ببینید.</p></div><a data-link class="button button--primary" href="/login">شروع دمو</a></div></div></section>`;
+  return publicHero({ title: "CRM برای فرایند واقعی کسب‌وکار ساخته شده است", description: "نه برای نمایش معماری پیچیده؛ برای اینکه مشتری، درخواست و کار روزانه گم نشوند.", activePath: "/about", content });
 }
 
 export function renderContactPage() {
@@ -184,16 +184,16 @@ export function renderTrackRequestPage() {
 
 export function renderPrivacyPage() {
   const content = `</div></section><section class="public-section public-section--first"><div class="container editorial-copy"><h2>نسخهٔ نمایشی</h2><p>تمام داده‌ها و عملیات این نسخه ساختگی‌اند و نباید اطلاعات شخصی یا محرمانهٔ واقعی در آن وارد شود.</p><h2>نسخهٔ عملیاتی آینده</h2><p>احراز هویت، مجوز، نقش، نشست، ذخیره‌سازی، ممیزی، دسترسی فایل، Secret و اطلاعات اتصال باید مرزهای مستقل داشته باشند. هیچ کلید یا Credential واقعی در Front-end قرار نمی‌گیرد.</p><h2>حداقل‌سازی</h2><p>هر فرم باید فقط اطلاعات لازم برای خدمت و مرحلهٔ مربوط را دریافت کند و دورهٔ نگه‌داری آن روشن باشد.</p></div></section>`;
-  return publicHero({ title: "حریم خصوصی و اصول داده", description: "رهجو اطلاعات را در ارتباط با مشتری، خدمت و هدف عملیاتی روشن نگه می‌دارد.", activePath: "/privacy", content });
+  return publicHero({ title: "حریم خصوصی و اصول داده", description: "CRM اطلاعات را در ارتباط با مشتری، خدمت و هدف عملیاتی روشن نگه می‌دارد.", activePath: "/privacy", content });
 }
 
 export function renderTermsPage() {
   const content = `</div></section><section class="public-section public-section--first"><div class="container editorial-copy"><h2>محیط نمایشی</h2><p>این نسخه برای نمایش تجربهٔ محصول است و هیچ پرداخت، پیام، فایل یا اتصال خارجی واقعی ایجاد نمی‌کند.</p><h2>داده و دسترسی</h2><p>از ورود دادهٔ واقعی، شخصی، مالی یا محرمانه خودداری کنید. اطلاعات واردشده فقط در حافظهٔ محلی مرورگر همان دستگاه نگه‌داری می‌شود.</p><h2>ادعاهای محصول</h2><p>اعداد، نام‌ها، زمان‌ها و وضعیت‌های نمایش‌داده‌شده نمونه‌اند و نباید به‌عنوان مشتری، عملکرد یا تعهد عملیاتی واقعی تفسیر شوند.</p></div></section>`;
-  return publicHero({ title: "شرایط استفاده از دموی رهجو", description: "مرز این نسخه روشن است: یک نمونهٔ تعاملی با داده و عملیات ساختگی.", activePath: "/terms", content });
+  return publicHero({ title: "شرایط استفاده از دموی CRM", description: "مرز این نسخه روشن است: یک نمونهٔ تعاملی با داده و عملیات ساختگی.", activePath: "/terms", content });
 }
 
 export function renderNotFoundPage() {
-  return siteShell({ activePath: "", content: `<section class="not-found"><div class="container"><span>۴۰۴</span><h1>این مسیر در رهجو پیدا نشد.</h1><p>از صفحهٔ اصلی یا دموی تعاملی ادامه دهید.</p><div class="button-row"><a data-link class="button button--primary" href="/">بازگشت به خانه</a><a data-link class="button button--outline" href="/login">شروع دمو</a></div></div></section>` });
+  return siteShell({ activePath: "", content: `<section class="not-found"><div class="container"><span>۴۰۴</span><h1>این مسیر در CRM پیدا نشد.</h1><p>از صفحهٔ اصلی یا دموی تعاملی ادامه دهید.</p><div class="button-row"><a data-link class="button button--primary" href="/">بازگشت به خانه</a><a data-link class="button button--outline" href="/login">شروع دمو</a></div></div></section>` });
 }
 
 export function mountPublicPage() {

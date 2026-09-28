@@ -19,7 +19,7 @@ import {
 } from "../data/operationalData.js";
 
 export const OPERATIONAL_STATE_VERSION = 1;
-export const OPERATIONAL_STATE_KEY = "rahjo.operational.memory.v1";
+export const OPERATIONAL_STATE_KEY = "crm.operational.memory.v1";
 
 /** @typedef {Record<string, any>} Entity */
 /** @typedef {{version:number, revision:number, counters:Record<string, number>, accounts:Entity[], contacts:Entity[], leads:Entity[], opportunities:Entity[], cases:Entity[], tasks:Entity[], services:Entity[], approvals:Entity[], actions:Entity[], outcomes:Entity[], interactions:Entity[], proposals:Entity[], contracts:Entity[], workflows:Entity[], runs:Entity[], dataQuality:Entity[], auditEvents:Entity[]}} OperationalState */
@@ -93,7 +93,7 @@ export function getOperationalState() {
 /** @param {OperationalState} next */
 function notify(next) {
   if (typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
-    window.dispatchEvent(new CustomEvent("rahjo:operational-state", { detail: next }));
+    window.dispatchEvent(new CustomEvent("crm:operational-state", { detail: next }));
   }
 }
 

@@ -115,7 +115,7 @@ export class Router {
       const accountLinkChanged = currentPath === "/accept-invite" || currentPath === "/recover-account";
       if (this.routingMode === "hash" || accountLinkChanged) this.handleNavigation({ moveFocus: true });
     });
-    window.addEventListener("rahjo:navigate", (event) => {
+    window.addEventListener("crm:navigate", (event) => {
       if (event instanceof CustomEvent && typeof event.detail === "string") this.navigate(event.detail);
     });
     document.addEventListener("click", (event) => {
@@ -159,7 +159,7 @@ export class Router {
       ?? this.routes.find((candidate) => candidate.path === "*")
       ?? this.routes[0];
 
-    document.title = route.title ? `${route.title} | رهجو` : "رهجو";
+    document.title = route.title ? `${route.title} | CRM` : "CRM";
     const meta = document.querySelector('meta[name="description"]');
     if (meta && route.description) meta.setAttribute("content", route.description);
 

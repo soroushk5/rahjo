@@ -26,7 +26,7 @@ test("canonical public site exposes home, product and real Start destinations", 
 
 test("public Start is a real server intake form without browser-owned routing controls", () => {
   const html = renderPublicIntakePage();
-  assert.match(html, /id="rahjo-public-intake"/);
+  assert.match(html, /id="crm-public-intake"/);
   assert.match(html, /name="organization"/);
   assert.match(html, /name="contactName"/);
   assert.match(html, /name="purpose"/);
@@ -40,7 +40,7 @@ test("public home explains a broad CRM category without narrowing to one industr
   for (const phrase of ["فروش B2B", "بازرگانی", "خدمات و پروژه", "آموزش و مشاوره", "تیم‌های در حال رشد"]) {
     assert.match(html, new RegExp(phrase));
   }
-  for (const area of ["حافظهٔ مشتری", "فروش و پیگیری", "پرونده و اجرا", "اقدام بعدی"]) {
+  for (const area of ["حافظهٔ مشتری", "فروش و پیگیری", "وظایف و فعالیت‌ها", "اقدام بعدی"]) {
     assert.match(html, new RegExp(area));
   }
   assert.doesNotMatch(html, /CRM و عملیات مشتری برای کسب‌وکارهای خدماتی|شروع بررسی|sw-showcases/);
@@ -61,16 +61,16 @@ test("legacy tracking route remains safe and sends users to secure login", () =>
 });
 
 test("public header uses a validated server user rather than backend readiness as authentication", async () => {
-  const config = { mode: "server", apiBase: "https://api.rahjo.example", buildSha: "server-sha" };
+  const config = { mode: "server", apiBase: "https://api.crm.example", buildSha: "server-sha" };
   const envelope = {
     dataMode: "server",
     version: 1,
-    workspace: { id: "workspace-a", name: "رهجو" },
-    user: { id: "user-a", email: "owner@rahjo.example", name: "مالک رهجو", role: "owner" },
+    workspace: { id: "workspace-a", name: "CRM" },
+    user: { id: "user-a", email: "owner@crm.example", name: "مالک CRM", role: "owner" },
     projection: { cases: [] }
   };
   const authenticatedFetch = async (url) => String(url).endsWith("/csrf")
-    ? new Response(JSON.stringify({ dataMode: "server", csrfToken: "rahjo_csrf_abcdefghijklmnopqrstuvwxyz" }), { status: 200 })
+    ? new Response(JSON.stringify({ dataMode: "server", csrfToken: "crm_csrf_abcdefghijklmnopqrstuvwxyz" }), { status: 200 })
     : new Response(JSON.stringify(envelope), { status: 200 });
 
   await runtimeData.initialize(config, { fetchImpl: authenticatedFetch });

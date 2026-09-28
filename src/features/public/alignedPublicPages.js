@@ -60,7 +60,7 @@ export function renderAlignedProductPage() {
     content: `${pageHero({
       label: "محصول",
       title: "یک سیستم برای حافظهٔ مشتری و اجرای کار.",
-      description: "رهجو CRM را از یک دفترچهٔ اطلاعات به ستون فقرات عملیات تبدیل می‌کند؛ از رابطهٔ مشتری تا Case، تصمیم، اجرا و Outcome.",
+      description: "CRM CRM را از یک دفترچهٔ اطلاعات به ستون فقرات عملیات تبدیل می‌کند؛ از رابطهٔ مشتری تا Case، تصمیم، اجرا و Outcome.",
       secondary: ["/how-it-works", "دیدن نقشهٔ محصول"]
     })}
       <section class="rv-page-section">
@@ -87,7 +87,7 @@ export function renderAlignedServicesPage() {
     activePath: "/services",
     content: `${pageHero({
       label: "خدمات",
-      title: "خدمت در رهجو یک قرارداد اجرایی است، نه یک صفحهٔ معرفی.",
+      title: "خدمت در CRM یک قرارداد اجرایی است، نه یک صفحهٔ معرفی.",
       description: "هر خدمت باید بگوید چه چیزی لازم است، چه کسی مسئول است، کجا تصمیم انسانی لازم است و اجرای موفق چگونه اثبات می‌شود.",
       primary: ["/request-service", "ثبت درخواست"],
       secondary: ["/how-it-works", "مسیر اجرا"]
@@ -110,7 +110,7 @@ export function renderAlignedUseCasesPage() {
     content: `${pageHero({
       label: "موارد استفاده",
       title: "برای جایی که فروش و ارائهٔ خدمت باید یک مسیر مشترک داشته باشند.",
-      description: "اگر مشتری از چند کانال وارد می‌شود، handoff بین افراد می‌شکند یا بعد از فروش اجرای خدمت در ابزار دیگری ادامه پیدا می‌کند، رهجو همان شکاف را هدف می‌گیرد.",
+      description: "اگر مشتری از چند کانال وارد می‌شود، handoff بین افراد می‌شکند یا بعد از فروش اجرای خدمت در ابزار دیگری ادامه پیدا می‌کند، CRM همان شکاف را هدف می‌گیرد.",
       secondary: ["/product", "ساختار محصول"]
     })}
       <section class="rv-page-section"><div class="container">${editorialHeader("سناریوها", "چهار الگوی پرتکرار، یک ستون فقرات مشترک.")}<div class="rv-scenario-list">${scenarios.map(([label, title, desc, bullets, glyph], index) => `
@@ -130,7 +130,7 @@ export function renderAlignedHowItWorksPage() {
     content: `${pageHero({
       label: "نحوهٔ کار",
       title: "هر مرحله، context را به مرحلهٔ بعد تحویل می‌دهد.",
-      description: "رهجو برای اضافه‌کردن یک فرم یا Dashboard دیگر ساخته نشده؛ هدف این است که ورودی، تصمیم، اجرا و نتیجه روی یک زنجیرهٔ قابل بازسازی حرکت کنند.",
+      description: "CRM برای اضافه‌کردن یک فرم یا Dashboard دیگر ساخته نشده؛ هدف این است که ورودی، تصمیم، اجرا و نتیجه روی یک زنجیرهٔ قابل بازسازی حرکت کنند.",
       primary: ["/contact", "بررسی مسیر فعلی من"],
       secondary: ["/product", "ساختار محصول"]
     })}

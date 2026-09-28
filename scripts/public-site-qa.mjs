@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const baseUrl = process.env.RAHJO_QA_ORIGIN || 'http://127.0.0.1:4173';
+const baseUrl = process.env.CRM_QA_ORIGIN || process.env.RAHJO_QA_ORIGIN || 'http://127.0.0.1:4173';
 const output = 'qa-artifacts/public-site';
 const routes = [
   {
@@ -20,7 +20,7 @@ const routes = [
     path: '/contact',
     slug: 'start',
     h1: 'از یک جریان واقعی مشتری شروع کنید',
-    markers: ['[data-public-intake-page]', '#rahjo-public-intake', '.public-intake__steps']
+    markers: ['[data-public-intake-page]', '#crm-public-intake', '.public-intake__steps']
   },
   { path: '/login', slug: 'login', h1: '', markers: [] }
 ];
@@ -203,8 +203,8 @@ for (const viewport of viewports) {
     }
     if (route.path === '/contact') {
       const startState = await page.evaluate(() => ({
-        form: Boolean(document.querySelector('#rahjo-public-intake')),
-        submitDisabled: document.querySelector('#rahjo-public-intake button[type=submit]')?.disabled === true,
+        form: Boolean(document.querySelector('#crm-public-intake')),
+        submitDisabled: document.querySelector('#crm-public-intake button[type=submit]')?.disabled === true,
         workspaceControl: Boolean(document.querySelector('[name="workspaceId"], [name="workspace_id"]')),
         serviceControl: Boolean(document.querySelector('[name="serviceId"]')),
         passwordControl: Boolean(document.querySelector('input[type="password"]'))
@@ -214,7 +214,7 @@ for (const viewport of viewports) {
       if (startState.workspaceControl || startState.serviceControl || startState.passwordControl) failures.push(`${viewport.name} /contact: browser-owned intake routing/auth control rendered`);
     }
     if (route.path === '/login') {
-      await contrastRatio(page, '#rahjo-server-login .button--primary, #guest-login-button', `${viewport.name} login primary action`);
+      await contrastRatio(page, '#crm-server-login .button--primary, #guest-login-button', `${viewport.name} login primary action`);
     }
 
     if (consoleErrors.length) failures.push(`${viewport.name} ${route.path}: console errors: ${consoleErrors.join(' | ')}`);
