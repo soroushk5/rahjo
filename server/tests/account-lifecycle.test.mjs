@@ -56,7 +56,7 @@ async function fixture() {
     appEnv: "development",
     port: 0,
     publicOrigin: "http://localhost",
-    corsOrigins: ["https://rahjo.example.test"],
+    corsOrigins: ["https://crm.example.test"],
     tokenPepper: "p".repeat(32),
     bodyLimit: 64 * 1024,
     sessionHours: 12,
@@ -73,7 +73,7 @@ async function fixture() {
 async function login(base) {
   const response = await fetch(`${base}/api/v1/session`, {
     method: "POST",
-    headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
     body: JSON.stringify({ workspaceSlug: "alpha", email: context.user_email, password: "a correct long password" })
   });
   assert.equal(response.status, 201);
@@ -83,7 +83,7 @@ async function login(base) {
 
 function authHeaders(session) {
   return {
-    Origin: "https://rahjo.example.test",
+    Origin: "https://crm.example.test",
     Cookie: session.cookie,
     "X-CSRF-Token": session.csrf,
     "Content-Type": "application/json"
@@ -95,7 +95,7 @@ test("owner can create a single-use invite URL and a clean device can accept it"
   t.after(() => fixtureState.server.close());
   const session = await login(fixtureState.base);
 
-  const members = await fetch(`${fixtureState.base}/api/v1/members`, { headers: { Origin: "https://rahjo.example.test", Cookie: session.cookie } });
+  const members = await fetch(`${fixtureState.base}/api/v1/members`, { headers: { Origin: "https://crm.example.test", Cookie: session.cookie } });
   assert.equal(members.status, 200);
   assert.equal((await members.json()).members[0].email, context.user_email);
 
@@ -107,20 +107,20 @@ test("owner can create a single-use invite URL and a clean device can accept it"
   assert.equal(invite.status, 201);
   const inviteBody = await invite.json();
   const url = new URL(inviteBody.invitation.url);
-  assert.equal(url.origin, "https://rahjo.example.test");
+  assert.equal(url.origin, "https://crm.example.test");
   assert.equal(url.pathname, "/accept-invite");
   assert.equal(url.search, "");
   const token = new URLSearchParams(url.hash.slice(1)).get("token");
-  assert.ok(token?.startsWith("rahjo_invite_"));
+  assert.ok(token?.startsWith("crm_invite_"));
   assert.equal(fixtureState.getInvitation().tokenHash, secretDigest(token));
 
   const accepted = await fetch(`${fixtureState.base}/api/v1/invitations/accept`, {
     method: "POST",
-    headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
     body: JSON.stringify({ token, password: "new secure password 123" })
   });
   assert.equal(accepted.status, 201);
-  assert.match(accepted.headers.get("set-cookie"), /^rahjo_session=/);
+  assert.match(accepted.headers.get("set-cookie"), /^crm_session=/);
 });
 
 test("owner can issue a reset link and consuming it starts a fresh browser session", async (t) => {
@@ -141,7 +141,7 @@ test("owner can issue a reset link and consuming it starts a fresh browser sessi
 
   const consumed = await fetch(`${fixtureState.base}/api/v1/account/reset`, {
     method: "POST",
-    headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
     body: JSON.stringify({ token, password: "another secure password 123" })
   });
   assert.equal(consumed.status, 201);
@@ -189,7 +189,7 @@ test("recovery codes are returned once and a code can recover an account on anot
 
   const recovered = await fetch(`${fixtureState.base}/api/v1/account/recovery`, {
     method: "POST",
-    headers: { Origin: "https://rahjo.example.test", "Content-Type": "application/json" },
+    headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
     body: JSON.stringify({ workspaceSlug: "alpha", email: context.user_email, recoveryCode: issuedBody.codes[0], password: "recovered password is long" })
   });
   assert.equal(recovered.status, 201);
