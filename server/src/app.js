@@ -389,6 +389,24 @@ export function createCrmServer({ config, database, repository, relaticle, works
         json(response, status, runtime, requestId, corsHeaders);
         return;
       }
+      if (request.method === "POST" && url.pathname === "/api/v1/accounts") {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const account = await repository.createAccount(context, body, requestId);
+        status = 201;
+        json(response, status, { dataMode: "server", data: account }, requestId, corsHeaders);
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/contacts") {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const contact = await repository.createContact(context, body, requestId);
+        status = 201;
+        json(response, status, { dataMode: "server", data: contact }, requestId, corsHeaders);
+        return;
+      }
       if (request.method === "POST" && url.pathname === "/api/v1/session/csrf") {
         if (context.auth_method !== "cookie") throw problems.forbidden();
         const rawSession = opaqueToken("crm_session");
