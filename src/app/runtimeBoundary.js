@@ -9,7 +9,7 @@ const PUBLIC_SERVER_PATHS = new Set(["/", "/product", "/services", "/use-cases",
 /** @param {{render:() => string}} route */
 function renderServerPublicRoute(route) {
   return route.render()
-    .replaceAll("دیدن دموی رهجو", "ورود به رهجو")
+    .replaceAll("ورود به CRM", "ورود به رهجو")
     .replaceAll("دیدن در دمو", "ورود به محیط عملیاتی")
     .replaceAll("دموی تعاملی", "محیط عملیاتی");
 }
@@ -122,10 +122,10 @@ export function maybeStartBrowserBootstrap(config, snapshot, browserWindow = glo
 }
 
 /** @param {Record<string, any>} snapshot @param {string} title */
-export function renderServerRuntimeState(snapshot, title = "رهجو") {
+export function renderServerRuntimeState(snapshot, title = "CRM") {
   const state = String(snapshot.state || RUNTIME_DATA_STATES.UNAVAILABLE);
   const label = labels[state] ?? labels.unavailable;
-  const displayTitle = state === RUNTIME_DATA_STATES.AUTH ? "ورود امن رهجو" : title;
+  const displayTitle = state === RUNTIME_DATA_STATES.AUTH ? "ورود امن CRM" : title;
   const workspaceName = snapshot.workspace?.name || snapshot.workspace?.id || "هنوز تأیید نشده";
   const readyNote = state === RUNTIME_DATA_STATES.READY
     ? "تصویر همگام سرور دریافت و در حافظهٔ موقت نگه‌داری شده است. نمایش عملیاتی زنده فقط از آداپتر سرور خوانده می‌شود."
@@ -144,7 +144,7 @@ export function renderServerRuntimeState(snapshot, title = "رهجو") {
   return `
     <div class="phase-site server-auth-page" data-runtime-mode="server" data-runtime-state="${escapeHtml(state)}">
       <main id="main-content" class="server-auth-layout">
-        <section class="server-auth-story"><a data-link href="/" class="server-auth-brand">CRM <small>CORE</small></a><div><span class="server-live-pill">${escapeHtml(label)}</span><h1>${escapeHtml(displayTitle)}</h1><p>مشتری، Case، تأیید انسانی، اقدام، رسید و نتیجه در یک جریان امن و قابل ممیزی.</p><ul><li>دادهٔ واقعی سرور</li><li>جداسازی فضای کاری</li><li>مسیر عملیاتی کنترل‌شده</li></ul></div></section>
+        <section class="server-auth-story"><a data-link href="/" class="server-auth-brand">CRM <small>CORE</small></a><div><span class="server-live-pill">${escapeHtml(label)}</span><h1>${escapeHtml(displayTitle)}</h1><p>مشتری، مخاطب، سرنخ، فرصت، وظیفه و فعالیت در یک فضای کاری امن و قابل ممیزی.</p><ul><li>دادهٔ واقعی سرور</li><li>جداسازی فضای کاری</li><li>مسیر عملیاتی کنترل‌شده</li></ul></div></section>
         <section class="server-auth-panel"><div class="server-auth-card"><header><small>محیط عملیاتی</small><h2>${escapeHtml(displayTitle)}</h2><p>${escapeHtml(snapshot.message || "وضعیت سرویس داده مشخص نیست.")}</p><p class="server-boundary-note">${escapeHtml(readyNote)}</p></header>${loginForm}<dl class="server-auth-meta"><div><dt>داده</dt><dd>Server</dd></div><div><dt>Workspace</dt><dd>${escapeHtml(String(workspaceName))}</dd></div></dl><small class="server-version">نسخه ${escapeHtml(String(snapshot.buildSha || "نامشخص"))}</small></div></section>
       </main>
     </div>`;
@@ -202,7 +202,7 @@ export function applyRuntimeBoundary(route) {
       if (PUBLIC_SERVER_PATHS.has(route.path ?? "")) return renderServerPublicRoute(route);
       return snapshot.state === RUNTIME_DATA_STATES.READY
         ? renderServerOperationalRoute(route.path ?? "/dashboard")
-        : renderServerRuntimeState(snapshot, route.path === "/login" ? "ورود امن رهجو" : route.title);
+        : renderServerRuntimeState(snapshot, route.path === "/login" ? "ورود امن CRM" : route.title);
     },
     mount: () => {
       if (runtimeData.read().mode === "demo") route.mount?.();
