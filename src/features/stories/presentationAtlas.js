@@ -34,13 +34,13 @@ export function renderPresentationAtlasPage() {
           <span class="public-kicker"><i></i>SERVICE & CAPABILITY CATALOG</span>
           <h1>سرویس را از وضعیتش جدا نکنیم.</h1>
         </div>
-        <div><p>رهجو capabilityها را به‌عنوان خانواده‌های قابل بررسی نمایش می‌دهد؛ اما فقط evidence، eligibility، امنیت، owner و شرایط عرضه می‌توانند یک capability را به سرویس Production تبدیل کنند.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن کاتالوگ در Workspace</a><a data-link class="button button--secondary" href="/trust">مرز ادعا و عرضه</a></div></div>
+        <div><p>CRM capabilityها را به‌عنوان خانواده‌های قابل بررسی نمایش می‌دهد؛ اما فقط evidence، eligibility، امنیت، owner و شرایط عرضه می‌توانند یک capability را به سرویس Production تبدیل کنند.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن کاتالوگ در Workspace</a><a data-link class="button button--secondary" href="/trust">مرز ادعا و عرضه</a></div></div>
       </div>
     </section>
 
     <section class="public-section">
       <div class="container">
-        <header class="public-section__head"><div><span>خانواده قابلیت‌ها</span><h2>از CRM تا Data/API و Workflow؛ با وضعیت صریح.</h2></div><p>این صفحه جایگزین روایت قدیمی «اطلس داده = محصول» می‌شود. داده و API بخش مهمی از رهجو هستند، اما در کنار CRM، Case، عملیات، Automation و Audit.</p></header>
+        <header class="public-section__head"><div><span>خانواده قابلیت‌ها</span><h2>از CRM تا Data/API و Workflow؛ با وضعیت صریح.</h2></div><p>این صفحه جایگزین روایت قدیمی «اطلس داده = محصول» می‌شود. داده و API بخش مهمی از CRM هستند، اما در کنار CRM، Case، عملیات، Automation و Audit.</p></header>
         <div class="public-capability-grid">${capabilityCards()}</div>
       </div>
     </section>
