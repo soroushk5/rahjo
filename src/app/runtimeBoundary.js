@@ -55,13 +55,13 @@ export function loginFeedbackMessage(snapshot = {}) {
  * @param {Record<string, any>} result
  */
 function syncCurrentLoginForm(submitted, result) {
-  const currentForm = document.querySelector("#rahjo-server-login");
+  const currentForm = document.querySelector("#crm-server-login");
   if (!(currentForm instanceof HTMLFormElement)) return;
   const currentWorkspace = currentForm.elements.namedItem("workspaceSlug");
   const currentEmail = currentForm.elements.namedItem("email");
   const currentPassword = currentForm.elements.namedItem("password");
   const currentButton = currentForm.querySelector("button[type=submit]");
-  const currentFeedback = currentForm.querySelector("#rahjo-login-feedback");
+  const currentFeedback = currentForm.querySelector("#crm-login-feedback");
   if (currentWorkspace instanceof HTMLInputElement) currentWorkspace.value = submitted.workspaceSlug;
   if (currentEmail instanceof HTMLInputElement) currentEmail.value = submitted.email;
   if (currentPassword instanceof HTMLInputElement) {
@@ -92,12 +92,12 @@ export async function initializeRuntimeFromDocument(target = document, facade = 
   }
 }
 
-const API_BOOTSTRAP_MARKER = "rahjoApiBootstrap";
+const API_BOOTSTRAP_MARKER = "crmApiBootstrap";
 
 /**
  * Resolve Hostinger's one-time browser challenge through a safe top-level hop.
- * The return URL is same-origin with the current Rahjo UI and is validated again
- * by the server against RAHJO_CORS_ORIGINS before redirecting.
+ * The return URL is same-origin with the current CRM UI and is validated again
+ * by the server against CRM_CORS_ORIGINS before redirecting.
  *
  * @param {{mode:string,apiBase:string}} config
  * @param {{state?:string,reason?:string}} snapshot
@@ -132,11 +132,11 @@ export function renderServerRuntimeState(snapshot, title = "رهجو") {
     : "حالت Server بسته مانده است؛ دادهٔ Golden Demo یا دادهٔ مرورگر به‌عنوان جایگزین نمایش داده نمی‌شود.";
 
   const loginForm = state === RUNTIME_DATA_STATES.AUTH ? `
-          <form id="rahjo-server-login" class="auth-form server-login-form" novalidate>
-            <label>فضای کاری<input name="workspaceSlug" type="text" autocomplete="organization" value="rahjo" required /></label>
+          <form id="crm-server-login" class="auth-form server-login-form" novalidate>
+            <label>فضای کاری<input name="workspaceSlug" type="text" autocomplete="organization" placeholder="workspace" required /></label>
             <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
             <label>گذرواژه<input name="password" type="password" autocomplete="current-password" required autofocus /></label>
-            <p id="rahjo-login-feedback" class="interaction-feedback" role="alert"></p>
+            <p id="crm-login-feedback" class="interaction-feedback" role="alert"></p>
             <button class="button button--primary button--large" type="submit">ورود به محیط عملیاتی</button>
             <a data-link class="text-link" href="/recover-account">بازیابی دسترسی</a>
           </form>` : "";
@@ -144,7 +144,7 @@ export function renderServerRuntimeState(snapshot, title = "رهجو") {
   return `
     <div class="phase-site server-auth-page" data-runtime-mode="server" data-runtime-state="${escapeHtml(state)}">
       <main id="main-content" class="server-auth-layout">
-        <section class="server-auth-story"><a data-link href="/" class="server-auth-brand">رهجو <small>RAHJO</small></a><div><span class="server-live-pill">${escapeHtml(label)}</span><h1>${escapeHtml(displayTitle)}</h1><p>مشتری، Case، تأیید انسانی، اقدام، رسید و نتیجه در یک جریان امن و قابل ممیزی.</p><ul><li>دادهٔ واقعی سرور</li><li>جداسازی فضای کاری</li><li>مسیر عملیاتی کنترل‌شده</li></ul></div></section>
+        <section class="server-auth-story"><a data-link href="/" class="server-auth-brand">CRM <small>CORE</small></a><div><span class="server-live-pill">${escapeHtml(label)}</span><h1>${escapeHtml(displayTitle)}</h1><p>مشتری، Case، تأیید انسانی، اقدام، رسید و نتیجه در یک جریان امن و قابل ممیزی.</p><ul><li>دادهٔ واقعی سرور</li><li>جداسازی فضای کاری</li><li>مسیر عملیاتی کنترل‌شده</li></ul></div></section>
         <section class="server-auth-panel"><div class="server-auth-card"><header><small>محیط عملیاتی</small><h2>${escapeHtml(displayTitle)}</h2><p>${escapeHtml(snapshot.message || "وضعیت سرویس داده مشخص نیست.")}</p><p class="server-boundary-note">${escapeHtml(readyNote)}</p></header>${loginForm}<dl class="server-auth-meta"><div><dt>داده</dt><dd>Server</dd></div><div><dt>Workspace</dt><dd>${escapeHtml(String(workspaceName))}</dd></div></dl><small class="server-version">نسخه ${escapeHtml(String(snapshot.buildSha || "نامشخص"))}</small></div></section>
       </main>
     </div>`;
@@ -153,7 +153,7 @@ export function renderServerRuntimeState(snapshot, title = "رهجو") {
 /** Mount only the server-owned login exchange; never import demo auth here. */
 function mountServerRuntimeState() {
   if (runtimeData.read().state !== RUNTIME_DATA_STATES.AUTH) return;
-  const form = document.querySelector("#rahjo-server-login");
+  const form = document.querySelector("#crm-server-login");
   if (!(form instanceof HTMLFormElement)) return;
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -164,7 +164,7 @@ function mountServerRuntimeState() {
     };
     const password = String(fields.get("password") ?? "");
     const button = form.querySelector("button[type=submit]");
-    const feedback = form.querySelector("#rahjo-login-feedback");
+    const feedback = form.querySelector("#crm-login-feedback");
     if (button instanceof HTMLButtonElement) button.disabled = true;
     if (feedback) feedback.textContent = "در حال بررسی امن نشست…";
     try {
