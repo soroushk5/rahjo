@@ -13,7 +13,7 @@ const fitTags = Object.freeze([
 function productMiniFrame({ title, content }) {
   return `
     <div class="sw-mini-frame" aria-label="${title}">
-      <div class="sw-mini-frame__bar"><div><i></i><strong>رهجو</strong></div><span>${title}</span></div>
+      <div class="sw-mini-frame__bar"><div><i></i><strong>CRM</strong></div><span>${title}</span></div>
       <div class="sw-mini-frame__body">${content}</div>
     </div>`;
 }
@@ -76,16 +76,16 @@ const pillars = Object.freeze([
   },
   {
     number: "۰۳",
-    title: "پرونده و اجرا",
-    description: "درخواست، تأیید، اقدام، رسید و نتیجه در همان مسیر کاری ثبت می‌شوند.",
-    bullets: ["خط زمانی", "رسید و نتیجه"],
+    title: "وظایف و فعالیت‌ها",
+    description: "وظایف، تماس‌ها، جلسه‌ها و یادداشت‌ها کنار مشتری و فرصت ثبت می‌شوند.",
+    bullets: ["خط زمانی فعالیت", "وظیفه و پیگیری"],
     visual: miniCase()
   }
 ]);
 
 function heroPreview() {
   return `
-    <div class="sw-hero-card" aria-label="خلاصه محیط محصول رهجو">
+    <div class="sw-hero-card" aria-label="خلاصه محیط CRM">
       <div class="sw-hero-card__rail">
         <span class="is-active">داشبورد</span><span>مشتریان</span><span>فروش</span><span>پرونده‌ها</span>
       </div>
@@ -109,7 +109,7 @@ function schematicJourney() {
     ["پرونده", "اجرا و کارها", "requests"],
     ["نتیجه", "رسید و سابقه", "check"]
   ];
-  return `<div class="sw-journey" aria-label="مسیر کار در رهجو">${items.map(([title, desc, glyph], index) => `
+  return `<div class="sw-journey" aria-label="مسیر کار در CRM">${items.map(([title, desc, glyph], index) => `
     <article><span>${icon(glyph, { size: 17 })}</span><b>${title}</b><small>${desc}</small>${index < items.length - 1 ? '<i class="sw-journey__line"></i>' : ""}</article>`).join("")}</div>`;
 }
 
@@ -135,10 +135,10 @@ export function renderMinimalHomePage() {
           <div class="sw-hero__copy">
             <p class="sw-kicker">CRM برای مدیریت مشتری، فروش و کارهای جاری</p>
             <h1>مشتری‌ها و فرصت‌ها را منظم جلو ببرید.</h1>
-            <p class="sw-lead">رهجو کمک می‌کند اطلاعات مشتری، پیگیری فروش، پرونده‌ها و اقدام بعدی در یک مسیر روشن کنار هم بمانند.</p>
+            <p class="sw-lead">CRM اطلاعات مشتری، مخاطبان، فرصت‌های فروش، وظایف و تعاملات را در یک سابقهٔ مشترک نگه می‌دارد.</p>
             <div class="sw-actions">
               <a data-link data-cta="home-product" class="button button--primary button--large" href="/product">دیدن محصول ${icon("arrow")}</a>
-              <a data-link data-cta="home-login" class="button button--outline button--large" href="/login">ورود به رهجو</a>
+              <a data-link data-cta="home-login" class="button button--outline button--large" href="/login">ورود به CRM</a>
             </div>
             <div class="sw-fit-tags">${fitTags.map((item) => `<span>${item}</span>`).join("")}</div>
           </div>
@@ -158,8 +158,8 @@ export function renderMinimalHomePage() {
 
       <section class="sw-final">
         <div class="container sw-final__inner">
-          <div><p class="sw-kicker">ادامه</p><h2>محصول را دقیق‌تر ببینید یا وارد فضای کاری شوید.</h2><p>برای جزئیات بیشتر، صفحهٔ محصول را ببینید. اگر فضای کاری دارید، مستقیم وارد رهجو شوید.</p></div>
-          <div class="sw-actions"><a data-link data-cta="home-final-login" class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link data-cta="home-final-product" class="button button--outline button--large" href="/product">جزئیات محصول</a></div>
+          <div><p class="sw-kicker">ادامه</p><h2>محصول را دقیق‌تر ببینید یا وارد فضای کاری شوید.</h2><p>برای جزئیات بیشتر، صفحهٔ محصول را ببینید. اگر فضای کاری دارید، مستقیم وارد CRM شوید.</p></div>
+          <div class="sw-actions"><a data-link data-cta="home-final-login" class="button button--primary button--large" href="/login">ورود به CRM</a><a data-link data-cta="home-final-product" class="button button--outline button--large" href="/product">جزئیات محصول</a></div>
         </div>
       </section>`
   });
@@ -174,7 +174,7 @@ export function renderMinimalProductPage() {
           <div>
             <p class="sw-kicker">محصول</p>
             <h1>CRM را با پیگیری کارهای واقعی تیم در یک مسیر نگه دارید.</h1>
-            <p class="sw-lead">رهجو رابطه با مشتری، فرصت‌های فروش و اجرای پرونده را به هم وصل می‌کند تا اقدام بعدی روشن بماند.</p>
+            <p class="sw-lead">CRM رابطه با مشتری، مخاطبان، فرصت‌های فروش، وظایف و فعالیت‌ها را به هم وصل می‌کند تا اقدام بعدی روشن بماند.</p>
             <div class="sw-fit-tags">${fitTags.map((item) => `<span>${item}</span>`).join("")}</div>
           </div>
           <div class="sw-page-hero__visual">${schematicJourney()}</div>
@@ -202,7 +202,7 @@ export function renderMinimalProductPage() {
       </section>
 
       <section class="sw-final sw-final--light">
-        <div class="container sw-final__inner"><div><p class="sw-kicker">مرحله بعد</p><h2>فضای کاری دارید؟ وارد رهجو شوید. برای مرور سریع‌تر، به معرفی برگردید.</h2></div><div class="sw-actions"><a data-link data-cta="product-login" class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link data-cta="product-home" class="button button--outline button--large" href="/">بازگشت به معرفی</a></div></div>
+        <div class="container sw-final__inner"><div><p class="sw-kicker">مرحله بعد</p><h2>فضای کاری دارید؟ وارد CRM شوید. برای مرور سریع‌تر، به معرفی برگردید.</h2></div><div class="sw-actions"><a data-link data-cta="product-login" class="button button--primary button--large" href="/login">ورود به CRM</a><a data-link data-cta="product-home" class="button button--outline button--large" href="/">بازگشت به معرفی</a></div></div>
       </section>`
   });
 }
@@ -215,10 +215,10 @@ export function renderMinimalContactPage() {
     content: `
       <section class="sw-contact-hero">
         <div class="container sw-contact-hero__inner">
-          <p class="sw-kicker">ادامه در رهجو</p>
+          <p class="sw-kicker">ادامه در CRM</p>
           <h1>برای ادامه وارد فضای کاری شوید.</h1>
           <p class="sw-lead">مسیر شروع عمومی هنوز فعال نیست؛ این صفحه هیچ فرم یا فرایند ساختگی نمایش نمی‌دهد.</p>
-          <div class="sw-actions"><a data-link class="button button--primary button--large" href="/login">ورود به رهجو</a><a data-link class="button button--outline button--large" href="/product">دیدن محصول</a></div>
+          <div class="sw-actions"><a data-link class="button button--primary button--large" href="/login">ورود به CRM</a><a data-link class="button button--outline button--large" href="/product">دیدن محصول</a></div>
         </div>
       </section>`
   });
@@ -227,6 +227,6 @@ export function renderMinimalContactPage() {
 export function renderMinimalTrackPage() {
   return siteShell({
     activePath: "/contact",
-    content: `<section class="sw-contact-hero"><div class="container sw-contact-hero__inner"><p class="sw-kicker">پیگیری</p><h1>وضعیت پرونده را داخل فضای کاری رهجو ببینید.</h1><p class="sw-lead">برای دیدن پرونده، اقدام‌های باز و آخرین رویدادها وارد محیط کار شوید.</p><div class="sw-actions"><a data-link data-cta="track-login" class="button button--primary button--large" href="/login">ورود ${icon("arrow")}</a></div></div></section>`
+    content: `<section class="sw-contact-hero"><div class="container sw-contact-hero__inner"><p class="sw-kicker">پیگیری</p><h1>وضعیت مشتری، فرصت و کارها را داخل فضای کاری CRM ببینید.</h1><p class="sw-lead">برای دیدن سابقهٔ مشتری، فرصت‌های باز، وظایف و آخرین فعالیت‌ها وارد محیط کار شوید.</p><div class="sw-actions"><a data-link data-cta="track-login" class="button button--primary button--large" href="/login">ورود ${icon("arrow")}</a></div></div></section>`
   });
 }
