@@ -23,7 +23,7 @@ function miniCustomers() {
     title: "مشتریان",
     content: `
       <div class="sw-micro-list">
-        <div><b>آریا صنعت</b><span>۲ پرونده باز · نسترن احمدی</span></div>
+        <div><b>آریا صنعت</b><span>۲ فرصت فعال · نسترن احمدی</span></div>
         <div><b>پارس تجهیز</b><span>فرصت در مرحله پیشنهاد</span></div>
         <div><b>راهکار نو</b><span>آخرین تماس: امروز</span></div>
       </div>`
@@ -42,18 +42,17 @@ function miniPipeline() {
   });
 }
 
-function miniCase() {
+function miniActivities() {
   return productMiniFrame({
-    title: "پرونده",
+    title: "فعالیت‌ها",
     content: `
       <div class="sw-micro-case">
-        <header><b>CASE-1028</b><span>در حال اجرا</span></header>
+        <header><b>پیگیری امروز</b><span>۳ کار باز</span></header>
         <ol>
-          <li class="is-done"><span>درخواست</span><i></i></li>
-          <li class="is-done"><span>تأیید</span><i></i></li>
-          <li class="is-current"><span>اقدام</span><i></i></li>
-          <li><span>رسید</span><i></i></li>
-          <li><span>نتیجه</span><i></i></li>
+          <li class="is-done"><span>تماس با مشتری</span><i></i></li>
+          <li class="is-current"><span>ارسال پیشنهاد</span><i></i></li>
+          <li><span>جلسه پیگیری</span><i></i></li>
+          <li><span>ثبت یادداشت</span><i></i></li>
         </ol>
       </div>`
   });
@@ -79,7 +78,7 @@ const pillars = Object.freeze([
     title: "وظایف و فعالیت‌ها",
     description: "وظایف، تماس‌ها، جلسه‌ها و یادداشت‌ها کنار مشتری و فرصت ثبت می‌شوند.",
     bullets: ["خط زمانی فعالیت", "وظیفه و پیگیری"],
-    visual: miniCase()
+    visual: miniActivities()
   }
 ]);
 
@@ -87,16 +86,16 @@ function heroPreview() {
   return `
     <div class="sw-hero-card" aria-label="خلاصه محیط CRM">
       <div class="sw-hero-card__rail">
-        <span class="is-active">داشبورد</span><span>مشتریان</span><span>فروش</span><span>پرونده‌ها</span>
+        <span class="is-active">داشبورد</span><span>مشتریان</span><span>فروش</span><span>فعالیت‌ها</span>
       </div>
       <div class="sw-hero-card__main">
         <div class="sw-hero-card__top"><div><small>در یک نگاه</small><h3>امروز چه چیزی باز است؟</h3></div><b>مدیر عملیات</b></div>
         <div class="sw-hero-metrics">
-          <article><small>پرونده باز</small><strong>۱۲</strong></article>
+          <article><small>وظیفه باز</small><strong>۱۲</strong></article>
           <article><small>کار امروز</small><strong>۷</strong></article>
           <article><small>فرصت فعال</small><strong>۵</strong></article>
         </div>
-        <div class="sw-hero-next"><div><small>اقدام بعدی</small><strong>تأیید شروع اجرای خدمت</strong><span>آریا صنعت · CASE-1028</span></div><em>امروز</em></div>
+        <div class="sw-hero-next"><div><small>اقدام بعدی</small><strong>پیگیری پیشنهاد فروش</strong><span>آریا صنعت · OPP-204</span></div><em>امروز</em></div>
       </div>
     </div>`;
 }
@@ -106,8 +105,8 @@ function schematicJourney() {
     ["ورود", "سرنخ یا درخواست", "requests"],
     ["مشتری", "حساب و مخاطب", "users"],
     ["فرصت", "فروش و پیگیری", "reports"],
-    ["پرونده", "اجرا و کارها", "requests"],
-    ["نتیجه", "رسید و سابقه", "check"]
+    ["فعالیت", "تماس، جلسه و وظیفه", "requests"],
+    ["پیگیری", "اقدام بعدی و سابقه", "check"]
   ];
   return `<div class="sw-journey" aria-label="مسیر کار در CRM">${items.map(([title, desc, glyph], index) => `
     <article><span>${icon(glyph, { size: 17 })}</span><b>${title}</b><small>${desc}</small>${index < items.length - 1 ? '<i class="sw-journey__line"></i>' : ""}</article>`).join("")}</div>`;
@@ -147,7 +146,7 @@ export function renderMinimalHomePage() {
       </section>
 
       <section class="sw-journey-section">
-        <div class="container sw-journey-section__head"><div><p class="sw-kicker">یک مسیر، نه چند ابزار پراکنده</p><h2>از سرنخ تا نتیجه، یک مسیر روشن.</h2></div><p>ورودی‌ها به مشتری و فرصت تبدیل می‌شوند و کار تا پرونده و نتیجه دنبال می‌شود.</p></div>
+        <div class="container sw-journey-section__head"><div><p class="sw-kicker">یک مسیر، نه چند ابزار پراکنده</p><h2>از سرنخ تا رابطهٔ پایدار، یک مسیر روشن.</h2></div><p>سرنخ‌ها به مشتری و فرصت تبدیل می‌شوند و تماس‌ها، وظایف و اقدام بعدی در همان سابقه دنبال می‌شوند.</p></div>
         <div class="container">${schematicJourney()}</div>
       </section>
 
@@ -182,7 +181,7 @@ export function renderMinimalProductPage() {
       </section>
 
       <section class="sw-pillars sw-pillars--product">
-        <div class="container sw-section-head"><p class="sw-kicker">هستهٔ محصول</p><h2>سه بخش کافی است تا مسیر مشتری گم نشود.</h2><p>اطلاعات مشتری، پیگیری تجاری و اجرای پرونده در یک جریان متصل می‌مانند.</p></div>
+        <div class="container sw-section-head"><p class="sw-kicker">هستهٔ محصول</p><h2>سه بخش کافی است تا مسیر مشتری گم نشود.</h2><p>اطلاعات مشتری، مخاطبان، فرصت‌های فروش و فعالیت‌ها در یک جریان متصل می‌مانند.</p></div>
         <div class="container sw-pillar-grid">${pillars.map((item) => pillarCard(item)).join("")}</div>
       </section>
 
@@ -192,9 +191,9 @@ export function renderMinimalProductPage() {
             <p class="sw-kicker">اقدام بعدی همیشه معلوم</p>
             <h2>اطلاعات فقط ذخیره نمی‌شوند؛ کار بعدی هم کنارشان می‌ماند.</h2>
             <ul class="sw-check-list">
-              <li>${icon("check", { size: 16 })}<span>مشتری به فرصت‌ها و پرونده‌هایش وصل است.</span></li>
+              <li>${icon("check", { size: 16 })}<span>مشتری به مخاطبان، فرصت‌ها و فعالیت‌هایش وصل است.</span></li>
               <li>${icon("check", { size: 16 })}<span>هر فرصت مالک و اقدام بعدی دارد.</span></li>
-              <li>${icon("check", { size: 16 })}<span>پرونده‌ها تاریخچه، تأیید و نتیجه دارند.</span></li>
+              <li>${icon("check", { size: 16 })}<span>تماس‌ها، جلسه‌ها، یادداشت‌ها و وظایف تاریخچهٔ قابل پیگیری دارند.</span></li>
             </ul>
           </div>
           <div class="sw-product-proof__card">${heroPreview()}</div>
