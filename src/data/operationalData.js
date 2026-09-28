@@ -1,10 +1,10 @@
 /**
  * Canonical synthetic fixture layer for Phase-1 Operational Foundation.
- * Nothing in this module represents a live Rahjo customer, provider, API or metric.
+ * Nothing in this module represents a live CRM Core customer, provider, API or metric.
  */
 
 export const operationalWorkspace = Object.freeze({
-  organization: "رهجو — محیط نمونه",
+  organization: "CRM — محیط نمونه",
   environment: "Demo / Synthetic / No-AI",
   disclaimer: "همه نام‌ها، اعداد و رخدادهای این محیط مصنوعی‌اند. هیچ اتصال، eligibility یا سرویس Production در این نسخه ادعا نمی‌شود."
 });
