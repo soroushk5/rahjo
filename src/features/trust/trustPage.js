@@ -46,7 +46,7 @@ export function renderTrustPage() {
     <section class="public-page-hero public-page-hero--trust">
       <div class="container public-page-hero__grid">
         <div><span class="public-kicker"><i></i>TRUST · GOVERNANCE · CLAIM SAFETY</span><h1>اعتماد از «قول» ساخته نمی‌شود؛<br><span>از Gate و Evidence ساخته می‌شود.</span></h1></div>
-        <div><p>رهجو در فاز اول باید هم در UI و هم در عملیات نشان دهد چه چیزی Demo است، چه چیزی Evidence می‌خواهد، چه اقدامی human-gated است و هر تغییر مهم چگونه audit می‌شود.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن Governance در Workspace</a><a data-link class="button button--secondary" href="/data">دیدن status سرویس‌ها</a></div></div>
+        <div><p>CRM در فاز اول باید هم در UI و هم در عملیات نشان دهد چه چیزی Demo است، چه چیزی Evidence می‌خواهد، چه اقدامی human-gated است و هر تغییر مهم چگونه audit می‌شود.</p><div class="public-page-hero__actions"><a data-link class="button button--primary" href="/login">دیدن Governance در Workspace</a><a data-link class="button button--secondary" href="/data">دیدن status سرویس‌ها</a></div></div>
       </div>
     </section>
 
