@@ -1,9 +1,9 @@
 {
-  "name": "@rahjo/crm-bff",
+  "name": "@crm-core/bff",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Tenant-scoped Rahjo operational BFF for the separated Relaticle CRM service.",
+  "description": "Tenant-scoped CRM BFF with a provider-neutral core and optional Relaticle adapter.",
   "engines": {
     "node": ">=22"
   },
