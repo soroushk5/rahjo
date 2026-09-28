@@ -58,6 +58,11 @@ API و UI با مفاهیم `Account` و `Contact` کار می‌کنند؛ adap
 - `GET /api/v1/runtime`
 - `POST /api/v1/accounts`
 - `POST /api/v1/contacts`
+- `POST /api/v1/opportunities`
+- `POST /api/v1/opportunities/:id/stage`
+- `POST /api/v1/tasks`
+- `POST /api/v1/tasks/:id/status`
+- `POST /api/v1/interactions`
 - session/account lifecycle
 - public intake
 - workflow extension routes
