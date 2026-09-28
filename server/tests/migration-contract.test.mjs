@@ -4,6 +4,7 @@ import test from "node:test";
 
 const sql = await readFile(new URL("../migrations/001_w13_foundation.sql", import.meta.url), "utf8");
 const identitySql = await readFile(new URL("../migrations/002_w15_identity_lifecycle.sql", import.meta.url), "utf8");
+const publicIntakeSql = await readFile(new URL("../migrations/004_public_intake_routing.sql", import.meta.url), "utf8");
 const migrator = await readFile(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
 const database = await readFile(new URL("../src/database.js", import.meta.url), "utf8");
 const repository = await readFile(new URL("../src/repository.js", import.meta.url), "utf8");
@@ -53,4 +54,16 @@ test("identity lifecycle is invite-only, one-time, session-revoking and RLS prot
   assert.match(identitySql, /FORCE ROW LEVEL SECURITY/);
   assert.match(identitySql, /SECURITY DEFINER/);
   assert.match(identitySql, /GRANT EXECUTE ON FUNCTION rahjo\.create_member_invitation/);
+});
+
+
+test("public intake routing is private, exact-origin and only executable by the runtime role", () => {
+  assert.match(publicIntakeSql, /CREATE TABLE IF NOT EXISTS rahjo\.public_intake_routes/);
+  assert.match(publicIntakeSql, /origin text NOT NULL UNIQUE/);
+  assert.match(publicIntakeSql, /FORCE ROW LEVEL SECURITY/);
+  assert.match(publicIntakeSql, /SECURITY DEFINER/);
+  assert.match(publicIntakeSql, /SET search_path = pg_catalog, rahjo/);
+  assert.match(publicIntakeSql, /REVOKE ALL ON FUNCTION rahjo\.resolve_public_intake\(text\) FROM PUBLIC/);
+  assert.match(publicIntakeSql, /GRANT EXECUTE ON FUNCTION rahjo\.resolve_public_intake\(text\) TO rahjo_app/);
+  assert.doesNotMatch(publicIntakeSql, /api_tokens/);
 });
