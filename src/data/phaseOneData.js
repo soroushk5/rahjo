@@ -75,7 +75,7 @@ export const serviceCatalog = Object.freeze([
     id: "connector-assessment",
     title: "بررسی اتصال سامانه‌های موجود",
     category: "اتصال",
-    summary: "بررسی فنی اتصال حسابداری، پیامک، ایمیل یا سامانه‌های موجود به رهجو.",
+    summary: "بررسی فنی اتصال حسابداری، پیامک، ایمیل یا سامانه‌های موجود به CRM.",
     description: "اتصال یک مرحلهٔ بعدی است؛ ابتدا نیاز، مالکیت و جریان دادهٔ لازم مشخص می‌شود.",
     pricingMode: "quote",
     price: 0,
