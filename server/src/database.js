@@ -145,9 +145,16 @@ export class Database {
   }
 
   async consumeRecoveryCode(workspaceSlug, email, codeHash, passwordSalt, passwordHash) {
+    if (workspaceSlug) {
+      const result = await this.executor.query(
+        "SELECT rahjo.consume_account_recovery_code($1,$2,$3,$4,$5) AS membership_id",
+        [workspaceSlug, email, codeHash, passwordSalt, passwordHash]
+      );
+      return result.rows[0]?.membership_id ?? null;
+    }
     const result = await this.executor.query(
-      "SELECT rahjo.consume_account_recovery_code($1,$2,$3,$4,$5) AS membership_id",
-      [workspaceSlug, email, codeHash, passwordSalt, passwordHash]
+      "SELECT rahjo.consume_account_recovery_code_by_email($1,$2,$3,$4) AS membership_id",
+      [email, codeHash, passwordSalt, passwordHash]
     );
     return result.rows[0]?.membership_id ?? null;
   }
