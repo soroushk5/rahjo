@@ -23,7 +23,7 @@ async function fixture({ appEnv = "development" } = {}) {
   let storedSession;
   const database = {
     ready: async () => ({ database: "test", role: "rahjo_app" }),
-    lookupPassword: async (slug, email) => slug === "alpha" && email === "owner@example.test" ? { membership_id: context.membership_id, password_salt: credential.salt, password_hash: credential.hash } : null,
+    lookupPassword: async (slug, email) => (!slug || slug === "alpha") && email === "owner@example.test" ? { membership_id: context.membership_id, password_salt: credential.salt, password_hash: credential.hash } : null,
     createSession: async (_membership, tokenHash, csrfHash) => { storedSession = { tokenHash, csrfHash }; return "session-id"; },
     renewSession: async (membershipId, oldTokenHash, newTokenHash, csrfHash) => {
       if (membershipId !== context.membership_id || storedSession?.tokenHash !== oldTokenHash) return null;
@@ -57,13 +57,13 @@ async function fixture({ appEnv = "development" } = {}) {
   return { server, base };
 }
 
-test("browser login issues an HttpOnly CRM session and runtime uses it with credentialed CORS", async (t) => {
+test("email-first browser login issues an HttpOnly CRM session and runtime uses it with credentialed CORS", async (t) => {
   const { server, base } = await fixture();
   t.after(() => server.close());
   const login = await fetch(`${base}/api/v1/session`, {
     method: "POST",
     headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
-    body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "a correct long password" })
+    body: JSON.stringify({ email: "owner@example.test", password: "a correct long password" })
   });
   assert.equal(login.status, 201);
   assert.equal(login.headers.get("access-control-allow-credentials"), "true");
@@ -177,7 +177,7 @@ test("repeated login abuse is rate limited with a Retry-After contract", async (
     response = await fetch(`${base}/api/v1/session`, {
       method: "POST",
       headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceSlug: "alpha", email: "owner@example.test", password: "wrong password" })
+      body: JSON.stringify({ email: "owner@example.test", password: "wrong password" })
     });
     if (attempt <= 10) assert.equal(response.status, 401);
   }
