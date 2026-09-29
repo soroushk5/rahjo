@@ -218,7 +218,7 @@ export function createCrmServer({ config, database, repository, relaticle, works
         json(response, status, {
           status: "ok",
           service: "crm-core-bff",
-          contractVersion: 2,
+          contractVersion: 3,
           dataMode: "server",
           crmMode: config.crmMode,
           interim: config.interim,
