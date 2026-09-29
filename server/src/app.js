@@ -338,7 +338,7 @@ export function createCrmServer({ config, database, repository, relaticle, works
         checkAccountRate(request);
         const body = await readJson(request, config.bodyLimit);
         rejectWorkspaceOverride(request, body);
-        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63, required: true });
+        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63 });
         const email = normalizeEmail(body.email);
         const recoveryCode = typeof body.recoveryCode === "string" ? body.recoveryCode.trim() : "";
         if (recoveryCode.length < 24 || recoveryCode.length > 256) throw problems.unauthorized();
