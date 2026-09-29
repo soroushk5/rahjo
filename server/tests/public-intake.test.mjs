@@ -2,11 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createCrmServer } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
-import { payloadDigest } from "../src/security.js";
 
 const origin = "https://www.crm.example";
 const pepper = "p".repeat(40);
-const token = "t".repeat(40);
 
 function baseConfig(overrides = {}) {
   return {
@@ -17,10 +15,6 @@ function baseConfig(overrides = {}) {
     interim: true,
     publicOrigin: "http://127.0.0.1:8787",
     publicIntakeEnabled: true,
-    publicIntakeOrigin: origin,
-    publicIntakeWorkspaceSlug: "default",
-    publicIntakeToken: token,
-    publicIntakeServiceId: "SRV-WEBSITE-INTAKE",
     publicIntakeMaxRequests: 20,
     publicIntakeWindowMs: 600_000,
     sessionHours: 12,
@@ -41,7 +35,10 @@ function dependencies(config = baseConfig()) {
     scopes: ["intake:write"]
   };
   const database = {
-    async authenticate() { return context; },
+    async resolvePublicIntake(receivedOrigin) {
+      if (receivedOrigin !== origin) return null;
+      return { ...context, service_id: "SRV-WEBSITE-INTAKE" };
+    },
     async ready() { return { role: "crm_app" }; },
     async authenticateSession() { return null; },
     async lookupPassword() { return null; }
@@ -148,13 +145,7 @@ test("public intake requires the exact configured origin", async () => {
 });
 
 test("disabled public intake is not discoverable", async () => {
-  const deps = dependencies(baseConfig({
-    publicIntakeEnabled: false,
-    publicIntakeOrigin: "",
-    publicIntakeWorkspaceSlug: "",
-    publicIntakeToken: "",
-    publicIntakeServiceId: ""
-  }));
+  const deps = dependencies(baseConfig({ publicIntakeEnabled: false }));
   await withServer(deps, async (base) => {
     const response = await submit(base);
     assert.equal(response.status, 404);
@@ -178,7 +169,7 @@ test("public intake returns explicit 429 with Retry-After", async () => {
   });
 });
 
-test("public intake config is feature-gated and binds origin/workspace/service server-side", () => {
+test("public intake is enabled by default and requires no intake secret", () => {
   const env = {
     NODE_ENV: "development",
     CRM_MODE: "native_deferred",
@@ -186,17 +177,24 @@ test("public intake config is feature-gated and binds origin/workspace/service s
     CRM_DATABASE_URL: "postgres://example.invalid/crm",
     CRM_TOKEN_PEPPER: pepper,
     CRM_CORS_ORIGINS: origin,
-    CRM_PUBLIC_ORIGIN: "http://127.0.0.1:8787",
-    CRM_PUBLIC_INTAKE_ENABLED: "true",
-    CRM_PUBLIC_INTAKE_ORIGIN: origin,
-    CRM_PUBLIC_INTAKE_WORKSPACE_SLUG: "default",
-    CRM_PUBLIC_INTAKE_TOKEN: token,
-    CRM_PUBLIC_INTAKE_SERVICE_ID: "SRV-WEBSITE-INTAKE"
+    CRM_PUBLIC_ORIGIN: "http://127.0.0.1:8787"
   };
   const config = loadConfig(env);
   assert.equal(config.publicIntakeEnabled, true);
-  assert.equal(config.publicIntakeOrigin, origin);
-  assert.equal(config.publicIntakeWorkspaceSlug, "default");
-  assert.equal(config.publicIntakeServiceId, "SRV-WEBSITE-INTAKE");
-  assert.equal(payloadDigest(config.publicIntakeToken).length, 64);
+  assert.equal(Object.hasOwn(config, "publicIntakeToken"), false);
+  assert.equal(Object.hasOwn(config, "publicIntakeWorkspaceSlug"), false);
+  assert.equal(Object.hasOwn(config, "publicIntakeServiceId"), false);
+
+  const disabled = loadConfig({ ...env, CRM_PUBLIC_INTAKE_ENABLED: "false" });
+  assert.equal(disabled.publicIntakeEnabled, false);
+});
+
+test("public intake returns 404 when the origin has no server-owned route", async () => {
+  const deps = dependencies();
+  deps.database.resolvePublicIntake = async () => null;
+  await withServer(deps, async (base) => {
+    const response = await submit(base);
+    assert.equal(response.status, 404);
+    assert.equal(deps.captured.length, 0);
+  });
 });

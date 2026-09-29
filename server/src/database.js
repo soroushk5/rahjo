@@ -16,7 +16,7 @@ export class Database {
       max: 12,
       idle_timeout: 30,
       connect_timeout: 5,
-      connection: { application_name: "rahjo-crm-bff" }
+      connection: { application_name: "crm-core-bff" }
     });
     this.executor = executor(this.sql);
   }
@@ -43,9 +43,14 @@ export class Database {
   async verifyWorkspaceBinding(workspaceId, relaticleTeamId) {
     const result = await this.executor.query("SELECT rahjo.verify_workspace_binding($1,$2) AS valid", [workspaceId, relaticleTeamId]);
     if (result.rows[0]?.valid !== true) {
-      throw problems.unavailable("RELATICLE_TEAM_BINDING_MISMATCH", "Rahjo workspace and Relaticle team binding could not be verified");
+      throw problems.unavailable("RELATICLE_TEAM_BINDING_MISMATCH", "CRM workspace and Relaticle team binding could not be verified");
     }
     return true;
+  }
+
+  async resolvePublicIntake(origin) {
+    const result = await this.executor.query("SELECT * FROM rahjo.resolve_public_intake($1)", [origin]);
+    return result.rows[0] ?? null;
   }
 
   async authenticateSession(tokenHash) {

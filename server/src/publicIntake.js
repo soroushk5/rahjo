@@ -1,6 +1,5 @@
 import { problems } from "./errors.js";
 import { normalizePersianText, requiredIdempotencyKey } from "./normalization.js";
-import { tokenDigest } from "./security.js";
 
 const attributionKeys = Object.freeze([
   "utmSource",
@@ -12,24 +11,38 @@ const attributionKeys = Object.freeze([
   "landingPath"
 ]);
 
-/** Resolve the one server-owned public-intake identity. */
-export async function resolvePublicIntakeContext(config, database) {
+/** Resolve the server-owned public-intake identity and service for one configured origin. */
+export async function resolvePublicIntakeContext(config, database, origin) {
   if (!config.publicIntakeEnabled) throw problems.notFound();
-  const context = await database.authenticate(tokenDigest(config.publicIntakeToken, config.tokenPepper));
+  const context = await database.resolvePublicIntake(origin);
   if (!context
-    || context.workspace_slug !== config.publicIntakeWorkspaceSlug
     || context.role !== "intake"
     || !Array.isArray(context.scopes)
-    || !context.scopes.includes("intake:write")) {
-    throw problems.unavailable("PUBLIC_INTAKE_IDENTITY_INVALID", "The public intake identity is not safely provisioned");
+    || !context.scopes.includes("intake:write")
+    || typeof context.service_id !== "string"
+    || !context.service_id) {
+    throw problems.notFound();
   }
-  return context;
+  return Object.freeze({
+    context: Object.freeze({
+      workspace_id: context.workspace_id,
+      workspace_slug: context.workspace_slug,
+      workspace_name: context.workspace_name,
+      membership_id: context.membership_id,
+      user_id: context.user_id,
+      user_email: context.user_email,
+      display_name: context.display_name,
+      role: context.role,
+      scopes: context.scopes
+    }),
+    serviceId: context.service_id
+  });
 }
 
 export function assertPublicIntakeOrigin(config, origin) {
   if (!config.publicIntakeEnabled) throw problems.notFound();
   const normalized = typeof origin === "string" ? origin.replace(/\/$/, "") : "";
-  if (!normalized || normalized !== config.publicIntakeOrigin) throw problems.forbidden();
+  if (!normalized || !config.corsOrigins.includes(normalized)) throw problems.forbidden();
   return normalized;
 }
 
@@ -45,7 +58,7 @@ export function normalizePublicAttribution(value) {
   return Object.freeze(output);
 }
 
-export function publicIntakeInput(config, body) {
+export function publicIntakeInput(serviceId, body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw problems.validation();
   return {
     organization: body.organization,
@@ -53,7 +66,7 @@ export function publicIntakeInput(config, body) {
     email: body.email,
     phone: body.phone,
     purpose: body.purpose,
-    serviceId: config.publicIntakeServiceId,
+    serviceId,
     sourceChannel: "website",
     attribution: normalizePublicAttribution(body.attribution)
   };

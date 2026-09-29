@@ -41,6 +41,10 @@ test("mandatory two-workspace RLS and no-context isolation", { skip: !enabled },
       VALUES(${workspaceA.id},'SVC-ALPHA','Alpha Service','active','human',${membershipA.id}) RETURNING id`;
     const [serviceB] = await admin`INSERT INTO rahjo.services(workspace_id,public_id,name,capability_status,execution_mode,owner_membership_id)
       VALUES(${workspaceB.id},'SVC-BETA','Beta Service','active','human',${membershipB.id}) RETURNING id`;
+    const [intakeUser] = await admin`INSERT INTO rahjo.users(email,display_name) VALUES('public-intake-alpha@example.test','Alpha Public Intake') RETURNING id`;
+    const [intakeMembership] = await admin`INSERT INTO rahjo.memberships(workspace_id,user_id,role) VALUES(${workspaceA.id},${intakeUser.id},'intake') RETURNING id`;
+    await admin`INSERT INTO rahjo.public_intake_routes(origin,workspace_id,membership_id,service_id)
+      VALUES('https://alpha-intake.example.test',${workspaceA.id},${intakeMembership.id},${serviceA.id})`;
 
     const authA = context(await database.authenticate(tokenDigest(tokenA, pepper)));
     const authB = context(await database.authenticate(tokenDigest(tokenB, pepper)));
@@ -104,6 +108,19 @@ test("mandatory two-workspace RLS and no-context isolation", { skip: !enabled },
       assert.deepEqual(result.map((row) => row.public_id), [expected]);
     }
     assert.notEqual(serviceA.id, serviceB.id);
+
+    const publicRoute = await database.resolvePublicIntake("https://alpha-intake.example.test");
+    assert.equal(publicRoute.workspace_id, workspaceA.id);
+    assert.equal(publicRoute.membership_id, intakeMembership.id);
+    assert.equal(publicRoute.role, "intake");
+    assert.deepEqual(publicRoute.scopes, ["intake:write"]);
+    assert.equal(publicRoute.service_id, "SVC-ALPHA");
+    assert.equal(await database.resolvePublicIntake("https://unknown.example.test"), null);
+    await assert.rejects(
+      () => database.executor.query("SELECT origin FROM rahjo.public_intake_routes"),
+      (error) => error.code === "42501"
+    );
+
     assert.equal(await database.verifyWorkspaceBinding(workspaceA.id, "TEAM-A"), true);
     await assert.rejects(
       () => database.verifyWorkspaceBinding(workspaceA.id, "TEAM-B"),

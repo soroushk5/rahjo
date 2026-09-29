@@ -65,20 +65,10 @@ export function loadConfig(env = process.env) {
     .split(",")
     .map((item) => absoluteUrl(item.trim(), "CRM_CORS_ORIGINS", { allowHttpLocalhost }));
 
-  const publicIntakeEnabled = envValue(env, "CRM_PUBLIC_INTAKE_ENABLED") === "true";
-  const publicIntakeWorkspaceSlug = publicIntakeEnabled ? required(env, "CRM_PUBLIC_INTAKE_WORKSPACE_SLUG") : "";
-  if (publicIntakeWorkspaceSlug && !/^[a-z0-9][a-z0-9-]{1,62}$/.test(publicIntakeWorkspaceSlug)) {
-    throw new Error("CRM_PUBLIC_INTAKE_WORKSPACE_SLUG is invalid");
-  }
-  const publicIntakeOrigin = publicIntakeEnabled
-    ? absoluteUrl(required(env, "CRM_PUBLIC_INTAKE_ORIGIN"), "CRM_PUBLIC_INTAKE_ORIGIN", { allowHttpLocalhost })
-    : "";
-  if (publicIntakeOrigin && !corsOrigins.includes(publicIntakeOrigin)) {
-    throw new Error("CRM_PUBLIC_INTAKE_ORIGIN must also be present in CRM_CORS_ORIGINS");
-  }
-
-  const publicIntakeToken = publicIntakeEnabled ? required(env, "CRM_PUBLIC_INTAKE_TOKEN", 32) : "";
-  const publicIntakeServiceId = publicIntakeEnabled ? required(env, "CRM_PUBLIC_INTAKE_SERVICE_ID", 4) : "";
+  // Public intake is routed to a server-owned identity through a database mapping.
+  // It is enabled by default and can be fail-closed explicitly with CRM_PUBLIC_INTAKE_ENABLED=false.
+  // No browser or Hostinger intake secret is required.
+  const publicIntakeEnabled = envValue(env, "CRM_PUBLIC_INTAKE_ENABLED") !== "false";
 
   return Object.freeze({
     appEnv,
@@ -93,10 +83,6 @@ export function loadConfig(env = process.env) {
     corsOrigins,
     publicOrigin: absoluteUrl(required(env, "CRM_PUBLIC_ORIGIN"), "CRM_PUBLIC_ORIGIN", { allowHttpLocalhost }),
     publicIntakeEnabled,
-    publicIntakeWorkspaceSlug,
-    publicIntakeOrigin,
-    publicIntakeToken,
-    publicIntakeServiceId,
     publicIntakeMaxRequests: optionalPositiveInteger(env, "CRM_PUBLIC_INTAKE_MAX_REQUESTS", 20),
     publicIntakeWindowMs: optionalPositiveInteger(env, "CRM_PUBLIC_INTAKE_WINDOW_MS", 10 * 60 * 1000),
     bodyLimit: 64 * 1024,
