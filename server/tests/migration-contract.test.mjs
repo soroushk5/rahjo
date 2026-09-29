@@ -81,4 +81,7 @@ test("email-first login resolves only one active workspace and remains fail-clos
   assert.match(emailLoginSql, /candidate_count=1/);
   assert.match(emailLoginSql, /REVOKE ALL ON FUNCTION rahjo\.lookup_password_login_by_email\(text\) FROM PUBLIC/);
   assert.match(emailLoginSql, /GRANT EXECUTE ON FUNCTION rahjo\.lookup_password_login_by_email\(text\) TO rahjo_app/);
+  assert.match(emailLoginSql, /consume_account_recovery_code_by_email/);
+  assert.match(emailLoginSql, /v_matches <> 1/);
+  assert.match(emailLoginSql, /GRANT EXECUTE ON FUNCTION rahjo\.consume_account_recovery_code_by_email\(text,text,text,text\) TO rahjo_app/);
 });
