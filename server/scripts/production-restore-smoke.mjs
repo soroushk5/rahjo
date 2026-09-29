@@ -58,7 +58,7 @@ try {
      WHERE enabled=true
   `;
 
-  if (!result.services.includes("SVC-WEBSITE-INTAKE")
+  if (!result.services.includes(context.service_id)
       || result.writeCount !== 1
       || policyCount[0].count < 2
       || routeCount[0].count < 1) {
@@ -70,7 +70,7 @@ try {
     runtimeRole: readiness.role,
     publicIntake: true,
     workspaceSlug: context.workspace_slug,
-    serviceId: "SVC-WEBSITE-INTAKE",
+    serviceId: context.service_id,
     read: true,
     leadCount: result.leadCount,
     write: true,
