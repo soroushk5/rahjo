@@ -6,6 +6,7 @@ const sql = await readFile(new URL("../migrations/001_w13_foundation.sql", impor
 const identitySql = await readFile(new URL("../migrations/002_w15_identity_lifecycle.sql", import.meta.url), "utf8");
 const publicIntakeSql = await readFile(new URL("../migrations/004_public_intake_routing.sql", import.meta.url), "utf8");
 const publicIntakeHardeningSql = await readFile(new URL("../migrations/005_public_intake_hardening.sql", import.meta.url), "utf8");
+const emailLoginSql = await readFile(new URL("../migrations/006_email_first_login.sql", import.meta.url), "utf8");
 const migrator = await readFile(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
 const database = await readFile(new URL("../src/database.js", import.meta.url), "utf8");
 const repository = await readFile(new URL("../src/repository.js", import.meta.url), "utf8");
@@ -71,4 +72,13 @@ test("public intake routing is private, exact-origin and only executable by the 
   assert.match(publicIntakeHardeningSql, /public_intake_routes_service_idx/);
   assert.match(publicIntakeHardeningSql, /public_intake_routes_runtime_deny/);
   assert.match(publicIntakeHardeningSql, /USING \(false\)/);
+});
+
+
+test("email-first login resolves only one active workspace and remains fail-closed for ambiguity", () => {
+  assert.match(emailLoginSql, /lookup_password_login_by_email/);
+  assert.match(emailLoginSql, /count\(\*\) OVER \(\)/);
+  assert.match(emailLoginSql, /candidate_count=1/);
+  assert.match(emailLoginSql, /REVOKE ALL ON FUNCTION rahjo\.lookup_password_login_by_email\(text\) FROM PUBLIC/);
+  assert.match(emailLoginSql, /GRANT EXECUTE ON FUNCTION rahjo\.lookup_password_login_by_email\(text\) TO rahjo_app/);
 });
