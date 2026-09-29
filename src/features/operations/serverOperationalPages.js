@@ -55,6 +55,30 @@ function accountHref(id) {
   return `/customers/detail?account=${encodeURIComponent(id)}`;
 }
 
+function relationValues(item, ...keys) {
+  return keys.flatMap((key) => {
+    const value = item?.[key];
+    if (Array.isArray(value)) return value.map(String);
+    return value == null || value === "" ? [] : [String(value)];
+  });
+}
+
+function linkedToAccount(item, accountId) {
+  return relationValues(item, "accountId", "account_id", "companyId", "company_id", "company_ids").includes(String(accountId));
+}
+
+function linkedToContact(item, contactId) {
+  return relationValues(item, "contactId", "contact_id", "personId", "person_id", "people_ids").includes(String(contactId));
+}
+
+function linkedToOpportunity(item, opportunityId) {
+  return relationValues(item, "opportunityId", "opportunity_id", "opportunity_ids").includes(String(opportunityId));
+}
+
+function optionList(items, selected = "") {
+  return items.map((item) => `<option value="${text(item.id)}" ${String(item.id) === String(selected) ? "selected" : ""}>${text(item.name || item.title || item.id)}</option>`).join("");
+}
+
 function caseRows(items = list("cases")) {
   if (!items.length) return `<tr><td colspan="7">هنوز Case سروری ثبت نشده است.</td></tr>`;
   const services = new Map(list("services").map((item) => [item.id, item]));
@@ -108,26 +132,84 @@ function renderCustomerDetail() {
   const id = new URLSearchParams(location.search).get("account") || list("accounts")[0]?.id;
   const account = list("accounts").find((item) => item.id === id);
   if (!account) return appShell({ content: `${pageHeader("مشتری پیدا نشد", "این شناسه در فضای کاری فعلی وجود ندارد.", `<a data-link class="button button--outline" href="/customers">بازگشت</a>`)}${serverNotice()}`, activePath: "/customers", title: "پروندهٔ مشتری" });
-  const cases = list("cases").filter((item) => item.account_ref === account.id);
-  const contacts = list("contacts").filter((item) => item.companyId === account.id || item.company_id === account.id);
-  const content = `${pageHeader(text(account.name || account.id), `حافظهٔ تجاری زنده · ${text(account.id)}`, `<a data-link class="button button--primary" href="/cases/new">Case جدید</a>`)}${serverNotice()}
-    <div class="account-overview-grid"><section class="workspace-panel"><header><h2>مشخصات Account</h2></header><dl class="financial-summary"><div><dt>شناسه</dt><dd>${text(account.id)}</dd></div><div><dt>منبع</dt><dd>${text(account.source)}</dd></div><div><dt>وضعیت همگام‌سازی</dt><dd>${badge(label(account.syncState))}</dd></div></dl></section>
-    ${panel("اشخاص مرتبط", `<div class="compact-list">${contacts.map((item) => `<article><div><strong>${text(item.name || item.id)}</strong><small>${text(item.email || item.phone || item.id)}</small></div></article>`).join("") || emptyState("Contact ثبت نشده", "با Intake بعدی ایجاد می‌شود.")}</div>`)}</div>
-    ${panel("Caseهای این مشتری", casesTable(cases))}`;
-  return appShell({ content, activePath: "/customers/detail", title: "پروندهٔ مشتری" });
-}
 
+  const contacts = list("contacts").filter((item) => linkedToAccount(item, account.id));
+  const opportunities = list("opportunities").filter((item) => linkedToAccount(item, account.id));
+  const tasks = list("tasks").filter((item) => linkedToAccount(item, account.id)
+    || opportunities.some((opportunity) => linkedToOpportunity(item, opportunity.id)));
+  const interactions = list("interactions").filter((item) => linkedToAccount(item, account.id)
+    || contacts.some((contact) => linkedToContact(item, contact.id))
+    || opportunities.some((opportunity) => linkedToOpportunity(item, opportunity.id)));
+  const cases = list("cases").filter((item) => item.account_ref === account.id);
+
+  const opportunityRows = opportunities.map((item) => `<tr data-server-row data-search="${text([item.id,item.name,item.stage].join(" "))}"><td><strong>${text(item.name || item.id)}</strong><small>${text(item.id)}</small></td><td>${badge(label(item.stage || "active"))}</td><td>${text(item.contact_id || item.contactId)}</td><td>${text(item.source)}</td></tr>`).join("");
+  const taskRows = tasks.map((item) => `<tr><td><strong>${text(item.title || item.id)}</strong><small>${text(item.id)}</small></td><td>${badge(label(item.status || "open"))}</td><td>${text(item.opportunity_id || item.opportunityId)}</td><td>${item.status === "Done" || item.status === "done" ? "—" : `<button class="button button--outline" data-task-id="${text(item.id)}" data-task-status="Done">انجام شد</button>`}</td></tr>`).join("");
+  const activityItems = interactions.map((item) => `<article><i class="dot"></i><div><strong>${text(item.title || item.id)}</strong><p>${text(item.body || item.summary || "فعالیت ثبت‌شده")}</p><small>${text(item.source)} · ${text(item.opportunity_id || item.opportunityId)}</small></div></article>`).join("");
+
+  const content = `${pageHeader(text(account.name || account.id), `Account 360 · ${text(account.id)}`, `<a data-link class="button button--primary" href="/sales">فرصت جدید</a>`)}${serverNotice()}
+    <div class="summary-strip">
+      <span><b>${number.format(contacts.length)}</b> Contact</span>
+      <span><b>${number.format(opportunities.length)}</b> Opportunity</span>
+      <span><b>${number.format(tasks.filter((item) => !["Done","done"].includes(item.status)).length)}</b> Task باز</span>
+      <span><b>${number.format(interactions.length)}</b> Activity</span>
+      <span><b>${number.format(cases.length)}</b> Workflow Case</span>
+    </div>
+    <div class="account-overview-grid">
+      <section class="workspace-panel"><header><h2>مشخصات Account</h2></header><dl class="financial-summary"><div><dt>شناسه</dt><dd>${text(account.id)}</dd></div><div><dt>Core ID</dt><dd>${text(account.coreId)}</dd></div><div><dt>منبع</dt><dd>${text(account.source)}</dd></div><div><dt>همگام‌سازی</dt><dd>${badge(label(account.syncState))}</dd></div></dl></section>
+      ${panel("Contactها", `<div class="compact-list">${contacts.map((item) => `<article><div><strong>${text(item.name || item.id)}</strong><small>${text(item.email || item.phone || item.id)}</small></div></article>`).join("") || emptyState("Contact ثبت نشده", "از intake یا API استاندارد Contact اضافه می‌شود.")}</div>`)}
+    </div>
+    ${panel("Opportunity pipeline", `<div class="table-wrap"><table class="workspace-table"><thead><tr><th>فرصت</th><th>مرحله</th><th>Contact</th><th>منبع</th></tr></thead><tbody>${opportunityRows || `<tr><td colspan="4">Opportunity ثبت نشده است.</td></tr>`}</tbody></table></div>`)}
+    ${panel("Task / Follow-up", `<div class="table-wrap"><table class="workspace-table"><thead><tr><th>Task</th><th>وضعیت</th><th>Opportunity</th><th>اقدام</th></tr></thead><tbody>${taskRows || `<tr><td colspan="4">Task ثبت نشده است.</td></tr>`}</tbody></table></div>`)}
+    ${panel("Activity timeline", `<div class="activity-stream">${activityItems || emptyState("Activity ثبت نشده", "تماس، جلسه و یادداشت‌های تجاری اینجا می‌آیند.")}</div>
+      <form id="server-interaction" class="table-toolbar" data-account-id="${text(account.id)}">
+        <input name="title" required maxlength="255" placeholder="عنوان تماس/جلسه/یادداشت" />
+        <input name="body" maxlength="8000" placeholder="خلاصه فعالیت" />
+        <select name="opportunityId"><option value="">بدون Opportunity</option>${optionList(opportunities)}</select>
+        <button class="button button--primary" type="submit">ثبت Activity</button>
+      </form>`)}
+    ${cases.length ? panel("Workflow extension / Case", casesTable(cases)) : ""}`;
+  return appShell({ content, activePath: "/customers/detail", title: "Account 360" });
+}
 function renderSales() {
   const leads = list("leads");
   const opportunities = list("opportunities");
-  const rows = leads.map((item) => `<tr><td><strong>${text(item.id)}</strong><small>${when(item.updated_at)}</small></td><td>${text(item.account_ref)}</td><td>${text(item.contact_ref)}</td><td>${badge(label(item.status))}</td><td>${text(item.source_channel)}</td></tr>`).join("");
-  const content = `${pageHeader("فروش", "Lead و Opportunityهای سروری؛ بدون آمار یا کارت ساختگی.", `<a data-link class="button button--primary" href="/cases/new">ورودی جدید</a>`)}${serverNotice()}
-    <div class="sales-summary">${metric("سرنخ‌ها", leads.length, "ثبت‌شده روی سرور", "reports")}${metric("فرصت‌ها", opportunities.length, "منبع Relaticle", "requests", "blue")}${metric("Caseهای باز", list("cases").filter((item) => !["resolved", "rejected"].includes(item.status)).length, "جریان فعال", "clock", "amber")}${metric("نتیجه‌ها", list("outcomes").length, "تکمیل‌شده", "check")}</div>
-    ${panel("سرنخ‌های ثبت‌شده", `<div class="table-wrap"><table class="workspace-table"><thead><tr><th>Lead</th><th>Account</th><th>Contact</th><th>وضعیت</th><th>منبع</th></tr></thead><tbody>${rows || `<tr><td colspan="5">هنوز Lead ثبت نشده است.</td></tr>`}</tbody></table></div>`)}
-    ${opportunities.length ? panel("فرصت‌ها", `<pre>${text(JSON.stringify(opportunities, null, 2))}</pre>`) : ""}`;
-  return appShell({ content, activePath: "/sales", title: "فروش" });
+  const accounts = list("accounts");
+  const contacts = list("contacts");
+  const leadRows = leads.map((item) => `<tr><td><strong>${text(item.id)}</strong><small>${when(item.updated_at)}</small></td><td><a data-link href="${accountHref(item.account_ref)}">${text(item.account_ref)}</a></td><td>${text(item.contact_ref)}</td><td>${badge(label(item.status))}</td><td>${text(item.source_channel)}</td></tr>`).join("");
+  const opportunityRows = opportunities.map((item) => `<tr data-server-row data-search="${text([item.id,item.name,item.stage,item.account_id,item.company_id].join(" "))}"><td><strong>${text(item.name || item.id)}</strong><small>${text(item.id)}</small></td><td>${badge(label(item.stage || "active"))}</td><td>${text(item.account_id || item.company_id || relationValues(item,"company_ids")[0])}</td><td>${text(item.contact_id || relationValues(item,"people_ids")[0])}</td><td>${text(item.source)}</td></tr>`).join("");
+  const content = `${pageHeader("فروش", "Lead → Account/Contact → Opportunity؛ pipeline واقعی سرور و بدون اعداد ساختگی.", `<a data-link class="button button--outline" href="/tasks">Taskها</a>`)}${serverNotice()}
+    <div class="sales-summary">${metric("سرنخ‌ها", leads.length, "ورودی تجاری", "reports")}${metric("فرصت‌ها", opportunities.length, "pipeline", "requests", "blue")}${metric("Task باز", list("tasks").filter((item) => !["Done","done"].includes(item.status)).length, "پیگیری", "clock", "amber")}${metric("Activity", list("interactions").length, "تعامل ثبت‌شده", "check")}</div>
+    ${panel("Opportunity pipeline", `<div class="table-toolbar"><label class="table-search">${icon("search", { size: 16 })}<input data-server-query placeholder="نام، مرحله یا مشتری…" /></label></div><div class="table-wrap"><table class="workspace-table"><thead><tr><th>Opportunity</th><th>Stage</th><th>Account</th><th>Contact</th><th>منبع</th></tr></thead><tbody>${opportunityRows || `<tr><td colspan="5">Opportunity ثبت نشده است.</td></tr>`}</tbody></table></div>`)}
+    ${panel("Opportunity جدید", `<form id="server-opportunity" class="intake-layout">
+      <label class="field-control"><span>نام فرصت *</span><input name="name" required maxlength="255" /></label>
+      <label class="select-control"><span>Account</span><select name="accountId"><option value="">—</option>${optionList(accounts)}</select></label>
+      <label class="select-control"><span>Contact</span><select name="contactId"><option value="">—</option>${optionList(contacts)}</select></label>
+      <label class="field-control"><span>Stage</span><input name="stage" maxlength="120" placeholder="مثلاً Proposal" /></label>
+      <button class="button button--primary" type="submit">ثبت Opportunity</button>
+    </form>`)}
+    ${panel("Lead intake", `<div class="table-wrap"><table class="workspace-table"><thead><tr><th>Lead</th><th>Account</th><th>Contact</th><th>وضعیت</th><th>منبع</th></tr></thead><tbody>${leadRows || `<tr><td colspan="5">هنوز Lead ثبت نشده است.</td></tr>`}</tbody></table></div>`)}`;
+  return appShell({ content, activePath: "/sales", title: "فروش و Pipeline" });
 }
 
+function renderTasks() {
+  const tasks = list("tasks");
+  const accounts = list("accounts");
+  const contacts = list("contacts");
+  const opportunities = list("opportunities");
+  const rows = tasks.map((item) => `<tr data-server-row data-search="${text([item.id,item.title,item.status,item.opportunity_id].join(" "))}"><td><strong>${text(item.title || item.id)}</strong><small>${text(item.id)}</small></td><td>${badge(label(item.status || "open"))}</td><td>${text(item.account_id || relationValues(item,"company_ids")[0])}</td><td>${text(item.opportunity_id || relationValues(item,"opportunity_ids")[0])}</td><td>${["Done","done"].includes(item.status) ? "—" : `<button class="button button--outline" data-task-id="${text(item.id)}" data-task-status="Done">انجام شد</button>`}</td></tr>`).join("");
+  const content = `${pageHeader("کارها و پیگیری‌ها", "Taskهای واقعی CRM؛ وضعیت هر پیگیری روی سرور ثبت و audit می‌شود.")}${serverNotice()}
+    <div class="summary-strip"><span><b>${number.format(tasks.length)}</b> کل</span><span><b>${number.format(tasks.filter((item) => !["Done","done"].includes(item.status)).length)}</b> باز</span><span><b>${number.format(tasks.filter((item) => ["Done","done"].includes(item.status)).length)}</b> انجام‌شده</span></div>
+    ${panel("صف Task", `<div class="table-toolbar"><label class="table-search">${icon("search",{size:16})}<input data-server-query placeholder="Task، وضعیت یا Opportunity…" /></label></div><div class="table-wrap"><table class="workspace-table"><thead><tr><th>Task</th><th>وضعیت</th><th>Account</th><th>Opportunity</th><th>اقدام</th></tr></thead><tbody>${rows || `<tr><td colspan="5">Task ثبت نشده است.</td></tr>`}</tbody></table></div>`)}
+    ${panel("Task جدید", `<form id="server-task" class="intake-layout">
+      <label class="field-control"><span>عنوان *</span><input name="title" required maxlength="255" /></label>
+      <label class="select-control"><span>Account</span><select name="accountId"><option value="">—</option>${optionList(accounts)}</select></label>
+      <label class="select-control"><span>Contact</span><select name="contactId"><option value="">—</option>${optionList(contacts)}</select></label>
+      <label class="select-control"><span>Opportunity</span><select name="opportunityId"><option value="">—</option>${optionList(opportunities)}</select></label>
+      <label class="field-control"><span>Status</span><input name="status" maxlength="120" value="To do" /></label>
+      <button class="button button--primary" type="submit">ثبت Task</button>
+    </form>`)}`;
+  return appShell({ content, activePath: "/tasks", title: "Taskها" });
+}
 function renderServices() {
   const capabilities = list("serviceCapabilities");
   const rows = list("services").map((item) => `<tr><td><strong>${text(item.name)}</strong><small>${text(item.id)}</small></td><td>${text(item.description)}</td><td>${badge(label(item.capability_status))}</td><td>${badge(label(item.execution_mode))}</td><td>${number.format(capabilities.filter((capability) => capability.service_id === item.id).length)}</td><td>${when(item.updated_at)}</td></tr>`).join("");
@@ -228,8 +310,8 @@ function renderSettings() {
 }
 
 function renderUnavailable(path) {
-  const title = path === "/finance" ? "مالی و اعتبار" : path === "/documents" ? "اسناد" : path === "/tasks" ? "کارها و پیگیری‌ها" : "ماژول";
-  const description = path === "/tasks" ? "صف اقدام‌ها از Approval و Caseهای واقعی ساخته می‌شود؛ Task مستقل پس از اتصال Relaticle فعال خواهد شد." : "این ماژول هنوز قرارداد نوشتن سروری ندارد؛ برای جلوگیری از نمایش دادهٔ ساختگی، عمداً خالی نگه داشته شده است.";
+  const title = path === "/finance" ? "مالی و اعتبار" : path === "/documents" ? "اسناد" : "ماژول";
+  const description = "این ماژول هنوز قرارداد نوشتن سروری ندارد؛ برای جلوگیری از نمایش دادهٔ ساختگی، عمداً خالی نگه داشته شده است.";
   return appShell({ content: `${pageHeader(title, description)}${serverNotice()}${panel("وضعیت", emptyState("دادهٔ ساختگی نمایش داده نمی‌شود", "هستهٔ مشتری، Case، Approval، Action، Receipt و Outcome هم‌اکنون زنده است."))}`, activePath: path, title });
 }
 
@@ -238,6 +320,7 @@ export function renderServerOperationalRoute(path) {
   if (path === "/customers") return renderCustomers();
   if (path === "/customers/detail") return renderCustomerDetail();
   if (path === "/sales") return renderSales();
+  if (path === "/tasks") return renderTasks();
   if (path === "/services-admin") return renderServices();
   if (path === "/requests") return renderCases();
   if (path === "/requests/detail") return renderCaseDetail();
@@ -283,6 +366,62 @@ export function mountServerOperationalRoute() {
     const reason = document.querySelector("#outcome-reason");
     return perform(button, "Outcome ثبت و Case حل شد.", () => runtimeData.command(`/api/v1/cases/${encodeURIComponent(button.dataset.recordOutcome)}/outcomes`, { body: { reason: reason instanceof HTMLTextAreaElement ? reason.value : "نتیجه ثبت شد" } }));
   }));
+
+  document.querySelectorAll("[data-task-id]").forEach((button) => button.addEventListener("click", () =>
+    perform(button, "وضعیت Task ثبت شد.", () => runtimeData.command(
+      `/api/v1/tasks/${encodeURIComponent(button.dataset.taskId)}/status`,
+      { body: { status: button.dataset.taskStatus || "Done" } }
+    ))
+  ));
+
+  const opportunityForm = document.querySelector("#server-opportunity");
+  opportunityForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!(opportunityForm instanceof HTMLFormElement) || !opportunityForm.reportValidity()) return;
+    const fields = new FormData(opportunityForm);
+    const button = opportunityForm.querySelector("button[type=submit]");
+    perform(button, "Opportunity روی سرور ثبت شد.", () => runtimeData.command("/api/v1/opportunities", {
+      body: {
+        name: String(fields.get("name") || ""),
+        accountId: String(fields.get("accountId") || ""),
+        contactId: String(fields.get("contactId") || ""),
+        stage: String(fields.get("stage") || "")
+      }
+    }));
+  });
+
+  const taskForm = document.querySelector("#server-task");
+  taskForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!(taskForm instanceof HTMLFormElement) || !taskForm.reportValidity()) return;
+    const fields = new FormData(taskForm);
+    const button = taskForm.querySelector("button[type=submit]");
+    perform(button, "Task روی سرور ثبت شد.", () => runtimeData.command("/api/v1/tasks", {
+      body: {
+        title: String(fields.get("title") || ""),
+        accountId: String(fields.get("accountId") || ""),
+        contactId: String(fields.get("contactId") || ""),
+        opportunityId: String(fields.get("opportunityId") || ""),
+        status: String(fields.get("status") || "")
+      }
+    }));
+  });
+
+  const interactionForm = document.querySelector("#server-interaction");
+  interactionForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!(interactionForm instanceof HTMLFormElement) || !interactionForm.reportValidity()) return;
+    const fields = new FormData(interactionForm);
+    const button = interactionForm.querySelector("button[type=submit]");
+    perform(button, "Activity روی سرور ثبت شد.", () => runtimeData.command("/api/v1/interactions", {
+      body: {
+        title: String(fields.get("title") || ""),
+        body: String(fields.get("body") || ""),
+        accountId: interactionForm.dataset.accountId || "",
+        opportunityId: String(fields.get("opportunityId") || "")
+      }
+    }));
+  });
 
   const intake = document.querySelector("#server-intake");
   intake?.addEventListener("submit", (event) => {
