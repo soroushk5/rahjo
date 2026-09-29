@@ -93,10 +93,11 @@ jobs:
         env:
           API_BASE: ${{ vars.CRM_API_BASE || vars.RAHJO_API_BASE }}
           SITE_ORIGIN: ${{ vars.CRM_PRODUCTION_ORIGIN || vars.RAHJO_PRODUCTION_ORIGIN }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
           api="${API_BASE%/}"
-          key="crm-core-live-acceptance-${GITHUB_SHA:0:12}"
+          key="crm-core-live-acceptance-${SOURCE_SHA:0:12}"
           payload='{"organization":"CRM Core Acceptance Probe","contactName":"CI Acceptance","email":"crm-core-acceptance@example.test","purpose":"Automated live public-intake acceptance; safe to ignore."}'
           first="$(mktemp)"
           second="$(mktemp)"
