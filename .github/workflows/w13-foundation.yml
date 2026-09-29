@@ -152,6 +152,7 @@ jobs:
           CRM_RESTORE_TEST_TOKEN: rahjo_test_workspace_a_12345678901234567890
           CRM_RESTORE_ADMIN_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:55432/rahjo_restore_drill
           CRM_RESTORE_RUNTIME_DATABASE_URL: postgresql://rahjo_app:rahjo-runtime-ci-only-password-00000001@127.0.0.1:55432/rahjo_restore_drill
+          CRM_RESTORE_PUBLIC_ORIGIN: https://alpha-intake.example.test
         run: |
           mkdir -p artifacts
           restore_container="rahjo-w13-restore-${GITHUB_RUN_ID}"
@@ -170,6 +171,7 @@ jobs:
           docker run --rm --network host -e PGPASSWORD -v "$PWD/artifacts:/backup" postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 \
             pg_restore -h 127.0.0.1 -p 55432 -U postgres -d rahjo_restore_drill --exit-on-error /backup/w13-test.dump
           node server/scripts/restore-smoke.mjs | tee artifacts/restore-smoke.json
+          node server/scripts/production-restore-smoke.mjs | tee artifacts/production-restore-smoke.json
           sha256sum artifacts/w13-test.dump | tee artifacts/backup-sha256.txt
           rm artifacts/w13-test.dump
 
