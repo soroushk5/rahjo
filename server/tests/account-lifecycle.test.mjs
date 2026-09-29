@@ -25,7 +25,7 @@ async function fixture() {
   let recoveryHashes = [];
   const database = {
     ready: async () => ({ database: "test", role: "rahjo_app" }),
-    lookupPassword: async (slug, email) => slug === "alpha" && email === context.user_email
+    lookupPassword: async (slug, email) => (!slug || slug === "alpha") && email === context.user_email
       ? { membership_id: context.membership_id, password_salt: credential.salt, password_hash: credential.hash }
       : null,
     createSession: async (membershipId, tokenHash, csrfHash) => {
@@ -74,7 +74,7 @@ async function login(base) {
   const response = await fetch(`${base}/api/v1/session`, {
     method: "POST",
     headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
-    body: JSON.stringify({ workspaceSlug: "alpha", email: context.user_email, password: "a correct long password" })
+    body: JSON.stringify({ email: context.user_email, password: "a correct long password" })
   });
   assert.equal(response.status, 201);
   const body = await response.json();
