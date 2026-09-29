@@ -59,7 +59,11 @@ export class Database {
   }
 
   async lookupPassword(workspaceSlug, email) {
-    const result = await this.executor.query("SELECT * FROM rahjo.lookup_password_login($1,$2)", [workspaceSlug, email]);
+    if (workspaceSlug) {
+      const result = await this.executor.query("SELECT * FROM rahjo.lookup_password_login($1,$2)", [workspaceSlug, email]);
+      return result.rows[0] ?? null;
+    }
+    const result = await this.executor.query("SELECT * FROM rahjo.lookup_password_login_by_email($1)", [email]);
     return result.rows[0] ?? null;
   }
 
