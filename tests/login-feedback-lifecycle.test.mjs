@@ -7,11 +7,11 @@ import { RUNTIME_DATA_STATES } from "../src/services/runtimeDataFacade.js";
 test("failed login feedback stays non-specific and actionable", () => {
   assert.equal(
     loginFeedbackMessage({ state: RUNTIME_DATA_STATES.AUTH, httpStatus: 401 }),
-    "اطلاعات ورود یا فضای کاری درست نیست."
+    "ایمیل یا گذرواژه درست نیست."
   );
   assert.equal(
     loginFeedbackMessage({ state: RUNTIME_DATA_STATES.FORBIDDEN, httpStatus: 403 }),
-    "این حساب به فضای کاری درخواستی دسترسی ندارد."
+    "این حساب به محیط درخواستی دسترسی ندارد."
   );
   assert.match(
     loginFeedbackMessage({ state: RUNTIME_DATA_STATES.UNAVAILABLE }),
@@ -29,6 +29,6 @@ test("login mount re-queries the current form after authenticate can rerender th
   assert.ok(syncIndex > authenticateIndex, "failed login must repair the current DOM after authenticate resolves");
   assert.ok(currentFormIndex >= 0, "login recovery must query the currently rendered form");
   assert.match(source, /currentPassword\.focus\(\)/, "failed login should return focus to the password field");
-  assert.match(source, /currentWorkspace\.value = submitted\.workspaceSlug/, "workspace input should survive a failed login rerender");
   assert.match(source, /currentEmail\.value = submitted\.email/, "email input should survive a failed login rerender");
+  assert.doesNotMatch(source, /currentWorkspace/, "email-first login must not reintroduce a workspace field");
 });

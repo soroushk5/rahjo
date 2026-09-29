@@ -218,7 +218,7 @@ export function createCrmServer({ config, database, repository, relaticle, works
         json(response, status, {
           status: "ok",
           service: "crm-core-bff",
-          contractVersion: 2,
+          contractVersion: 3,
           dataMode: "server",
           crmMode: config.crmMode,
           interim: config.interim,
@@ -291,7 +291,7 @@ export function createCrmServer({ config, database, repository, relaticle, works
         checkLoginRate(request);
         const body = await readJson(request, config.bodyLimit);
         rejectWorkspaceOverride(request, body);
-        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63, required: true });
+        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63 });
         const email = normalizeEmail(body.email);
         const suppliedPassword = typeof body.password === "string" ? body.password : "";
         const credential = await database.lookupPassword(workspaceSlug, email);
@@ -338,7 +338,7 @@ export function createCrmServer({ config, database, repository, relaticle, works
         checkAccountRate(request);
         const body = await readJson(request, config.bodyLimit);
         rejectWorkspaceOverride(request, body);
-        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63, required: true });
+        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63 });
         const email = normalizeEmail(body.email);
         const recoveryCode = typeof body.recoveryCode === "string" ? body.recoveryCode.trim() : "";
         if (recoveryCode.length < 24 || recoveryCode.length > 256) throw problems.unauthorized();

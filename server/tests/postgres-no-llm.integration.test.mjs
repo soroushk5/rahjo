@@ -236,7 +236,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     const login = await fetch(`${base}/api/v1/session`, {
       method: "POST",
       headers: { Origin: "http://localhost", "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceSlug: `e2e-alpha-${workspaceSuffix}`, email: `e2e-alpha-${workspaceSuffix}@example.test`, password: browserPassword })
+      body: JSON.stringify({ email: `e2e-alpha-${workspaceSuffix}@example.test`, password: browserPassword })
     });
     assert.equal(login.status, 201);
     let loginData = await login.json();

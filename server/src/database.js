@@ -59,7 +59,11 @@ export class Database {
   }
 
   async lookupPassword(workspaceSlug, email) {
-    const result = await this.executor.query("SELECT * FROM rahjo.lookup_password_login($1,$2)", [workspaceSlug, email]);
+    if (workspaceSlug) {
+      const result = await this.executor.query("SELECT * FROM rahjo.lookup_password_login($1,$2)", [workspaceSlug, email]);
+      return result.rows[0] ?? null;
+    }
+    const result = await this.executor.query("SELECT * FROM rahjo.lookup_password_login_by_email($1)", [email]);
     return result.rows[0] ?? null;
   }
 
@@ -141,9 +145,16 @@ export class Database {
   }
 
   async consumeRecoveryCode(workspaceSlug, email, codeHash, passwordSalt, passwordHash) {
+    if (workspaceSlug) {
+      const result = await this.executor.query(
+        "SELECT rahjo.consume_account_recovery_code($1,$2,$3,$4,$5) AS membership_id",
+        [workspaceSlug, email, codeHash, passwordSalt, passwordHash]
+      );
+      return result.rows[0]?.membership_id ?? null;
+    }
     const result = await this.executor.query(
-      "SELECT rahjo.consume_account_recovery_code($1,$2,$3,$4,$5) AS membership_id",
-      [workspaceSlug, email, codeHash, passwordSalt, passwordHash]
+      "SELECT rahjo.consume_account_recovery_code_by_email($1,$2,$3,$4) AS membership_id",
+      [email, codeHash, passwordSalt, passwordHash]
     );
     return result.rows[0]?.membership_id ?? null;
   }
