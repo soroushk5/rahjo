@@ -7,11 +7,11 @@ import { RUNTIME_DATA_STATES } from "../src/services/runtimeDataFacade.js";
 test("failed login feedback stays non-specific and actionable", () => {
   assert.equal(
     loginFeedbackMessage({ state: RUNTIME_DATA_STATES.AUTH, httpStatus: 401 }),
-    "اطلاعات ورود یا فضای کاری درست نیست."
+    "ایمیل یا گذرواژه درست نیست."
   );
   assert.equal(
     loginFeedbackMessage({ state: RUNTIME_DATA_STATES.FORBIDDEN, httpStatus: 403 }),
-    "این حساب به فضای کاری درخواستی دسترسی ندارد."
+    "این حساب به محیط درخواستی دسترسی ندارد."
   );
   assert.match(
     loginFeedbackMessage({ state: RUNTIME_DATA_STATES.UNAVAILABLE }),
