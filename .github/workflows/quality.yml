@@ -17,13 +17,13 @@ jobs:
       - run: npm run qa
       - run: npm run build:hostinger
         env:
-          RAHJO_RUNTIME_MODE: demo
+          CRM_RUNTIME_MODE: demo
       - run: npm run smoke:hostinger
         env:
           RAHJO_RUNTIME_MODE: demo
       - uses: actions/upload-artifact@v4
         with:
-          name: rahjo-hostinger-preview
+          name: crm-core-hostinger-preview
           path: dist-hostinger
           if-no-files-found: error
           retention-days: 14
