@@ -190,7 +190,7 @@ test("recovery codes are returned once and a code can recover an account on anot
   const recovered = await fetch(`${fixtureState.base}/api/v1/account/recovery`, {
     method: "POST",
     headers: { Origin: "https://crm.example.test", "Content-Type": "application/json" },
-    body: JSON.stringify({ workspaceSlug: "alpha", email: context.user_email, recoveryCode: issuedBody.codes[0], password: "recovered password is long" })
+    body: JSON.stringify({ email: context.user_email, recoveryCode: issuedBody.codes[0], password: "recovered password is long" })
   });
   assert.equal(recovered.status, 201);
 });
