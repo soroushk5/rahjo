@@ -239,7 +239,7 @@ export function createRuntimeDataFacade() {
    * storage. A successful exchange is not READY until the server projection is
    * fetched and validated through the normal fail-closed path.
    *
-   * @param {{workspaceSlug:string, email:string, password:string}} credentials
+   * @param {{workspaceSlug?:string, email:string, password:string}} credentials
    * @param {{fetchImpl?: typeof fetch, timeoutMs?: number}} [options]
    */
   async function authenticate(credentials, options = {}) {
@@ -248,7 +248,6 @@ export function createRuntimeDataFacade() {
       return configurationFailure(new RuntimeConfigurationError("Server runtime is not configured.", "server-not-configured"));
     }
     if (!credentials || typeof credentials !== "object"
-      || typeof credentials.workspaceSlug !== "string" || !credentials.workspaceSlug.trim()
       || typeof credentials.email !== "string" || !credentials.email.trim()
       || typeof credentials.password !== "string" || !credentials.password) {
       return publish(makeSnapshot("server", RUNTIME_DATA_STATES.VALIDATION, {
@@ -279,7 +278,9 @@ export function createRuntimeDataFacade() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          workspaceSlug: credentials.workspaceSlug.trim(),
+          ...(typeof credentials.workspaceSlug === "string" && credentials.workspaceSlug.trim()
+            ? { workspaceSlug: credentials.workspaceSlug.trim() }
+            : {}),
           email: credentials.email.trim(),
           password: credentials.password
         }),
