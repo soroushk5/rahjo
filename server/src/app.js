@@ -291,7 +291,7 @@ export function createCrmServer({ config, database, repository, relaticle, works
         checkLoginRate(request);
         const body = await readJson(request, config.bodyLimit);
         rejectWorkspaceOverride(request, body);
-        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63, required: true });
+        const workspaceSlug = normalizePersianText(body.workspaceSlug, { max: 63 });
         const email = normalizeEmail(body.email);
         const suppliedPassword = typeof body.password === "string" ? body.password : "";
         const credential = await database.lookupPassword(workspaceSlug, email);
