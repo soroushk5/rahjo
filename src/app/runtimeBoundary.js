@@ -33,9 +33,9 @@ const labels = Object.freeze({
 export function loginFeedbackMessage(snapshot = {}) {
   switch (snapshot.state) {
     case RUNTIME_DATA_STATES.AUTH:
-      return "اطلاعات ورود یا فضای کاری درست نیست.";
+      return "ایمیل یا گذرواژه درست نیست.";
     case RUNTIME_DATA_STATES.FORBIDDEN:
-      return "این حساب به فضای کاری درخواستی دسترسی ندارد.";
+      return "این حساب به محیط درخواستی دسترسی ندارد.";
     case RUNTIME_DATA_STATES.UNAVAILABLE:
       return "ارتباط با سرویس ورود برقرار نشد؛ دوباره تلاش کنید.";
     case RUNTIME_DATA_STATES.CONFLICT:
