@@ -29,6 +29,6 @@ test("login mount re-queries the current form after authenticate can rerender th
   assert.ok(syncIndex > authenticateIndex, "failed login must repair the current DOM after authenticate resolves");
   assert.ok(currentFormIndex >= 0, "login recovery must query the currently rendered form");
   assert.match(source, /currentPassword\.focus\(\)/, "failed login should return focus to the password field");
-  assert.match(source, /currentWorkspace\.value = submitted\.workspaceSlug/, "workspace input should survive a failed login rerender");
   assert.match(source, /currentEmail\.value = submitted\.email/, "email input should survive a failed login rerender");
+  assert.doesNotMatch(source, /currentWorkspace/, "email-first login must not reintroduce a workspace field");
 });
