@@ -33,9 +33,9 @@ const labels = Object.freeze({
 export function loginFeedbackMessage(snapshot = {}) {
   switch (snapshot.state) {
     case RUNTIME_DATA_STATES.AUTH:
-      return "اطلاعات ورود یا فضای کاری درست نیست.";
+      return "ایمیل یا گذرواژه درست نیست.";
     case RUNTIME_DATA_STATES.FORBIDDEN:
-      return "این حساب به فضای کاری درخواستی دسترسی ندارد.";
+      return "این حساب به محیط درخواستی دسترسی ندارد.";
     case RUNTIME_DATA_STATES.UNAVAILABLE:
       return "ارتباط با سرویس ورود برقرار نشد؛ دوباره تلاش کنید.";
     case RUNTIME_DATA_STATES.CONFLICT:
@@ -51,18 +51,16 @@ export function loginFeedbackMessage(snapshot = {}) {
  * Runtime state publications can replace the login DOM while authenticate() is
  * awaiting the server. Always update the CURRENT form instead of references
  * captured before the request, otherwise users see a silent failed login.
- * @param {{workspaceSlug:string,email:string}} submitted
+ * @param {{email:string}} submitted
  * @param {Record<string, any>} result
  */
 function syncCurrentLoginForm(submitted, result) {
   const currentForm = document.querySelector("#crm-server-login");
   if (!(currentForm instanceof HTMLFormElement)) return;
-  const currentWorkspace = currentForm.elements.namedItem("workspaceSlug");
   const currentEmail = currentForm.elements.namedItem("email");
   const currentPassword = currentForm.elements.namedItem("password");
   const currentButton = currentForm.querySelector("button[type=submit]");
   const currentFeedback = currentForm.querySelector("#crm-login-feedback");
-  if (currentWorkspace instanceof HTMLInputElement) currentWorkspace.value = submitted.workspaceSlug;
   if (currentEmail instanceof HTMLInputElement) currentEmail.value = submitted.email;
   if (currentPassword instanceof HTMLInputElement) {
     currentPassword.value = "";
@@ -133,7 +131,6 @@ export function renderServerRuntimeState(snapshot, title = "CRM") {
 
   const loginForm = state === RUNTIME_DATA_STATES.AUTH ? `
           <form id="crm-server-login" class="auth-form server-login-form" novalidate>
-            <label>فضای کاری<input name="workspaceSlug" type="text" autocomplete="organization" placeholder="workspace" required /></label>
             <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
             <label>گذرواژه<input name="password" type="password" autocomplete="current-password" required autofocus /></label>
             <p id="crm-login-feedback" class="interaction-feedback" role="alert"></p>
@@ -159,7 +156,6 @@ function mountServerRuntimeState() {
     event.preventDefault();
     const fields = new FormData(form);
     const submitted = {
-      workspaceSlug: String(fields.get("workspaceSlug") ?? "").trim(),
       email: String(fields.get("email") ?? "").trim()
     };
     const password = String(fields.get("password") ?? "");
@@ -169,7 +165,6 @@ function mountServerRuntimeState() {
     if (feedback) feedback.textContent = "در حال بررسی امن نشست…";
     try {
       const result = await runtimeData.authenticate({
-        workspaceSlug: submitted.workspaceSlug,
         email: submitted.email,
         password
       });
