@@ -115,7 +115,7 @@ test("server login exchanges only credentials, then validates the cookie-backed 
     }), { status: 200, headers: { "Content-Type": "application/json" } });
   };
   await facade.initialize(serverConfig, { fetchImpl: async () => new Response(null, { status: 401 }) });
-  const state = await facade.authenticate({ workspaceSlug: "alpha", email: "owner@example.test", password: "server-only-password" }, { fetchImpl });
+  const state = await facade.authenticate({ email: "owner@example.test", password: "server-only-password" }, { fetchImpl });
 
   assert.equal(state.state, RUNTIME_DATA_STATES.READY);
   assert.equal(calls.length, 2);
@@ -123,7 +123,6 @@ test("server login exchanges only credentials, then validates the cookie-backed 
   assert.equal(calls[0].options.method, "POST");
   assert.equal(calls[0].options.credentials, "include");
   assert.deepEqual(JSON.parse(calls[0].options.body), {
-    workspaceSlug: "alpha",
     email: "owner@example.test",
     password: "server-only-password"
   });
@@ -138,7 +137,7 @@ test("failed server login remains explicit and has no projection", async () => {
   const facade = createRuntimeDataFacade();
   await facade.initialize(serverConfig, { fetchImpl: async () => new Response(null, { status: 401 }) });
   const state = await facade.authenticate(
-    { workspaceSlug: "alpha", email: "owner@example.test", password: "wrong-password" },
+    { email: "owner@example.test", password: "wrong-password" },
     { fetchImpl: async () => new Response(null, { status: 401 }) }
   );
   assert.equal(state.state, RUNTIME_DATA_STATES.AUTH);
