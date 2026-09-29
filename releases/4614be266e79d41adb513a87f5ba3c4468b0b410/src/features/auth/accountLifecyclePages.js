@@ -41,7 +41,6 @@ export function renderRecoverAccountPage() {
     <header><small>بازیابی حساب</small><h2>تعیین گذرواژه جدید</h2><p id="recovery-mode-copy">اگر لینک بازیابی دارید همان لینک را باز کنید؛ در غیر این صورت از کد بازیابی استفاده کنید.</p></header>
     <form id="crm-account-recovery" class="auth-form server-login-form" novalidate>
       <div data-recovery-identity>
-        <label>فضای کاری<input name="workspaceSlug" value="crm" autocomplete="organization" required /></label>
         <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
         <label>کد بازیابی<input name="recoveryCode" autocomplete="one-time-code" /></label>
       </div>
@@ -178,7 +177,6 @@ export function mountRecoverAccountPage() {
         await publicApi(config, "/api/v1/account/recovery", {
           method: "POST",
           body: JSON.stringify({
-            workspaceSlug: String(fields.get("workspaceSlug") || "").trim(),
             email: String(fields.get("email") || "").trim(),
             recoveryCode: String(fields.get("recoveryCode") || "").trim(),
             password
