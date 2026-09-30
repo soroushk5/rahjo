@@ -56,9 +56,14 @@ test("native deferred bridge is explicit and cannot activate accidentally", () =
 
 test("Persian normalization preserves original meaning while normalizing keys", () => {
   assert.equal(normalizePersianText("  شركت يارا  "), "شرکت یارا");
-  assert.equal(asciiDigits("۰۹۱٢"), "0912");
+  assert.equal(normalizePersianText("  شرکت\t  یارا  "), "شرکت یارا");
+  assert.equal(normalizePersianText("Ａ"), "A");
+  assert.equal(normalizePersianText("می\u200cروم\u200b"), "می\u200cروم\u200b");
+  assert.equal(asciiDigits("۰۹۱٢٣٤٥٦٧٨٩٠"), "091234567890");
   assert.equal(normalizePhone("۰۹۱۲ ۱۲۳ ۴۵۶۷"), "09121234567");
+  assert.equal(normalizePhone("+٩٨ ٩١٢-١٢٣-٤٥٦٧"), "+989121234567");
   assert.equal(normalizeEmail(" Test۰@example.com "), "test0@example.com");
+  assert.equal(normalizeEmail("TEST٠@example.com"), "test0@example.com");
   const intake = normalizeIntake({
     organization: "شركت يارا",
     contactName: "علی رضایی",
@@ -69,6 +74,55 @@ test("Persian normalization preserves original meaning while normalizing keys", 
   assert.equal(intake.organization, "شرکت یارا");
   assert.equal(intake.normalizedOrganization, "شرکت یارا");
   assert.equal(intake.sourceChannel, "website");
+});
+
+test("equivalent mixed Persian and Arabic intake variants produce the same identity key", () => {
+  const base = normalizeIntake({
+    organization: "شركت يارا",
+    contactName: "علي رضايي",
+    email: "Sales۰@example.com",
+    phone: "۰۹۱۲۱۲۳۴۵۶۷",
+    purpose: "پیگیری درخواست",
+    serviceId: "SVC-001"
+  });
+  const mixed = normalizeIntake({
+    organization: " شركت ىارا ",
+    contactName: "علی رضایی",
+    email: "SALES٠@example.com",
+    phone: "٠٩١٢ ١٢٣ ٤٥٦٧",
+    purpose: "پیگیری درخواست",
+    serviceId: "SVC-001"
+  });
+  const equivalent = normalizeIntake({
+    organization: "شرکت يارا",
+    contactName: "علي رضايي",
+    email: "sales0@example.com",
+    phone: "09121234567",
+    purpose: "پیگیری درخواست",
+    serviceId: "SVC-001"
+  });
+
+  assert.deepEqual(
+    [base.normalizedOrganization, base.email, base.phone],
+    [equivalent.normalizedOrganization, equivalent.email, equivalent.phone]
+  );
+  assert.deepEqual(
+    [mixed.normalizedOrganization, mixed.email, mixed.phone],
+    [base.normalizedOrganization, "sales0@example.com", "09121234567"]
+  );
+});
+
+test("normalization validates required text, contact channels, email, and phone bounds", () => {
+  assert.throws(() => normalizePersianText("   ", { required: true }), /empty/);
+  assert.throws(() => normalizePersianText("طولانی", { max: 2 }), /exceeds 2/);
+  assert.throws(() => normalizeEmail("not-an-email"), /Email is invalid/);
+  assert.throws(() => normalizePhone("۱۲۳۴۵۶۷"), /Phone is invalid/);
+  assert.throws(() => normalizeIntake({
+    organization: "شرکت",
+    contactName: "نام",
+    purpose: "پیگیری",
+    serviceId: "SVC-001"
+  }), /At least one contact channel/);
 });
 
 test("idempotency and credential hashing are deterministic without storing cleartext", () => {
