@@ -377,8 +377,9 @@ test("server-backed intake-to-outcome path passes with every model provider abse
         ]
       }
     });
-    assert.equal(importResponse.status, 202);
-    const importData = (await importResponse.json()).data;
+    const importResponseBody = await importResponse.json();
+    assert.equal(importResponse.status, 202, JSON.stringify({ body: importResponseBody, serverErrors: requestLogs.filter((entry) => entry.status >= 500) }));
+    const importData = importResponseBody.data;
     assert.equal(importData.fuzzyCandidatesTruncated, true);
     assert.equal(importData.rows[0].candidates[0].evidence, "authoritative_identifier");
     assert.equal(importData.rows[0].candidates[0].candidateRef === undefined, false);
