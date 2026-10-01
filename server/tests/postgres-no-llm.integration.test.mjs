@@ -388,12 +388,13 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     assert.ok(importData.rows[1].candidates.some((item) => item.candidateImportRowId === importData.rows[0].rowId));
     assert.ok(importData.rows[2].candidates.some((item) => item.evidence === "fuzzy_review"));
     assert.ok(importData.rows[3].candidates.some((item) => item.evidence === "exact_email"));
-    assert.equal(JSON.stringify(importData).includes("sara@example.com"), true);
+    assert.equal(JSON.stringify(importData).includes("sara@example.com"), false);
     assert.equal(JSON.stringify(importData).includes(" SARA@example.com "), false);
     const importReloadResponse = await browserCall(`/api/v1/import/contacts/${encodeURIComponent(importData.batchId)}`);
     assert.equal(importReloadResponse.status, 200);
     const importReload = (await importReloadResponse.json()).data;
     assert.equal(importReload.rows.length, 4);
+    assert.equal(JSON.stringify(importReload).includes("sara@example.com"), true);
     assert.equal(importReload.rows[0].candidates[0].evidence, "authoritative_identifier");
     assert.equal(importReload.fuzzyCandidatesTruncated, true);
     assert.ok(importReload.rows[1].candidates.some((item) => item.candidateImportRowId === importData.rows[0].rowId));
