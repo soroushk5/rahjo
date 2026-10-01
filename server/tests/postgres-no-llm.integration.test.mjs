@@ -449,8 +449,10 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     const runtimeA = await browserCall("/api/v1/runtime");
     assert.equal(runtimeA.status, 200);
     const projectionA = (await runtimeA.json()).projection;
-    assert.equal(projectionA.contacts.find((item) => item.id === contactData.id).email, "sara@example.com");
-    assert.equal(projectionA.contacts.find((item) => item.id === contactData.id).identifiers.find((item) => item.type === "client_ref").normalizedValue, "INV-123");
+    const projectedContact = projectionA.contacts.find((item) => item.id === contactData.id);
+    assert.equal(projectedContact.email, "sara@example.com");
+    assert.ok(Array.isArray(projectedContact.identifiers), JSON.stringify(projectedContact.identifiers));
+    assert.equal(projectedContact.identifiers.find((item) => item.type === "client_ref").normalizedValue, "INV-123");
     assert.deepEqual(projectionA.opportunities.find((item) => item.id === opportunityData.id).amount, { currency: "IRR", value: "1234" });
     assert.deepEqual(projectionA.tasks.find((item) => item.id === dateTaskData.id).deadline, { kind: "date-only", value: "2025-03-20", displayCalendar: "jalali" });
     assert.deepEqual(projectionA.tasks.find((item) => item.id === instantTaskData.id).deadline, { kind: "instant", value: "2024-03-20T06:01:00.000Z", timeZone: "Asia/Tehran" });
