@@ -6,9 +6,12 @@ const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
 const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
 const rawAttributionKeys = Object.freeze(["utmSource", "utmMedium", "utmCampaign", "utmTerm", "utmContent", "referrer", "landingPath"]);
 
-// No identifier type has been declared canonical-unique for CRM yet.
-// Add an entry only after the owner approves its authority and uniqueness scope.
-export const CANONICAL_UNIQUE_IDENTIFIER_SCOPES = Object.freeze({});
+// These two identifiers are backed by workspace-scoped unique constraints on
+// crm_entity_refs. Do not add business identifier types without canonical evidence.
+export const IDENTIFIER_TYPE_REGISTRY = Object.freeze({
+  rahjo_contact_id: Object.freeze({ uniqueScope: "workspace", entityType: "contact", numeric: false, caseInsensitive: false }),
+  relaticle_contact_id: Object.freeze({ uniqueScope: "workspace", entityType: "contact", numeric: false, caseInsensitive: false })
+});
 
 export function normalizePersianText(value, { max = 1200, required = false } = {}) {
   if (typeof value !== "string") {
@@ -170,26 +173,92 @@ export function normalizeIranMoney(amount, unit) {
   const fractionalIrr = isToman ? BigInt(fraction) : 0n;
   let amountIrr = whole * factor + fractionalIrr;
   if (match[1] === "-") amountIrr = -amountIrr;
+  if (amountIrr.toString().replace(/^-/, "").length > 38) validation("IRR amount exceeds the supported 38-digit storage range");
   return Object.freeze({ currency: "IRR", amount: amountIrr.toString(), inputUnit: isToman ? "TOMAN" : "IRR" });
 }
 
 /** Keep identifier input separate from its type-specific canonical equality key. */
-export function normalizeIdentifier(type, rawValue, { numeric = false, caseInsensitive = false } = {}) {
+export function normalizeIdentifier(type, rawValue) {
   const identifierType = normalizePersianText(type, { max: 80, required: true }).toLowerCase();
   if (!/^[a-z][a-z0-9._:-]*$/.test(identifierType)) validation("Identifier type is invalid");
   if (typeof rawValue !== "string") validation("Identifier value must be a string");
   const raw = rawValue;
-  let normalizedValue = normalizePersianText(rawValue, { max: 256, required: true });
-  if (numeric) normalizedValue = asciiDigits(normalizedValue);
-  if (caseInsensitive) normalizedValue = normalizedValue.toLocaleLowerCase("fa-IR");
-  const uniqueScope = Object.hasOwn(CANONICAL_UNIQUE_IDENTIFIER_SCOPES, identifierType)
-    ? CANONICAL_UNIQUE_IDENTIFIER_SCOPES[identifierType]
-    : null;
-  if (uniqueScope !== null && !["workspace", "system"].includes(uniqueScope)) validation("Identifier uniqueness scope is invalid");
+  const profile = Object.hasOwn(IDENTIFIER_TYPE_REGISTRY, identifierType)
+    ? IDENTIFIER_TYPE_REGISTRY[identifierType]
+    : { uniqueScope: null, entityType: null };
+  let normalizedValue = identifierType === "email"
+    ? normalizeEmail(rawValue)
+    : identifierType === "phone"
+      ? normalizePhone(rawValue)
+      : normalizePersianText(rawValue, { max: 256, required: true });
+  if (profile.numeric) normalizedValue = asciiDigits(normalizedValue);
+  if (profile.caseInsensitive) normalizedValue = normalizedValue.toLocaleLowerCase("fa-IR");
   return Object.freeze({
-    canonical: Object.freeze({ type: identifierType, normalizedValue, uniqueScope }),
+    canonical: Object.freeze({ type: identifierType, normalizedValue, uniqueScope: profile.uniqueScope }),
     raw: Object.freeze({ value: raw })
   });
+}
+
+export function normalizeContactImport(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) validation("Contact import row must be an object");
+  const name = normalizePersianText(input.name, { max: 180, required: true });
+  const emailIdentifiers = [];
+  const phoneIdentifiers = [];
+  const rawIdentifiers = Array.isArray(input.identifiers) ? input.identifiers : [];
+  if (rawIdentifiers.length > 20) validation("Contact import row has too many identifiers");
+  if (rawIdentifiers.some((item) => !item || typeof item !== "object" || typeof item.type !== "string" || typeof item.value !== "string")) {
+    validation("Each contact identifier must include a type and string value");
+  }
+  const identifiers = rawIdentifiers.map(({ type, value }) => normalizeIdentifier(type, value).canonical);
+  emailIdentifiers.push(...identifiers.filter((item) => item.type === "email").map((item) => item.normalizedValue));
+  phoneIdentifiers.push(...identifiers.filter((item) => item.type === "phone").map((item) => item.normalizedValue));
+  const email = input.email ? normalizeEmail(input.email) : emailIdentifiers[0] ?? "";
+  const phone = input.phone ? normalizePhone(input.phone) : phoneIdentifiers[0] ?? "";
+  if (emailIdentifiers.some((value) => value !== email) || phoneIdentifiers.some((value) => value !== phone)) {
+    validation("Contact email/phone identifiers must match their dedicated fields");
+  }
+  if (identifiers.filter((item) => item.type === "email").length > 1 || identifiers.filter((item) => item.type === "phone").length > 1) {
+    validation("Contact email and phone identifiers must be unique within the row");
+  }
+  if (email) identifiers.push(normalizeIdentifier("email", email).canonical);
+  if (phone) identifiers.push(normalizeIdentifier("phone", phone).canonical);
+  const seen = new Set();
+  const deduplicatedIdentifiers = identifiers.filter((identifier) => {
+    const key = `${identifier.type}\u0000${identifier.normalizedValue}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return Object.freeze({
+    canonical: Object.freeze({ name, email, phone, identifiers: Object.freeze(deduplicatedIdentifiers) }),
+    raw: Object.freeze({
+      name: input.name,
+      ...(typeof input.email === "string" ? { email: input.email } : {}),
+      ...(typeof input.phone === "string" ? { phone: input.phone } : {}),
+      identifiers: Object.freeze(rawIdentifiers.map(({ type, value }) => ({ type, value })))
+    })
+  });
+}
+
+export function normalizedNameSimilarity(left, right) {
+  const normalize = (value) => normalizePersianText(value, { max: 180, required: true }).replace(/\s+/g, "");
+  const a = normalize(left);
+  const b = normalize(right);
+  if (a === b) return 1;
+  if (a.length < 2 || b.length < 2) return 0;
+  const bigrams = (value) => {
+    const result = new Map();
+    for (let index = 0; index < value.length - 1; index += 1) {
+      const pair = value.slice(index, index + 2);
+      result.set(pair, (result.get(pair) ?? 0) + 1);
+    }
+    return result;
+  };
+  const aPairs = bigrams(a);
+  const bPairs = bigrams(b);
+  let overlap = 0;
+  for (const [pair, count] of aPairs) overlap += Math.min(count, bPairs.get(pair) ?? 0);
+  return (2 * overlap) / (a.length + b.length - 2);
 }
 
 /** Produce an equality key using only the declared canonical field profile. */

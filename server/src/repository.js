@@ -1,10 +1,38 @@
 import { problems } from "./errors.js";
 import { normalizeIntake, normalizePersianText, publicId, requiredIdempotencyKey } from "./normalization.js";
+import {
+  normalizeContactImport,
+  normalizeCrmDate,
+  normalizeEqualityValue,
+  normalizeIdentifier,
+  normalizeIranMoney,
+  normalizedNameSimilarity,
+  rankDedupeCandidates
+} from "./normalization.js";
 import { payloadDigest } from "./security.js";
 import { requireRole, requireScope } from "./database.js";
+import { createHash } from "node:crypto";
 
 function record(row) {
   return row ?? null;
+}
+
+function scopedIdentifiers(identifiers, workspaceId) {
+  return identifiers.map((identifier) => ({
+    ...identifier,
+    scopeKey: identifier.uniqueScope === "workspace" ? workspaceId : null
+  }));
+}
+
+function safeCrmSnapshot(entityType, snapshot = {}) {
+  const fields = {
+    account: ["name", "source", "sync_state"],
+    contact: ["name", "email", "phone", "account_id", "identifiers", "source", "sync_state"],
+    opportunity: ["name", "account_id", "contact_id", "stage", "amount", "identifiers", "source", "sync_state"],
+    task: ["title", "account_id", "contact_id", "opportunity_id", "status", "deadline", "identifiers", "source", "sync_state"],
+    interaction: ["title", "body", "account_id", "contact_id", "opportunity_id", "source", "sync_state"]
+  }[entityType] ?? [];
+  return Object.fromEntries(fields.filter((key) => Object.hasOwn(snapshot, key)).map((key) => [key, snapshot[key]]));
 }
 
 async function audit(client, context, { eventType, entityType, entityId, correlationId, before = null, after = null, source = "crm-bff" }) {
@@ -22,7 +50,10 @@ async function persistCrmEntity(client, context, {
   entity,
   eventType,
   correlationId,
-  source
+  source,
+  contractValues = null,
+  identifiers = [],
+  rawValues = null
 }) {
   const coreId = publicId(corePrefix);
   const persisted = await client.query(
@@ -34,10 +65,61 @@ async function persistCrmEntity(client, context, {
        snapshot = rahjo.crm_entity_refs.snapshot || EXCLUDED.snapshot,
        synced_at = now(),
        updated_at = now()
-     RETURNING rahjo_id`,
+     RETURNING id, rahjo_id`,
     [context.workspace_id, entityType, coreId, entity.id, entity.attributes]
   );
   const stableCoreId = persisted.rows[0]?.rahjo_id ?? coreId;
+  const entityRefId = persisted.rows[0]?.id;
+  const storedIdentifiers = entityType === "contact" && entityRefId
+    ? [...identifiers, normalizeIdentifier("rahjo_contact_id", stableCoreId).canonical]
+    : identifiers;
+  if (entityRefId && contractValues) {
+    await client.query(
+      `INSERT INTO rahjo.crm_entity_contract_values
+         (workspace_id, entity_ref_id, deadline_kind, deadline_date, deadline_at,
+          deadline_timezone, deadline_calendar, money_currency, money_amount_irr, money_input_unit)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (workspace_id, entity_ref_id) DO UPDATE SET
+         deadline_kind=EXCLUDED.deadline_kind,
+         deadline_date=EXCLUDED.deadline_date,
+         deadline_at=EXCLUDED.deadline_at,
+         deadline_timezone=EXCLUDED.deadline_timezone,
+         deadline_calendar=EXCLUDED.deadline_calendar,
+         money_currency=EXCLUDED.money_currency,
+         money_amount_irr=EXCLUDED.money_amount_irr,
+         money_input_unit=EXCLUDED.money_input_unit,
+         updated_at=now()`,
+      [context.workspace_id, entityRefId, contractValues.deadlineKind ?? null,
+        contractValues.deadlineDate ?? null, contractValues.deadlineAt ?? null,
+        contractValues.deadlineTimezone ?? null, contractValues.deadlineCalendar ?? null,
+        contractValues.moneyCurrency ?? null, contractValues.moneyAmountIrr ?? null,
+        contractValues.moneyInputUnit ?? null]
+    );
+  }
+  for (const identifier of entityRefId ? storedIdentifiers : []) {
+    await client.query(
+      `INSERT INTO rahjo.crm_entity_identifiers
+         (workspace_id, entity_ref_id, identifier_type, normalized_value, unique_scope)
+       VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+      [context.workspace_id, entityRefId, identifier.type, identifier.normalizedValue, identifier.uniqueScope]
+    );
+  }
+  if (entityType === "contact" && entityRefId) {
+    await client.query(
+      `UPDATE rahjo.crm_entity_refs
+          SET snapshot = snapshot || jsonb_build_object('identifiers', $3::jsonb), updated_at=now()
+        WHERE workspace_id=$1 AND id=$2`,
+      [context.workspace_id, entityRefId, JSON.stringify(storedIdentifiers)]
+    );
+  }
+  if (entityRefId && rawValues && Object.keys(rawValues).length) {
+    await client.query(
+      `INSERT INTO rahjo.crm_restricted_raw_values
+         (workspace_id, entity_ref_id, captured_by, raw_values)
+       VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+      [context.workspace_id, entityRefId, context.membership_id, rawValues]
+    );
+  }
   await audit(client, context, {
     eventType,
     entityType,
@@ -153,6 +235,21 @@ export class CrmRepository {
           this.relaticle.listTasks(context.workspace_id),
           this.relaticle.listInteractions(context.workspace_id)
         ]);
+    const references = new Map(extension.crmRefs.map((item) => [`${item.entity_type}\u0000${item.id}`, item]));
+    const mergeCanonicalSnapshot = (entityType, items) => items.map((item) => {
+      const reference = references.get(`${entityType}\u0000${item.id}`);
+      if (!reference) return item;
+      return {
+        ...item,
+        coreId: reference.core_id,
+        attributes: { ...item.attributes, ...safeCrmSnapshot(entityType, reference.snapshot) }
+      };
+    });
+    const projectedCompanies = mergeCanonicalSnapshot("account", companies);
+    const projectedPeople = mergeCanonicalSnapshot("contact", people);
+    const projectedOpportunities = mergeCanonicalSnapshot("opportunity", opportunities);
+    const projectedTasks = mergeCanonicalSnapshot("task", tasks);
+    const projectedInteractions = mergeCanonicalSnapshot("interaction", interactions);
     delete extension.crmRefs;
 
     return {
@@ -161,11 +258,11 @@ export class CrmRepository {
       workspace: { id: context.workspace_id, slug: context.workspace_slug, name: context.workspace_name },
       user: { id: context.user_id, email: context.user_email, name: context.display_name, role: context.role },
       projection: {
-        accounts: companies.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
-        contacts: people.map((item) => ({ id: item.id, ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
-        opportunities: opportunities.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
-        tasks: tasks.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
-        interactions: interactions.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        accounts: projectedCompanies.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        contacts: projectedPeople.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        opportunities: projectedOpportunities.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        tasks: projectedTasks.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
+        interactions: projectedInteractions.map((item) => ({ id: item.id, ...(item.coreId ? { coreId: item.coreId } : {}), ...item.attributes, source: deferred ? "crm-native-bridge" : "relaticle", syncState: deferred ? "pending_relaticle" : "verified" })),
         ...extension
       }
     };
@@ -193,21 +290,36 @@ export class CrmRepository {
   async createContact(context, input, correlationId) {
     requireScope(context, "crm:write");
     requireRole(context, ["owner", "admin", "operator"]);
-    const name = normalizePersianText(input?.name, { max: 180, required: true });
+    const normalized = normalizeContactImport(input);
+    const { name, email, phone, identifiers } = normalized.canonical;
     const accountId = normalizePersianText(input?.accountId, { max: 180, required: true });
+    if (identifiers.some((item) => item.type === "relaticle_contact_id" || item.type === "rahjo_contact_id")) {
+      throw problems.validation("System-managed contact identifiers can only enter through the import review path");
+    }
     const contact = await this.relaticle.createContact(context.workspace_id, { name, accountId });
+    const canonicalIdentifiers = [...identifiers, normalizeIdentifier("relaticle_contact_id", contact.id).canonical];
+    const canonicalAttributes = {
+      ...contact.attributes,
+      ...(email ? { email } : {}),
+      ...(phone ? { phone } : {}),
+      identifiers: canonicalIdentifiers
+    };
+    const canonicalContact = { ...contact, attributes: canonicalAttributes };
 
     const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
     const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
       entityType: "contact",
       corePrefix: "CON",
-      entity: contact,
+      entity: canonicalContact,
       eventType: "crm.contact.created",
       correlationId,
-      source
+      source,
+      identifiers: scopedIdentifiers(canonicalIdentifiers, context.workspace_id),
+      rawValues: normalized.raw
     }));
 
-    return { id: contact.id, coreId, ...contact.attributes, source };
+    const responseIdentifiers = [...canonicalIdentifiers, normalizeIdentifier("rahjo_contact_id", coreId).canonical];
+    return { id: contact.id, coreId, ...canonicalAttributes, identifiers: responseIdentifiers, source };
   }
 
   async createOpportunity(context, input, correlationId) {
@@ -217,17 +329,27 @@ export class CrmRepository {
     const accountId = normalizePersianText(input?.accountId, { max: 180 });
     const contactId = normalizePersianText(input?.contactId, { max: 180 });
     const stage = normalizePersianText(input?.stage, { max: 120 });
+    const money = input?.amount === undefined ? null : normalizeIranMoney(input.amount?.value, input.amount?.unit);
     const opportunity = await this.relaticle.createOpportunity(context.workspace_id, { name, accountId, contactId, stage });
+    const canonicalAttributes = {
+      ...opportunity.attributes,
+      ...(money ? { amount: { currency: money.currency, value: money.amount } } : {})
+    };
+    const canonicalOpportunity = { ...opportunity, attributes: canonicalAttributes };
     const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
     const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
       entityType: "opportunity",
       corePrefix: "OPP",
-      entity: opportunity,
+      entity: canonicalOpportunity,
       eventType: "crm.opportunity.created",
       correlationId,
-      source
+      source,
+      ...(money ? {
+        contractValues: { moneyCurrency: money.currency, moneyAmountIrr: money.amount, moneyInputUnit: money.inputUnit },
+        rawValues: { amount: input.amount.value, unit: input.amount.unit }
+      } : {})
     }));
-    return { id: opportunity.id, coreId, ...opportunity.attributes, source };
+    return { id: opportunity.id, coreId, ...canonicalAttributes, source };
   }
 
   async updateOpportunityStage(context, opportunityId, input, correlationId) {
@@ -256,17 +378,30 @@ export class CrmRepository {
     const contactId = normalizePersianText(input?.contactId, { max: 180 });
     const opportunityId = normalizePersianText(input?.opportunityId, { max: 180 });
     const status = normalizePersianText(input?.status, { max: 120 });
+    const deadline = input?.deadline === undefined ? null : normalizeCrmDate(input.deadline);
     const task = await this.relaticle.createTask(context.workspace_id, { title, accountId, contactId, opportunityId, status });
+    const canonicalAttributes = { ...task.attributes, ...(deadline ? { deadline } : {}) };
+    const canonicalTask = { ...task, attributes: canonicalAttributes };
     const source = this.relaticle.mode === "native_deferred" ? "crm-native-bridge" : "relaticle";
     const coreId = await this.database.withWorkspace(context, (client) => persistCrmEntity(client, context, {
       entityType: "task",
       corePrefix: "TSK",
-      entity: task,
+      entity: canonicalTask,
       eventType: "crm.task.created",
       correlationId,
-      source
+      source,
+      ...(deadline ? {
+        contractValues: {
+          deadlineKind: deadline.kind,
+          deadlineDate: deadline.kind === "date-only" ? deadline.value : null,
+          deadlineAt: deadline.kind === "instant" ? deadline.value : null,
+          deadlineTimezone: deadline.kind === "instant" ? deadline.timeZone : null,
+          deadlineCalendar: deadline.kind === "date-only" ? deadline.displayCalendar : null
+        },
+        rawValues: { deadline: input.deadline }
+      } : {})
     }));
-    return { id: task.id, coreId, ...task.attributes, source };
+    return { id: task.id, coreId, ...canonicalAttributes, source };
   }
 
   async updateTaskStatus(context, taskId, input, correlationId) {
@@ -309,6 +444,292 @@ export class CrmRepository {
       source
     }));
     return { id: interaction.id, coreId, ...interaction.attributes, source };
+  }
+
+  async searchCrm(context, { field, value, calendar, timeZone, unit, identifierType }) {
+    requireScope(context, "read");
+    let rows;
+    if (field === "name") {
+      const normalized = normalizeEqualityValue("text", value);
+      rows = await this.database.withWorkspace(context, (client) => client.query(
+        `SELECT entity_type, rahjo_id AS core_id, relaticle_id AS id, snapshot
+           FROM rahjo.crm_entity_refs
+          WHERE workspace_id=$1 AND (snapshot->>'name'=$2 OR snapshot->>'title'=$2)
+          ORDER BY updated_at DESC, id LIMIT 100`,
+        [context.workspace_id, normalized]
+      ));
+    } else if (field === "email" || field === "phone" || field === "identifier") {
+      let identifier;
+      if (field === "identifier") identifier = normalizeIdentifier(identifierType, value).canonical;
+      else identifier = { type: field, normalizedValue: normalizeEqualityValue(field, value) };
+      rows = await this.database.withWorkspace(context, (client) => client.query(
+        `SELECT DISTINCT ref.entity_type, ref.rahjo_id AS core_id, ref.relaticle_id AS id, ref.snapshot
+           FROM rahjo.crm_entity_identifiers identity
+           JOIN rahjo.crm_entity_refs ref
+             ON ref.workspace_id=identity.workspace_id AND ref.id=identity.entity_ref_id
+          WHERE identity.workspace_id=$1 AND identity.identifier_type=$2 AND identity.normalized_value=$3
+          ORDER BY entity_type, id LIMIT 100`,
+        [context.workspace_id, identifier.type, identifier.normalizedValue]
+      ));
+    } else if (field === "date-only" || field === "instant") {
+      const date = normalizeCrmDate(field === "date-only"
+        ? { kind: "date-only", value, calendar }
+        : { kind: "instant", value, timeZone });
+      rows = await this.database.withWorkspace(context, (client) => client.query(
+        `SELECT ref.entity_type, ref.rahjo_id AS core_id, ref.relaticle_id AS id, ref.snapshot
+           FROM rahjo.crm_entity_contract_values contract
+           JOIN rahjo.crm_entity_refs ref
+             ON ref.workspace_id=contract.workspace_id AND ref.id=contract.entity_ref_id
+          WHERE contract.workspace_id=$1 AND ${field === "date-only" ? "contract.deadline_date=$2::date" : "contract.deadline_at=$2::timestamptz"}
+          ORDER BY ref.entity_type, ref.id LIMIT 100`,
+        [context.workspace_id, date.value]
+      ));
+    } else if (field === "money") {
+      const money = normalizeIranMoney(value, unit);
+      rows = await this.database.withWorkspace(context, (client) => client.query(
+        `SELECT ref.entity_type, ref.rahjo_id AS core_id, ref.relaticle_id AS id, ref.snapshot
+           FROM rahjo.crm_entity_contract_values contract
+           JOIN rahjo.crm_entity_refs ref
+             ON ref.workspace_id=contract.workspace_id AND ref.id=contract.entity_ref_id
+          WHERE contract.workspace_id=$1 AND contract.money_currency=$2 AND contract.money_amount_irr=$3::numeric
+          ORDER BY ref.entity_type, ref.id LIMIT 100`,
+        [context.workspace_id, money.currency, money.amount]
+      ));
+    } else {
+      throw problems.validation("Search field is not supported");
+    }
+    return rows.rows.map((row) => ({
+      entityType: row.entity_type,
+      id: row.id,
+      coreId: row.core_id,
+      attributes: safeCrmSnapshot(row.entity_type, row.snapshot)
+    }));
+  }
+
+  async stageContactImport(context, input) {
+    requireScope(context, "crm:write");
+    requireRole(context, ["owner", "admin", "operator"]);
+    const sourceName = normalizePersianText(input?.sourceName, { max: 180, required: true });
+    if (!Array.isArray(input?.rows) || input.rows.length < 1 || input.rows.length > 250) {
+      throw problems.validation("Contact import must contain between 1 and 250 rows");
+    }
+    const rows = input.rows.map((row) => normalizeContactImport(row));
+    const sourceHash = createHash("sha256").update(JSON.stringify(input.rows)).digest("hex");
+    return this.database.withWorkspace(context, async (client) => {
+      const batchPublicId = publicId("IMP");
+      const batch = await client.query(
+        `INSERT INTO rahjo.import_batches(workspace_id, public_id, source_name, source_sha256, status, created_by)
+         VALUES ($1,$2,$3,$4,'reviewing',$5) RETURNING id`,
+        [context.workspace_id, batchPublicId, sourceName, sourceHash, context.membership_id]
+      );
+      const importBatchId = batch.rows[0]?.id;
+      const existingRefs = await client.query(
+        `SELECT id, workspace_id, entity_type, rahjo_id, relaticle_id, snapshot
+           FROM rahjo.crm_entity_refs
+          WHERE workspace_id=$1 AND entity_type='contact'
+          ORDER BY updated_at DESC, id LIMIT 2001`,
+        [context.workspace_id]
+      );
+      const fuzzyCandidatesTruncated = existingRefs.rows.length > 2000;
+      const fuzzyRefs = existingRefs.rows.slice(0, 2000);
+      const fuzzyRefIds = new Set(fuzzyRefs.map((ref) => ref.id));
+      if (fuzzyCandidatesTruncated) {
+        await client.query(
+          "UPDATE rahjo.import_batches SET fuzzy_candidates_truncated=true WHERE workspace_id=$1 AND id=$2",
+          [context.workspace_id, importBatchId]
+        );
+      }
+      const soughtIdentifiers = [...new Map(rows.flatMap(({ canonical }) => canonical.identifiers)
+        .map(({ type, normalizedValue }) => [`${type}\u0000${normalizedValue}`, { type, normalizedValue }])).values()];
+      const exactRefs = soughtIdentifiers.length
+        ? await client.query(
+            `SELECT DISTINCT ref.id, ref.workspace_id, ref.entity_type, ref.rahjo_id, ref.relaticle_id, ref.snapshot
+               FROM rahjo.crm_entity_identifiers identity
+               JOIN rahjo.crm_entity_refs ref
+                 ON ref.workspace_id=identity.workspace_id AND ref.id=identity.entity_ref_id
+               JOIN jsonb_to_recordset($2::jsonb) AS sought(identifier_type text, normalized_value text)
+                 ON sought.identifier_type=identity.identifier_type AND sought.normalized_value=identity.normalized_value
+              WHERE identity.workspace_id=$1 AND ref.entity_type='contact'`,
+            [context.workspace_id, JSON.stringify(soughtIdentifiers.map(({ type, normalizedValue }) => ({ identifier_type: type, normalized_value: normalizedValue })))]
+          )
+        : { rows: [] };
+      const refsById = new Map([...fuzzyRefs, ...exactRefs.rows].map((ref) => [ref.id, ref]));
+      const candidateRefs = [...refsById.values()];
+      const existingIds = await client.query(
+        `SELECT entity_ref_id, identifier_type, normalized_value, unique_scope
+           FROM rahjo.crm_entity_identifiers
+          WHERE workspace_id=$1 AND entity_ref_id=ANY($2::uuid[])`,
+        [context.workspace_id, candidateRefs.map((ref) => ref.id)]
+      );
+      const idsByRef = new Map();
+      for (const identity of existingIds.rows) {
+        const list = idsByRef.get(identity.entity_ref_id) ?? [];
+        list.push({
+          type: identity.identifier_type,
+          normalizedValue: identity.normalized_value,
+          uniqueScope: identity.unique_scope,
+          scopeKey: identity.unique_scope === "workspace" ? context.workspace_id : null
+        });
+        idsByRef.set(identity.entity_ref_id, list);
+      }
+      const candidates = candidateRefs.map((ref) => {
+        const identifiers = idsByRef.get(ref.id) ?? [];
+        return {
+          id: ref.id,
+          candidateKind: "crm",
+          allowFuzzy: fuzzyRefIds.has(ref.id),
+          workspaceId: ref.workspace_id,
+          name: ref.snapshot?.name ?? "",
+          email: identifiers.find((item) => item.type === "email")?.normalizedValue ?? "",
+          phone: identifiers.find((item) => item.type === "phone")?.normalizedValue ?? "",
+          identifiers
+        };
+      });
+      const staged = [];
+      for (let index = 0; index < rows.length; index += 1) {
+        const { canonical, raw } = rows[index];
+        const rowResult = await client.query(
+          `INSERT INTO rahjo.import_rows(workspace_id, batch_id, row_number, raw_record, normalized_record, decision)
+           VALUES ($1,$2,$3,'{}'::jsonb,$4,'pending') RETURNING id`,
+          [context.workspace_id, importBatchId, index + 1, canonical]
+        );
+        const importRowId = rowResult.rows[0]?.id;
+        await client.query(
+          `INSERT INTO rahjo.crm_restricted_raw_values(workspace_id, import_row_id, captured_by, raw_values)
+           VALUES ($1,$2,$3,$4)`,
+          [context.workspace_id, importRowId, context.membership_id, raw]
+        );
+        const incoming = {
+          workspaceId: context.workspace_id,
+          name: canonical.name,
+          email: canonical.email,
+          phone: canonical.phone,
+          identifiers: scopedIdentifiers(canonical.identifiers, context.workspace_id)
+        };
+        const fuzzyScores = new Map();
+        for (const candidate of candidates) {
+          if (candidate.allowFuzzy === false) continue;
+          const score = normalizedNameSimilarity(canonical.name, candidate.name || canonical.name);
+          if (candidate.name && score >= 0.72) fuzzyScores.set(String(candidate.id), score);
+        }
+        const ranked = rankDedupeCandidates(incoming, candidates, [...fuzzyScores.keys()]);
+        for (const candidate of ranked) {
+          const score = candidate.evidence === "fuzzy_review" ? fuzzyScores.get(String(candidate.candidateId)) : 1;
+          const target = candidates.find((item) => item.id === candidate.candidateId);
+          await client.query(
+            `INSERT INTO rahjo.duplicate_candidates
+               (workspace_id, import_row_id, source_import_batch_id,
+                candidate_ref, candidate_import_row_id, candidate_import_batch_id, score, reasons)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [context.workspace_id, importRowId, importBatchId,
+              target?.candidateKind === "import_row" ? null : candidate.candidateId,
+              target?.candidateKind === "import_row" ? candidate.candidateId : null,
+              target?.candidateKind === "import_row" ? importBatchId : null,
+              score.toFixed(4), { evidence: candidate.evidence, autoMerge: false }]
+          );
+        }
+        staged.push({
+          rowId: importRowId,
+          rowNumber: index + 1,
+          decision: "pending",
+          candidates: ranked.map((candidate) => {
+            const target = candidates.find((item) => item.id === candidate.candidateId);
+            return {
+            ...(target?.candidateKind === "import_row"
+              ? { candidateImportRowId: candidate.candidateId, candidateRowNumber: target.rowNumber }
+              : { candidateRef: candidate.candidateId }),
+            evidence: candidate.evidence,
+            score: candidate.evidence === "fuzzy_review" ? fuzzyScores.get(String(candidate.candidateId)) : 1,
+            reviewRequired: true,
+            autoMerge: false
+            };
+          })
+        });
+        candidates.push({
+          id: importRowId,
+          candidateKind: "import_row",
+          allowFuzzy: true,
+          rowNumber: index + 1,
+          workspaceId: context.workspace_id,
+          name: canonical.name,
+          email: canonical.email,
+          phone: canonical.phone,
+          identifiers: incoming.identifiers
+        });
+      }
+      return { batchId: batchPublicId, status: "reviewing", fuzzyCandidatesTruncated, rows: staged };
+    });
+  }
+
+  async getContactImport(context, batchPublicId) {
+    requireScope(context, "read");
+    const result = await this.database.withWorkspace(context, async (client) => {
+      const batches = await client.query(
+        `SELECT id, public_id, source_name, status, created_at, fuzzy_candidates_truncated
+           FROM rahjo.import_batches WHERE workspace_id=$1 AND public_id=$2`,
+        [context.workspace_id, normalizePersianText(batchPublicId, { max: 120, required: true })]
+      );
+      if (!batches.rowCount) return null;
+      const rows = await client.query(
+        `SELECT id, row_number, normalized_record, decision, decision_reason
+           FROM rahjo.import_rows WHERE workspace_id=$1 AND batch_id=$2 ORDER BY row_number`,
+        [context.workspace_id, batches.rows[0].id]
+      );
+      const duplicates = await client.query(
+        `SELECT duplicate.import_row_id, duplicate.candidate_ref, duplicate.candidate_import_row_id,
+                duplicate.score, duplicate.reasons, duplicate.decision,
+                ref.entity_type, ref.rahjo_id AS core_id, ref.relaticle_id AS id, ref.snapshot,
+                candidate_row.row_number AS candidate_row_number,
+                candidate_row.normalized_record AS candidate_normalized_record
+           FROM rahjo.duplicate_candidates duplicate
+          LEFT JOIN rahjo.crm_entity_refs ref
+             ON ref.workspace_id=duplicate.workspace_id AND ref.id=duplicate.candidate_ref
+          LEFT JOIN rahjo.import_rows candidate_row
+             ON candidate_row.workspace_id=duplicate.workspace_id
+            AND candidate_row.batch_id=duplicate.candidate_import_batch_id
+            AND candidate_row.id=duplicate.candidate_import_row_id
+          WHERE duplicate.workspace_id=$1 AND duplicate.import_row_id = ANY($2::uuid[])
+          ORDER BY duplicate.import_row_id,
+            CASE duplicate.reasons->>'evidence'
+              WHEN 'authoritative_identifier' THEN 0
+              WHEN 'exact_phone' THEN 1
+              WHEN 'exact_email' THEN 2
+              ELSE 3
+            END,
+            duplicate.score DESC, duplicate.id`,
+        [context.workspace_id, rows.rows.map((row) => row.id)]
+      );
+      return {
+        ...batches.rows[0],
+        rows: rows.rows.map((row) => ({
+          id: row.id,
+          rowNumber: row.row_number,
+          canonical: row.normalized_record,
+          decision: row.decision,
+          decisionReason: row.decision_reason,
+          candidates: duplicates.rows.filter((item) => item.import_row_id === row.id).map((item) => ({
+            ...(item.candidate_ref ? {
+              entityType: item.entity_type,
+              coreId: item.core_id,
+              id: item.id,
+              attributes: safeCrmSnapshot(item.entity_type, item.snapshot)
+            } : {
+              candidateImportRowId: item.candidate_import_row_id,
+              candidateRowNumber: item.candidate_row_number,
+              canonical: item.candidate_normalized_record
+            }),
+            score: Number(item.score),
+            evidence: item.reasons.evidence,
+            decision: item.decision,
+            reviewRequired: true,
+            autoMerge: false
+          }))
+        })),
+        fuzzyCandidatesTruncated: batches.rows[0].fuzzy_candidates_truncated
+      };
+    });
+    if (!result) throw problems.notFound();
+    return result;
   }
 
   async createIntake(context, input, rawIdempotencyKey, correlationId, rawInput = input) {
@@ -380,12 +801,33 @@ export class CrmRepository {
       const leadId = publicId("LEAD");
       const caseId = publicId("CASE");
       const approvalId = publicId("APR");
+      const contactIdentifiers = [
+        ...(payload.email ? [normalizeIdentifier("email", payload.email).canonical] : []),
+        ...(payload.phone ? [normalizeIdentifier("phone", payload.phone).canonical] : []),
+        normalizeIdentifier("relaticle_contact_id", person.id).canonical,
+        normalizeIdentifier("rahjo_contact_id", contactId).canonical
+      ];
+      const canonicalPersonAttributes = {
+        ...person.attributes,
+        ...(payload.email ? { email: payload.email } : {}),
+        ...(payload.phone ? { phone: payload.phone } : {}),
+        identifiers: contactIdentifiers
+      };
 
-      await client.query(
+      const refs = await client.query(
         `INSERT INTO rahjo.crm_entity_refs (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
-         VALUES ($1,'account',$2,$3,$4),($1,'contact',$5,$6,$7)`,
-        [context.workspace_id, accountId, company.id, company.attributes, contactId, person.id, person.attributes]
+         VALUES ($1,'account',$2,$3,$4),($1,'contact',$5,$6,$7) RETURNING id, entity_type`,
+        [context.workspace_id, accountId, company.id, company.attributes, contactId, person.id, canonicalPersonAttributes]
       );
+      const contactRef = refs.rows.find((ref) => ref.entity_type === "contact");
+      for (const identifier of contactIdentifiers) {
+        await client.query(
+          `INSERT INTO rahjo.crm_entity_identifiers
+             (workspace_id, entity_ref_id, identifier_type, normalized_value, unique_scope)
+           VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+          [context.workspace_id, contactRef.id, identifier.type, identifier.normalizedValue, identifier.uniqueScope]
+        );
+      }
       const lead = await client.query(
         `INSERT INTO rahjo.leads
           (workspace_id, public_id, account_ref, contact_ref, status, source_channel, attribution, normalized_identity)

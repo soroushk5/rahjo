@@ -3,9 +3,10 @@ import test from "node:test";
 import { loadConfig } from "../src/config.js";
 import {
   asciiDigits,
-  CANONICAL_UNIQUE_IDENTIFIER_SCOPES,
+  IDENTIFIER_TYPE_REGISTRY,
   normalizeCrmDate,
   normalizeCurrencyCode,
+  normalizeContactImport,
   normalizeEmail,
   normalizeEqualityValue,
   normalizeIdentifier,
@@ -13,6 +14,7 @@ import {
   normalizeIranMoney,
   normalizePersianText,
   normalizePhone,
+  normalizedNameSimilarity,
   rankDedupeCandidates,
   requiredIdempotencyKey,
   toJalaliDate
@@ -189,19 +191,52 @@ test("Iranian money uses exact IRR integers and explicit toman conversion", () =
   assert.throws(() => normalizeIranMoney("12", ""), /explicitly/);
 });
 
-test("identifier raw values stay separate and only a canonical registry can declare uniqueness", () => {
-  assert.deepEqual(CANONICAL_UNIQUE_IDENTIFIER_SCOPES, {});
-  const value = normalizeIdentifier("national_id", "۰۰۱٢٣", { numeric: true, uniqueScopes: { national_id: "workspace" } });
+test("identifier raw values stay separate and only evidenced canonical types are unique", () => {
+  assert.deepEqual(Object.keys(IDENTIFIER_TYPE_REGISTRY).sort(), ["rahjo_contact_id", "relaticle_contact_id"]);
+  const value = normalizeIdentifier("national_id", "۰۰۱٢٣");
   assert.deepEqual(value, {
-    canonical: { type: "national_id", normalizedValue: "00123", uniqueScope: null },
+    canonical: { type: "national_id", normalizedValue: "۰۰۱٢٣", uniqueScope: null },
     raw: { value: "۰۰۱٢٣" }
   });
-  const unknownType = normalizeIdentifier("external_ref", "٠٠١٢٣", { numeric: true });
+  const canonicalId = normalizeIdentifier("relaticle_contact_id", "CRM-C-123");
+  assert.equal(canonicalId.canonical.uniqueScope, "workspace");
+  const unknownType = normalizeIdentifier("external_ref", "٠٠١٢٣");
   assert.equal(unknownType.canonical.uniqueScope, null);
-  assert.deepEqual(normalizeEqualityValue("identifier", "۰۰۱٢٣", { type: "national_id", numeric: true }), {
-    type: "national_id", normalizedValue: "00123", uniqueScope: null
+  assert.equal(normalizeIdentifier("constructor", "value").canonical.uniqueScope, null);
+  assert.deepEqual(normalizeEqualityValue("identifier", "۰۰۱٢٣", { type: "national_id" }), {
+    type: "national_id", normalizedValue: "۰۰۱٢٣", uniqueScope: null
   });
   assert.throws(() => normalizeIdentifier("national id", "123"), /type is invalid/);
+});
+
+test("contact import normalization separates raw values and fuzzy scoring is deterministic", () => {
+  const imported = normalizeContactImport({
+    name: " سارا يوسفی ",
+    email: " SARA@example.com ",
+    phone: "۰۹۱۲ ۱۲۳ ۴۵۶۷",
+    identifiers: [{ type: "relaticle_contact_id", value: "CRM-C-123" }]
+  });
+  assert.deepEqual(imported.canonical, {
+    name: "سارا یوسفی",
+    email: "sara@example.com",
+    phone: "09121234567",
+    identifiers: [
+      { type: "relaticle_contact_id", normalizedValue: "CRM-C-123", uniqueScope: "workspace" },
+      { type: "email", normalizedValue: "sara@example.com", uniqueScope: null },
+      { type: "phone", normalizedValue: "09121234567", uniqueScope: null }
+    ]
+  });
+  assert.equal(imported.raw.email, " SARA@example.com ");
+  assert.equal(imported.raw.phone, "۰۹۱۲ ۱۲۳ ۴۵۶۷");
+  const typedChannels = normalizeContactImport({ name: "نام", identifiers: [
+    { type: "email", value: " MAIL@example.com " }, { type: "phone", value: "۰۹۱۲ ۱۲۳ ۴۵۶۷" }
+  ] });
+  assert.equal(typedChannels.canonical.email, "mail@example.com");
+  assert.equal(typedChannels.canonical.phone, "09121234567");
+  assert.throws(() => normalizeContactImport({ name: "نام", email: "one@example.com", identifiers: [{ type: "email", value: "two@example.com" }] }), /must match/);
+  assert.ok(normalizedNameSimilarity("سارا یوسفی", "سارا یوسفی") === 1);
+  assert.ok(normalizedNameSimilarity("سارا یوسفی", "سارا یوسفیان") > 0.7);
+  assert.throws(() => normalizeContactImport({ name: "نام", identifiers: [null] }), /identifier/);
 });
 
 test("dedupe ranks authoritative IDs before exact phone/email and fuzzy matches stay review-only", () => {
@@ -209,13 +244,13 @@ test("dedupe ranks authoritative IDs before exact phone/email and fuzzy matches 
     workspaceId: "ws-1",
     phone: "09121234567",
     email: "sales@example.com",
-    identifiers: [{ type: "registry_id", normalizedValue: "00012", uniqueScope: "workspace", scopeKey: "ws-1" }]
+    identifiers: [{ type: "relaticle_contact_id", normalizedValue: "CRM-C-12", uniqueScope: "workspace", scopeKey: "ws-1" }]
   };
   const ranked = rankDedupeCandidates(incoming, [
     { id: "fuzzy", workspaceId: "ws-1" },
     { id: "phone", workspaceId: "ws-1", phone: "09121234567" },
-    { id: "authoritative", workspaceId: "ws-1", phone: "09121234567", identifiers: [{ type: "registry_id", normalizedValue: "00012", uniqueScope: "workspace", scopeKey: "ws-1" }] },
-    { id: "wrong-type", workspaceId: "ws-1", identifiers: [{ type: "tax_id", normalizedValue: "00012", uniqueScope: "workspace", scopeKey: "ws-1" }] },
+    { id: "authoritative", workspaceId: "ws-1", phone: "09121234567", identifiers: [{ type: "relaticle_contact_id", normalizedValue: "CRM-C-12", uniqueScope: "workspace", scopeKey: "ws-1" }] },
+    { id: "wrong-type", workspaceId: "ws-1", identifiers: [{ type: "tax_id", normalizedValue: "CRM-C-12", uniqueScope: "workspace", scopeKey: "ws-1" }] },
     { id: "other-workspace", workspaceId: "ws-2", phone: "09121234567" }
   ], ["fuzzy"]);
   assert.deepEqual(ranked.map(({ candidateId, evidence }) => [candidateId, evidence]), [

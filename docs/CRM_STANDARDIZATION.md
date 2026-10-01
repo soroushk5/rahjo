@@ -123,7 +123,7 @@ Until a new commercial brand is supplied, public product copy uses the neutral l
 
 ## قرارداد تکمیلی نرمال‌سازی — RAH-W0-005
 
-وضعیت: قرارداد مصوب مالک، ۲۰۲۶-۱۰-۰۱. این قرارداد مطابق Implementation Blueprint کانونی اجرا می‌شود. تغییرهای runtime و آزمون‌ها در follow-up محدود PR #55 ثبت می‌شوند؛ دامنهٔ PR اصلی پنهانی گسترش نمی‌یابد.
+وضعیت: قرارداد مصوب مالک، ۲۰۲۶-۱۰-۰۱. این قرارداد مطابق Implementation Blueprint کانونی اجرا می‌شود. PR #55 آزمون‌محور باقی می‌ماند؛ اتصال runtime و آزمون‌های یکپارچه در PR پیگیری #56 انجام می‌شود.
 
 ### قرارداد اجرایی مصوب
 
@@ -136,9 +136,14 @@ Until a new commercial brand is supplied, public product copy uses the neutral l
 
 آزمون‌ها برای Yeh/Kaf، رقم، فاصله/نیم‌فاصله، تلفن، شناسه، تبدیل Jalali/Gregorian، timezone و date-only/instant، IRR/TOMAN، برابری/جست‌وجو، جدایی raw/canonical، تقدم dedupe و منع auto-merge لازم‌اند.
 
-### مرز پوشش این follow-up
+### اتصال اجرایی در PR #56
 
-این تغییرها قراردادهای نرمال‌سازی و ذخیرهٔ ورودی فعلی intake را پیاده و آزمون می‌کنند. مدل جاری CRM فیلدهای ساخت‌یافتهٔ deadline، مبلغ، شناسهٔ نوع‌دار و import/dedupe ندارد؛ بنابراین برای این فیلدهای آتی، آزمون helper به‌تنهایی به‌معنی اتصال به مسیر واقعی ذخیره‌سازی/جست‌وجو نیست و RAH-W0-005 تا پیاده‌سازی مسیرهای لازم In Progress می‌ماند. تولید نامزد fuzzy در adapter واردسازی فعلی وجود ندارد؛ مرتب‌ساز فقط نامزدهای ازپیش‌تأمین‌شده را review-only مرتب می‌کند. هیچ نوع شناسه‌ای هنوز در registry کانونی canonical-unique اعلام نشده است.
+- `POST /api/v1/tasks` موعد date-only یا instant را اعتبارسنجی و در `crm_entity_contract_values` در ستون‌های جدا ذخیره می‌کند؛ Jalali به Gregorian تبدیل می‌شود و instant به UTC با نگهداری شناسهٔ IANA می‌رود. `GET /api/v1/runtime` مقدار canonical را پس از reload بازمی‌گرداند.
+- `POST /api/v1/opportunities` مبلغ صریح IRR یا TOMAN را به رشتهٔ صحیح IRR تبدیل و در همان جدول ذخیره می‌کند؛ مقدار خام فقط در جدول دسترسی‌محدود می‌رود.
+- `POST /api/v1/contacts` شناسهٔ نوع‌دار، ایمیل و تلفن canonical را در `crm_entity_identifiers` ثبت می‌کند؛ raw جداست. یکتایی فقط برای `rahjo_contact_id` و `relaticle_contact_id` در محدودهٔ فضای کاری فعال است، چون کلیدهای مرکب موجود یکتایی هر دو را ثابت می‌کنند.
+- `GET /api/v1/crm/search` فقط برابری دقیقِ مقدار canonical را برای نام، شناسه، ایمیل، تلفن، تاریخ، لحظه و مبلغ اجرا می‌کند.
+- `POST /api/v1/import/contacts` ردیف‌ها را بدون ایجاد/ادغام موجودیت stage می‌کند؛ `GET /api/v1/import/contacts/:batchId` canonical و صف بازبینی را reload می‌کند. تطبیق دقیق شناسه از کل فضای کاری و ردیف‌های همان batch بررسی می‌شود؛ تقدم تطبیق شناسهٔ معتبر، تلفن/ایمیل دقیق و سپس شباهت نام است. امتیاز fuzzy فقط candidate با وضعیت pending و `autoMerge=false` می‌سازد؛ اگر scan نام بیش از ۲۰۰۰ مخاطب داشته باشد، پرچم `fuzzyCandidatesTruncated` محدودیت را آشکار می‌کند.
+- migration `008_crm_contract_values.sql` جدول‌های typed و raw محدودشده را با RLS اجباری اضافه می‌کند. مدت نگهداری `retention_until` را owner تعیین می‌کند؛ در این تغییر هیچ پاک‌سازی زمان‌دار hard-code نشده است.
 
 ### پیش‌نویس قدیمی (برای سابقه؛ superseded)
 

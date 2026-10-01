@@ -148,8 +148,8 @@ test("server-backed intake-to-outcome path passes with every model provider abse
   const tokenA = "rahjo_e2e_workspace_a_12345678901234567890";
   const tokenB = "rahjo_e2e_workspace_b_12345678901234567890";
   const upstreamTokens = new Map([
-    ["relaticle-alpha-token", { workspace: "A", companies: [], people: [] }],
-    ["relaticle-beta-token", { workspace: "B", companies: [], people: [] }]
+    ["relaticle-alpha-token", { workspace: "A", companies: [], people: [], opportunities: [], tasks: [], notes: [] }],
+    ["relaticle-beta-token", { workspace: "B", companies: [], people: [], opportunities: [], tasks: [], notes: [] }]
   ]);
   const upstream = createServer(async (request, response) => {
     const token = request.headers.authorization?.slice(7);
@@ -163,16 +163,16 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       return;
     }
     if (request.method === "GET") {
-      const data = collection === "companies" ? state.companies : collection === "people" ? state.people : [];
+      const data = state[collection] ?? [];
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({ data }));
       return;
     }
-    if (request.method === "POST" && (collection === "companies" || collection === "people")) {
+    if (request.method === "POST" && ["companies", "people", "opportunities", "tasks", "notes"].includes(collection)) {
       const chunks = [];
       for await (const chunk of request) chunks.push(chunk);
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-      const target = collection === "companies" ? state.companies : state.people;
+      const target = state[collection];
       const entity = { id: `${state.workspace}-${collection.toUpperCase()}-${target.length + 1}`, type: collection, attributes: body };
       target.push(entity);
       response.writeHead(201, { "Content-Type": "application/json" });
@@ -186,6 +186,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
   t.after(() => upstream.close());
 
   let app;
+  const requestLogs = [];
   try {
     const workspaceSuffix = Math.random().toString(36).slice(2, 10);
     const [workspaceA] = await admin`INSERT INTO rahjo.workspaces(slug,name,relaticle_team_id) VALUES(${`e2e-alpha-${workspaceSuffix}`},'E2E Alpha',${`E2E-TEAM-A-${workspaceSuffix}`}) RETURNING id`;
@@ -218,7 +219,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       appEnv: "development", publicOrigin: "http://localhost", corsOrigins: ["http://localhost"],
       tokenPepper: pepper, bodyLimit: 64 * 1024, sessionHours: 12
     };
-    app = createCrmServer({ config, database, repository, relaticle, workspaceTokens, logger: { info() {}, error() {} } });
+    app = createCrmServer({ config, database, repository, relaticle, workspaceTokens, logger: { info(entry) { requestLogs.push(entry); }, error(entry) { requestLogs.push(entry); } } });
     app.listen(0, "127.0.0.1");
     await once(app, "listening");
     t.after(() => app?.close());
@@ -279,6 +280,155 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     const conflict = await browserCall("/api/v1/intakes", { method: "POST", body: { ...intakePayload, purpose: "different" }, idempotencyKey: "intake:e2e:0001" });
     assert.equal(conflict.status, 409);
 
+    const contactResponse = await browserCall("/api/v1/contacts", {
+      method: "POST",
+      body: {
+        name: " سارا يوسفی ",
+        accountId: intakeData.accountId,
+        email: " SARA@example.com ",
+        phone: "۰۹۱۲ ۱۲۳ ۴۵۶۷",
+        identifiers: [{ type: "client_ref", value: " INV-123 " }]
+      }
+    });
+    assert.equal(contactResponse.status, 201);
+    const contactData = (await contactResponse.json()).data;
+    assert.equal(contactData.name, "سارا یوسفی");
+    assert.equal(contactData.email, "sara@example.com");
+    assert.equal(contactData.phone, "09121234567");
+    assert.equal(contactData.identifiers.find((item) => item.type === "client_ref").normalizedValue, "INV-123");
+    assert.equal(contactData.identifiers.find((item) => item.type === "relaticle_contact_id").uniqueScope, "workspace");
+    assert.equal(contactData.identifiers.find((item) => item.type === "rahjo_contact_id").normalizedValue, contactData.coreId);
+    assert.equal(JSON.stringify(contactData).includes(" SARA@example.com "), false);
+
+    const opportunityResponse = await browserCall("/api/v1/opportunities", {
+      method: "POST",
+      body: {
+        name: "فرصت نرمال‌سازی",
+        accountId: intakeData.accountId,
+        contactId: contactData.id,
+        amount: { value: "۱۲۳٫۴", unit: "تومان" }
+      }
+    });
+    assert.equal(opportunityResponse.status, 201);
+    const opportunityData = (await opportunityResponse.json()).data;
+    assert.deepEqual(opportunityData.amount, { currency: "IRR", value: "1234" });
+
+    const dateTaskResponse = await browserCall("/api/v1/tasks", {
+      method: "POST",
+      body: {
+        title: "مهلت فقط‌تاریخ",
+        opportunityId: opportunityData.id,
+        deadline: { kind: "date-only", value: "۱۴۰۳/۱۲/۳۰", calendar: "jalali" }
+      }
+    });
+    assert.equal(dateTaskResponse.status, 201);
+    const dateTaskData = (await dateTaskResponse.json()).data;
+    assert.deepEqual(dateTaskData.deadline, { kind: "date-only", value: "2025-03-20", displayCalendar: "jalali" });
+
+    const instantTaskResponse = await browserCall("/api/v1/tasks", {
+      method: "POST",
+      body: {
+        title: "مهلت لحظه‌ای",
+        opportunityId: opportunityData.id,
+        deadline: { kind: "instant", value: "2024-03-20T09:31:00+03:30", timeZone: "Asia/Tehran" }
+      }
+    });
+    assert.equal(instantTaskResponse.status, 201);
+    const instantTaskData = (await instantTaskResponse.json()).data;
+    assert.deepEqual(instantTaskData.deadline, { kind: "instant", value: "2024-03-20T06:01:00.000Z", timeZone: "Asia/Tehran" });
+
+    const searchFor = async (params, token = tokenA) => {
+      const response = await call(`/api/v1/crm/search?${new URLSearchParams(params)}`, { token });
+      assert.equal(response.status, 200);
+      return (await response.json()).results;
+    };
+    assert.equal((await searchFor({ field: "email", value: "SARA@example.com" }))[0].id, contactData.id);
+    assert.equal((await searchFor({ field: "phone", value: "۰۹۱۲۱۲۳۴۵۶۷" }))[0].id, contactData.id);
+    assert.equal((await searchFor({ field: "name", value: "سارا یوسفی" }))[0].id, contactData.id);
+    assert.equal((await searchFor({ field: "identifier", identifierType: "client_ref", value: "INV-123" }))[0].id, contactData.id);
+    assert.equal((await searchFor({ field: "identifier", identifierType: "rahjo_contact_id", value: contactData.coreId }))[0].id, contactData.id);
+    assert.equal((await searchFor({ field: "date-only", calendar: "jalali", value: "1403/12/30" }))[0].id, dateTaskData.id);
+    assert.equal((await searchFor({ field: "instant", timeZone: "UTC", value: "2024-03-20T06:01:00Z" }))[0].id, instantTaskData.id);
+    assert.equal((await searchFor({ field: "money", unit: "تومان", value: "۱۲۳٫۴" }))[0].id, opportunityData.id);
+    assert.equal(JSON.stringify(requestLogs).includes("SARA@example.com"), false);
+    const invalidSearch = await call(`/api/v1/crm/search?${new URLSearchParams({ field: "email", value: "raw-secret-not-an-email" })}`, { token: tokenA });
+    assert.equal(invalidSearch.status, 422);
+    assert.equal(JSON.stringify(await invalidSearch.json()).includes("raw-secret-not-an-email"), false);
+    assert.equal(JSON.stringify(requestLogs).includes("raw-secret-not-an-email"), false);
+    assert.deepEqual(await searchFor({ field: "email", value: "sara@example.com" }, tokenB), []);
+
+    await admin`INSERT INTO rahjo.crm_entity_refs(workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+      SELECT ${workspaceA.id}, 'contact', 'BULK-CON-' || n::text, 'BULK-REL-' || n::text,
+             jsonb_build_object('name', 'آزمون مخاطب ' || n::text)
+        FROM generate_series(1, 2001) AS n`;
+
+    const importResponse = await browserCall("/api/v1/import/contacts", {
+      method: "POST",
+      body: {
+        sourceName: "درون‌ریزی آزمون",
+        rows: [
+          {
+            name: "سارا یوسفی", email: " SARA@example.com ", phone: "09121234567",
+            identifiers: [{ type: "relaticle_contact_id", value: contactData.id }, { type: "client_ref", value: "INV-123" }]
+          },
+          { name: "رکورد با تلفن تکراری", phone: "۰۹۱۲۱۲۳۴۵۶۷" },
+          { name: "سارا یوسفیان" },
+          { name: "رکورد با ایمیل تکراری", email: "sara@example.com" }
+        ]
+      }
+    });
+    assert.equal(importResponse.status, 202);
+    const importData = (await importResponse.json()).data;
+    assert.equal(importData.fuzzyCandidatesTruncated, true);
+    assert.equal(importData.rows[0].candidates[0].evidence, "authoritative_identifier");
+    assert.equal(importData.rows[0].candidates[0].candidateRef === undefined, false);
+    assert.ok(importData.rows[0].candidates.every((item) => item.reviewRequired && !item.autoMerge));
+    assert.ok(importData.rows[1].candidates.some((item) => item.evidence === "exact_phone"));
+    assert.ok(importData.rows[1].candidates.some((item) => item.candidateImportRowId === importData.rows[0].rowId));
+    assert.ok(importData.rows[2].candidates.some((item) => item.evidence === "fuzzy_review"));
+    assert.ok(importData.rows[3].candidates.some((item) => item.evidence === "exact_email"));
+    assert.equal(JSON.stringify(importData).includes("sara@example.com"), true);
+    assert.equal(JSON.stringify(importData).includes(" SARA@example.com "), false);
+    const importReloadResponse = await browserCall(`/api/v1/import/contacts/${encodeURIComponent(importData.batchId)}`);
+    assert.equal(importReloadResponse.status, 200);
+    const importReload = (await importReloadResponse.json()).data;
+    assert.equal(importReload.rows.length, 4);
+    assert.equal(importReload.rows[0].candidates[0].evidence, "authoritative_identifier");
+    assert.equal(importReload.fuzzyCandidatesTruncated, true);
+    assert.ok(importReload.rows[1].candidates.some((item) => item.candidateImportRowId === importData.rows[0].rowId));
+    assert.equal(JSON.stringify(importReload).includes(" SARA@example.com "), false);
+    const importedRaw = await admin`SELECT raw_values, retention_until FROM rahjo.crm_restricted_raw_values
+      WHERE workspace_id=${workspaceA.id} AND import_row_id=${importData.rows[0].rowId}`;
+    assert.equal(importedRaw.length, 1);
+    assert.equal(importedRaw[0].raw_values.email, " SARA@example.com ");
+    assert.equal(importedRaw[0].retention_until, null);
+    const contactRaw = await admin`SELECT raw_values FROM rahjo.crm_restricted_raw_values
+      WHERE workspace_id=${workspaceA.id}
+        AND entity_ref_id=(SELECT id FROM rahjo.crm_entity_refs WHERE workspace_id=${workspaceA.id} AND relaticle_id=${contactData.id})`;
+    assert.equal(contactRaw[0].raw_values.name, " سارا يوسفی ");
+    assert.equal(contactRaw[0].raw_values.email, " SARA@example.com ");
+    await admin.begin(async (tx) => {
+      await tx`SET LOCAL ROLE rahjo_worker`;
+      await tx`SELECT set_config('rahjo.workspace_id', ${workspaceA.id}, true)`;
+      const workerRowsA = await tx`SELECT id FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id}`;
+      assert.ok(workerRowsA.length >= 2);
+      await tx`SELECT set_config('rahjo.workspace_id', ${workspaceB.id}, true)`;
+      const workerRowsB = await tx`SELECT id FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id}`;
+      assert.equal(workerRowsB.length, 0);
+      const deletedRowsB = await tx`DELETE FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id} RETURNING id`;
+      assert.equal(deletedRowsB.length, 0);
+    });
+    const authA = await database.authenticate(tokenDigest(tokenA, pepper));
+    await assert.rejects(
+      () => database.withWorkspace(authA, (client) => client.query(
+        "SELECT raw_values FROM rahjo.crm_restricted_raw_values WHERE workspace_id=$1",
+        [workspaceA.id]
+      )),
+      (error) => error.code === "42501"
+    );
+    const crossWorkspaceImport = await call(`/api/v1/import/contacts/${encodeURIComponent(importData.batchId)}`, { token: tokenB });
+    assert.equal(crossWorkspaceImport.status, 404);
+
     const foreign = await call(`/api/v1/approvals/${encodeURIComponent(intakeData.approvalId)}/decision`, { token: tokenB, method: "POST", body: { decision: "approved" } });
     assert.equal(foreign.status, 404);
     const missingCsrf = await browserCall(`/api/v1/approvals/${encodeURIComponent(intakeData.approvalId)}/decision`, { method: "POST", body: { decision: "approved" }, csrf: false });
@@ -297,6 +447,12 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     const runtimeA = await browserCall("/api/v1/runtime");
     assert.equal(runtimeA.status, 200);
     const projectionA = (await runtimeA.json()).projection;
+    assert.equal(projectionA.contacts.find((item) => item.id === contactData.id).email, "sara@example.com");
+    assert.equal(projectionA.contacts.find((item) => item.id === contactData.id).identifiers.find((item) => item.type === "client_ref").normalizedValue, "INV-123");
+    assert.deepEqual(projectionA.opportunities.find((item) => item.id === opportunityData.id).amount, { currency: "IRR", value: "1234" });
+    assert.deepEqual(projectionA.tasks.find((item) => item.id === dateTaskData.id).deadline, { kind: "date-only", value: "2025-03-20", displayCalendar: "jalali" });
+    assert.deepEqual(projectionA.tasks.find((item) => item.id === instantTaskData.id).deadline, { kind: "instant", value: "2024-03-20T06:01:00.000Z", timeZone: "Asia/Tehran" });
+    assert.equal(JSON.stringify(projectionA).includes(" SARA@example.com "), false);
     assert.equal(projectionA.cases.find((item) => item.id === intakeData.caseId).status, "resolved");
     assert.equal(projectionA.receipts.length, 1);
     assert.equal(projectionA.outcomes.length, 1);

@@ -8,6 +8,7 @@ const publicIntakeSql = await readFile(new URL("../migrations/004_public_intake_
 const publicIntakeHardeningSql = await readFile(new URL("../migrations/005_public_intake_hardening.sql", import.meta.url), "utf8");
 const emailLoginSql = await readFile(new URL("../migrations/006_email_first_login.sql", import.meta.url), "utf8");
 const rawInputSql = await readFile(new URL("../migrations/007_w0_005_raw_intake_values.sql", import.meta.url), "utf8");
+const crmContractsSql = await readFile(new URL("../migrations/008_crm_contract_values.sql", import.meta.url), "utf8");
 const migrator = await readFile(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
 const database = await readFile(new URL("../src/database.js", import.meta.url), "utf8");
 const repository = await readFile(new URL("../src/repository.js", import.meta.url), "utf8");
@@ -100,4 +101,26 @@ test("raw intake values are tenant-scoped, append-only to the runtime role, and 
   assert.doesNotMatch(rawInputSql, /GRANT SELECT[^;]*rahjo_app/);
   assert.match(repository, /INSERT INTO rahjo\.intake_raw_values/);
   assert.doesNotMatch(repository, /SELECT[^;]*FROM rahjo\.intake_raw_values/i);
+});
+
+test("typed CRM contract values and identifiers are tenant-scoped while raw values remain worker-only", () => {
+  assert.match(crmContractsSql, /CREATE TABLE IF NOT EXISTS rahjo\.crm_entity_contract_values/);
+  assert.match(crmContractsSql, /deadline_kind = 'date-only'.*deadline_date IS NOT NULL AND deadline_at IS NULL/s);
+  assert.match(crmContractsSql, /deadline_kind = 'instant'.*deadline_date IS NULL AND deadline_at IS NOT NULL/s);
+  assert.match(crmContractsSql, /money_amount_irr numeric,/);
+  assert.match(crmContractsSql, /money_amount_irr = trunc\(money_amount_irr\)/);
+  assert.match(crmContractsSql, /CREATE TABLE IF NOT EXISTS rahjo\.crm_entity_identifiers/);
+  assert.match(crmContractsSql, /UNIQUE \(workspace_id, entity_ref_id, identifier_type, normalized_value\)/);
+  assert.match(crmContractsSql, /CREATE UNIQUE INDEX IF NOT EXISTS crm_entity_identifiers_workspace_unique_idx[\s\S]*WHERE unique_scope = 'workspace'/);
+  assert.match(crmContractsSql, /CREATE TABLE IF NOT EXISTS rahjo\.crm_restricted_raw_values/);
+  assert.match(crmContractsSql, /duplicate_candidates_one_target[\s\S]*candidate_import_batch_id = source_import_batch_id/);
+  assert.match(crmContractsSql, /duplicate_candidates_source_import_row_fkey[\s\S]*FOREIGN KEY \(workspace_id, source_import_batch_id, import_row_id\)/);
+  assert.match(crmContractsSql, /duplicate_candidates_import_row_fkey[\s\S]*REFERENCES rahjo\.import_rows\(workspace_id, batch_id, id\)/);
+  assert.match(crmContractsSql, /ALTER TABLE rahjo\.crm_entity_contract_values FORCE ROW LEVEL SECURITY/);
+  assert.match(crmContractsSql, /ALTER TABLE rahjo\.crm_entity_identifiers FORCE ROW LEVEL SECURITY/);
+  assert.match(crmContractsSql, /ALTER TABLE rahjo\.crm_restricted_raw_values FORCE ROW LEVEL SECURITY/);
+  assert.match(crmContractsSql, /GRANT SELECT, INSERT, UPDATE ON rahjo\.crm_entity_contract_values,/);
+  assert.match(crmContractsSql, /GRANT INSERT ON rahjo\.crm_restricted_raw_values TO rahjo_app/);
+  assert.match(crmContractsSql, /GRANT SELECT, DELETE ON rahjo\.crm_restricted_raw_values TO rahjo_worker/);
+  assert.doesNotMatch(crmContractsSql, /GRANT SELECT[^;]*crm_restricted_raw_values TO rahjo_app/);
 });

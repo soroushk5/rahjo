@@ -16,6 +16,9 @@ function fixture() {
       return callback({
         async query(sql, params = []) {
           queries.push({ sql, params });
+          if (sql.includes("INSERT INTO rahjo.crm_entity_refs")) {
+            return { rows: [{ id: "crm-ref-db-id", rahjo_id: "CRM-REF-001" }], rowCount: 1 };
+          }
           return { rows: [], rowCount: 1 };
         }
       });
@@ -61,11 +64,19 @@ test("CRM core creates an Account through the provider-neutral adapter and audit
 
 test("CRM core creates a Contact attached to an Account and audits it", async () => {
   const { repository, queries } = fixture();
-  const result = await repository.createContact(owner, { name: "سارا محمدی", accountId: "ACC-UPSTREAM-1" }, "REQ-CONTACT-1");
+  const result = await repository.createContact(owner, {
+    name: " سارا محمدی ", accountId: "ACC-UPSTREAM-1", email: " SARA@example.com ",
+    phone: "۰۹۱۲۱۲۳۴۵۶۷", identifiers: [{ type: "client_ref", value: " REF-01 " }]
+  }, "REQ-CONTACT-1");
 
   assert.equal(result.id, "CON-UPSTREAM-1");
   assert.equal(result.name, "سارا محمدی");
   assert.equal(result.account_id, "ACC-UPSTREAM-1");
+  assert.equal(result.email, "sara@example.com");
+  assert.equal(result.phone, "09121234567");
+  assert.equal(result.identifiers.find((item) => item.type === "client_ref").normalizedValue, "REF-01");
+  assert.ok(queries.some(({ sql, params }) => sql.includes("INSERT INTO rahjo.crm_entity_identifiers") && params.includes("client_ref")));
+  assert.ok(queries.some(({ sql, params }) => sql.includes("INSERT INTO rahjo.crm_restricted_raw_values") && params[3]?.email === " SARA@example.com "));
   assert.ok(queries.some(({ sql }) => sql.includes("crm_entity_refs")));
   assert.ok(queries.some(({ sql, params }) => sql.includes("audit_events") && params.includes("crm.contact.created")));
 });
@@ -92,6 +103,9 @@ test("intake persists raw values separately and never returns or reads the restr
           }
           if (sql.includes("SELECT status, payload_sha256, response FROM rahjo.intake_requests")) return { rows: [], rowCount: 0 };
           if (sql.includes("INSERT INTO rahjo.intake_requests")) return { rows: [{ id: "intake-db-id" }], rowCount: 1 };
+          if (sql.includes("INSERT INTO rahjo.crm_entity_refs")) {
+            return { rows: [{ id: "account-ref-db-id", entity_type: "account" }, { id: "contact-ref-db-id", entity_type: "contact" }], rowCount: 2 };
+          }
           if (sql.includes("INSERT INTO rahjo.leads")) return { rows: [{ id: "lead-db-id" }], rowCount: 1 };
           if (sql.includes("INSERT INTO rahjo.cases")) return { rows: [{ id: "case-db-id" }], rowCount: 1 };
           if (sql.includes("INSERT INTO rahjo.approvals")) return { rows: [{ id: "approval-db-id" }], rowCount: 1 };
@@ -133,11 +147,14 @@ test("CRM core creates and stages an Opportunity with provider-neutral audit evi
     name: "فرصت سازمانی",
     accountId: "ACC-UPSTREAM-1",
     contactId: "CON-UPSTREAM-1",
-    stage: "Proposal"
+    stage: "Proposal",
+    amount: { value: "۱۲۳٫۴", unit: "تومان" }
   }, "REQ-OPP-1");
 
   assert.equal(created.id, "OPP-UPSTREAM-1");
   assert.equal(created.stage, "Proposal");
+  assert.deepEqual(created.amount, { currency: "IRR", value: "1234" });
+  assert.ok(queries.some(({ sql, params }) => sql.includes("INSERT INTO rahjo.crm_entity_contract_values") && params.includes("1234")));
   assert.ok(queries.some(({ sql, params }) => sql.includes("crm_entity_refs") && params.includes("opportunity")));
   assert.ok(queries.some(({ sql, params }) => sql.includes("audit_events") && params.includes("crm.opportunity.created")));
 
@@ -153,11 +170,14 @@ test("CRM core creates and updates a Task linked to the commercial graph", async
     accountId: "ACC-UPSTREAM-1",
     contactId: "CON-UPSTREAM-1",
     opportunityId: "OPP-UPSTREAM-1",
-    status: "To do"
+    status: "To do",
+    deadline: { kind: "date-only", value: "1403/12/30", calendar: "jalali" }
   }, "REQ-TASK-1");
 
   assert.equal(created.id, "TASK-UPSTREAM-1");
   assert.equal(created.opportunity_id, "OPP-UPSTREAM-1");
+  assert.deepEqual(created.deadline, { kind: "date-only", value: "2025-03-20", displayCalendar: "jalali" });
+  assert.ok(queries.some(({ sql, params }) => sql.includes("INSERT INTO rahjo.crm_entity_contract_values") && params.includes("date-only")));
   const updated = await repository.updateTaskStatus(owner, created.id, { status: "Done" }, "REQ-TASK-2");
   assert.equal(updated.status, "Done");
   assert.ok(queries.some(({ sql, params }) => sql.includes("audit_events") && params.includes("crm.task.created")));
