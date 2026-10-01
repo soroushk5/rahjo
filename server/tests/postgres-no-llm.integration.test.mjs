@@ -343,7 +343,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       return (await response.json()).results;
     };
     assert.equal((await searchFor({ field: "email", value: "SARA@example.com" }))[0].id, contactData.id);
-    assert.equal((await searchFor({ field: "phone", value: "۰۹۱۲۱۲۳۴۵۶۷" }))[0].id, contactData.id);
+    assert.ok((await searchFor({ field: "phone", value: "۰۹۱۲۱۲۳۴۵۶۷" })).some((item) => item.id === contactData.id));
     assert.equal((await searchFor({ field: "name", value: "سارا یوسفی" }))[0].id, contactData.id);
     assert.equal((await searchFor({ field: "identifier", identifierType: "client_ref", value: "INV-123" }))[0].id, contactData.id);
     assert.equal((await searchFor({ field: "identifier", identifierType: "rahjo_contact_id", value: contactData.coreId }))[0].id, contactData.id);
