@@ -142,6 +142,22 @@ export class CrmRepository {
     const extension = await this.database.withWorkspace(context, async (client) => {
       const queries = await Promise.all([
         client.query("SELECT entity_type, rahjo_id AS core_id, relaticle_id AS id, snapshot, created_at, updated_at FROM rahjo.crm_entity_refs WHERE workspace_id=$1 AND entity_type IN ('account','contact','opportunity','task','interaction') ORDER BY updated_at DESC, id DESC LIMIT 800", [context.workspace_id]),
+        client.query(`SELECT entity_ref_id, identifier_type, normalized_value, unique_scope
+                        FROM rahjo.crm_entity_identifiers
+                       WHERE workspace_id=$1 AND entity_ref_id IN (
+                         SELECT id FROM rahjo.crm_entity_refs
+                          WHERE workspace_id=$1 AND entity_type IN ('contact','opportunity','task')
+                          ORDER BY updated_at DESC, id DESC LIMIT 800
+                       )`, [context.workspace_id]),
+        client.query(`SELECT entity_ref_id, deadline_kind, deadline_date::text AS deadline_date,
+                             deadline_at, deadline_timezone, deadline_calendar,
+                             money_currency, money_amount_irr::text AS money_amount_irr
+                        FROM rahjo.crm_entity_contract_values
+                       WHERE workspace_id=$1 AND entity_ref_id IN (
+                         SELECT id FROM rahjo.crm_entity_refs
+                          WHERE workspace_id=$1 AND entity_type IN ('opportunity','task')
+                          ORDER BY updated_at DESC, id DESC LIMIT 800
+                       )`, [context.workspace_id]),
         client.query("SELECT public_id AS id, name, description, capability_status, execution_mode, version, updated_at FROM rahjo.services WHERE workspace_id=$1 ORDER BY updated_at DESC, id DESC LIMIT 200", [context.workspace_id]),
         client.query(`SELECT capability.public_id AS id, service.public_id AS service_id,
                              capability.capability_code, capability.eligibility_status,
@@ -215,8 +231,8 @@ export class CrmRepository {
                        ORDER BY outcome.recorded_at DESC, outcome.id DESC LIMIT 200`, [context.workspace_id]),
         client.query("SELECT event_type, entity_type, entity_id, source, correlation_id, before_state, after_state, created_at FROM rahjo.audit_events WHERE workspace_id=$1 ORDER BY created_at DESC, id DESC LIMIT 300", [context.workspace_id])
       ]);
-      const [crmRefs, services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents] = queries.map((item) => item.rows);
-      return { crmRefs, services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents };
+      const [crmRefs, crmIdentifiers, crmContractValues, services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents] = queries.map((item) => item.rows);
+      return { crmRefs, crmIdentifiers, crmContractValues, services, serviceCapabilities, leads, cases, approvals, actions, runs, receipts, outcomes, auditEvents };
     });
 
     const deferred = this.relaticle.mode === "native_deferred";
@@ -235,7 +251,33 @@ export class CrmRepository {
           this.relaticle.listTasks(context.workspace_id),
           this.relaticle.listInteractions(context.workspace_id)
         ]);
-    const references = new Map(extension.crmRefs.map((item) => [`${item.entity_type}\u0000${item.id}`, item]));
+    const identifiersByRef = new Map();
+    for (const identity of extension.crmIdentifiers) {
+      const values = identifiersByRef.get(identity.entity_ref_id) ?? [];
+      values.push({ type: identity.identifier_type, normalizedValue: identity.normalized_value, uniqueScope: identity.unique_scope });
+      identifiersByRef.set(identity.entity_ref_id, values);
+    }
+    const contractValuesByRef = new Map(extension.crmContractValues.map((item) => [item.entity_ref_id, item]));
+    const canonicalRefs = extension.crmRefs.map((item) => {
+      const snapshot = { ...item.snapshot };
+      const identifiers = identifiersByRef.get(item.id) ?? [];
+      if (item.entity_type === "contact" && identifiers.length) {
+        snapshot.identifiers = identifiers;
+        const email = identifiers.find((identity) => identity.type === "email")?.normalizedValue;
+        const phone = identifiers.find((identity) => identity.type === "phone")?.normalizedValue;
+        if (email) snapshot.email = email;
+        if (phone) snapshot.phone = phone;
+      }
+      const contract = contractValuesByRef.get(item.id);
+      if (contract?.deadline_kind === "date-only") {
+        snapshot.deadline = { kind: "date-only", value: contract.deadline_date, displayCalendar: contract.deadline_calendar };
+      } else if (contract?.deadline_kind === "instant") {
+        snapshot.deadline = { kind: "instant", value: new Date(contract.deadline_at).toISOString(), timeZone: contract.deadline_timezone };
+      }
+      if (contract?.money_currency) snapshot.amount = { currency: contract.money_currency, value: contract.money_amount_irr };
+      return { ...item, snapshot };
+    });
+    const references = new Map(canonicalRefs.map((item) => [`${item.entity_type}\u0000${item.id}`, item]));
     const mergeCanonicalSnapshot = (entityType, items) => items.map((item) => {
       const reference = references.get(`${entityType}\u0000${item.id}`);
       if (!reference) return item;
@@ -251,6 +293,8 @@ export class CrmRepository {
     const projectedTasks = mergeCanonicalSnapshot("task", tasks);
     const projectedInteractions = mergeCanonicalSnapshot("interaction", interactions);
     delete extension.crmRefs;
+    delete extension.crmIdentifiers;
+    delete extension.crmContractValues;
 
     return {
       version: 1,
