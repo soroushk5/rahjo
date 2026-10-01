@@ -399,7 +399,7 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     assert.equal(importReload.fuzzyCandidatesTruncated, true);
     assert.ok(importReload.rows[1].candidates.some((item) => item.candidateImportRowId === importData.rows[0].rowId));
     assert.equal(JSON.stringify(importReload).includes(" SARA@example.com "), false);
-    const importedRaw = await admin`SELECT raw_values, retention_until FROM rahjo.crm_restricted_raw_values
+    const importedRaw = await admin`SELECT raw_values, created_at, retention_until FROM rahjo.crm_restricted_raw_values
       WHERE workspace_id=${workspaceA.id} AND import_row_id=${importData.rows[0].rowId}`;
     assert.equal(importedRaw.length, 1);
     assert.equal(importedRaw[0].raw_values.email, " SARA@example.com ");
