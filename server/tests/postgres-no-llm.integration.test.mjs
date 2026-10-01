@@ -483,12 +483,12 @@ test("server-backed intake-to-outcome path passes with every model provider abse
         (SELECT count(*) FROM rahjo.crm_entity_refs WHERE workspace_id=${workspaceA.id} AND relaticle_id=${contactData.id}) AS canonical_contact_count,
         (SELECT count(*) FROM rahjo.intake_requests WHERE workspace_id=${workspaceA.id} AND id=${intakeRaw[0].id}) AS canonical_intake_count,
         (SELECT count(*) FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceB.id} AND id=${expiredWorkspaceBRaw.id}) AS workspace_b_raw_count`;
-    assert.equal(cleanupReadback[0].contact_raw_count, 0);
-    assert.equal(cleanupReadback[0].import_raw_count, 1);
-    assert.equal(cleanupReadback[0].canonical_import_count, 1);
-    assert.equal(cleanupReadback[0].canonical_contact_count, 1);
-    assert.equal(cleanupReadback[0].canonical_intake_count, 1);
-    assert.equal(cleanupReadback[0].workspace_b_raw_count, 1);
+    assert.equal(cleanupReadback[0].contact_raw_count, "0");
+    assert.equal(cleanupReadback[0].import_raw_count, "1");
+    assert.equal(cleanupReadback[0].canonical_import_count, "1");
+    assert.equal(cleanupReadback[0].canonical_contact_count, "1");
+    assert.equal(cleanupReadback[0].canonical_intake_count, "1");
+    assert.equal(cleanupReadback[0].workspace_b_raw_count, "1");
 
     await admin.begin(async (tx) => {
       await tx`SET LOCAL ROLE rahjo_worker`;
