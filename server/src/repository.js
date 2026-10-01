@@ -141,7 +141,7 @@ export class CrmRepository {
     requireScope(context, "read");
     const extension = await this.database.withWorkspace(context, async (client) => {
       const queries = await Promise.all([
-        client.query("SELECT entity_type, rahjo_id AS core_id, relaticle_id AS id, snapshot, created_at, updated_at FROM rahjo.crm_entity_refs WHERE workspace_id=$1 AND entity_type IN ('account','contact','opportunity','task','interaction') ORDER BY updated_at DESC, id DESC LIMIT 800", [context.workspace_id]),
+        client.query("SELECT id AS ref_id, entity_type, rahjo_id AS core_id, relaticle_id AS id, snapshot, created_at, updated_at FROM rahjo.crm_entity_refs WHERE workspace_id=$1 AND entity_type IN ('account','contact','opportunity','task','interaction') ORDER BY updated_at DESC, id DESC LIMIT 800", [context.workspace_id]),
         client.query(`SELECT entity_ref_id, identifier_type, normalized_value, unique_scope
                         FROM rahjo.crm_entity_identifiers
                        WHERE workspace_id=$1 AND entity_ref_id IN (
@@ -260,7 +260,7 @@ export class CrmRepository {
     const contractValuesByRef = new Map(extension.crmContractValues.map((item) => [item.entity_ref_id, item]));
     const canonicalRefs = extension.crmRefs.map((item) => {
       const snapshot = { ...item.snapshot };
-      const identifiers = identifiersByRef.get(item.id) ?? [];
+      const identifiers = identifiersByRef.get(item.ref_id) ?? [];
       if (item.entity_type === "contact" && identifiers.length) {
         snapshot.identifiers = identifiers;
         const email = identifiers.find((identity) => identity.type === "email")?.normalizedValue;
@@ -268,7 +268,7 @@ export class CrmRepository {
         if (email) snapshot.email = email;
         if (phone) snapshot.phone = phone;
       }
-      const contract = contractValuesByRef.get(item.id);
+      const contract = contractValuesByRef.get(item.ref_id);
       if (contract?.deadline_kind === "date-only") {
         snapshot.deadline = { kind: "date-only", value: contract.deadline_date, displayCalendar: contract.deadline_calendar };
       } else if (contract?.deadline_kind === "instant") {
