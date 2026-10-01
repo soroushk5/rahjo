@@ -668,7 +668,15 @@ export function createCrmServer({ config, database, repository, relaticle, works
       status = problem.status;
       json(response, status, problem.body, requestId, { ...corsHeaders, ...problem.headers, "Content-Type": "application/problem+json; charset=utf-8" });
       if (!(error instanceof HttpProblem) || error.status >= 500) {
-        logger.error?.({ requestId, code: error.code ?? "UNHANDLED", status });
+        logger.error?.({
+          requestId,
+          code: error.code ?? "UNHANDLED",
+          status,
+          ...(error.routine ? { pgRoutine: error.routine } : {}),
+          ...(error.file ? { pgFile: error.file } : {}),
+          ...(error.line ? { pgLine: error.line } : {}),
+          ...(error.constraint_name ? { pgConstraint: error.constraint_name } : {})
+        });
       }
     } finally {
       logger.info?.({ requestId, method: request.method, path: requestPath, status, durationMs: Math.round(performance.now() - startedAt) });
