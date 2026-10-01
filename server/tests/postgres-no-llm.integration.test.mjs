@@ -357,9 +357,9 @@ test("server-backed intake-to-outcome path passes with every model provider abse
     assert.equal(JSON.stringify(requestLogs).includes("raw-secret-not-an-email"), false);
     assert.deepEqual(await searchFor({ field: "email", value: "sara@example.com" }, tokenB), []);
 
-    await admin`INSERT INTO rahjo.crm_entity_refs(workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+    await admin`INSERT INTO rahjo.crm_entity_refs(workspace_id, entity_type, rahjo_id, relaticle_id, snapshot, updated_at)
       SELECT ${workspaceA.id}, 'contact', 'BULK-CON-' || n::text, 'BULK-REL-' || n::text,
-             jsonb_build_object('name', 'آزمون مخاطب ' || n::text)
+             jsonb_build_object('name', 'آزمون مخاطب ' || n::text), now() - interval '1 year'
         FROM generate_series(1, 2001) AS n`;
 
     const importResponse = await browserCall("/api/v1/import/contacts", {
