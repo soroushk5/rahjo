@@ -7,6 +7,7 @@ const identitySql = await readFile(new URL("../migrations/002_w15_identity_lifec
 const publicIntakeSql = await readFile(new URL("../migrations/004_public_intake_routing.sql", import.meta.url), "utf8");
 const publicIntakeHardeningSql = await readFile(new URL("../migrations/005_public_intake_hardening.sql", import.meta.url), "utf8");
 const emailLoginSql = await readFile(new URL("../migrations/006_email_first_login.sql", import.meta.url), "utf8");
+const rawInputSql = await readFile(new URL("../migrations/007_w0_005_raw_intake_values.sql", import.meta.url), "utf8");
 const migrator = await readFile(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
 const database = await readFile(new URL("../src/database.js", import.meta.url), "utf8");
 const repository = await readFile(new URL("../src/repository.js", import.meta.url), "utf8");
@@ -84,4 +85,19 @@ test("email-first login resolves only one active workspace and remains fail-clos
   assert.match(emailLoginSql, /consume_account_recovery_code_by_email/);
   assert.match(emailLoginSql, /v_matches <> 1/);
   assert.match(emailLoginSql, /GRANT EXECUTE ON FUNCTION rahjo\.consume_account_recovery_code_by_email\(text,text,text,text\) TO rahjo_app/);
+});
+
+test("raw intake values are tenant-scoped, append-only to the runtime role, and worker-readable only", () => {
+  assert.match(rawInputSql, /CREATE TABLE IF NOT EXISTS rahjo\.intake_raw_values/);
+  assert.match(rawInputSql, /FOREIGN KEY \(workspace_id, intake_request_id\)/);
+  assert.match(rawInputSql, /ALTER TABLE rahjo\.intake_raw_values FORCE ROW LEVEL SECURITY/);
+  assert.match(rawInputSql, /FOR INSERT TO rahjo_app/);
+  assert.match(rawInputSql, /FOR SELECT TO rahjo_worker/);
+  assert.match(rawInputSql, /FOR DELETE TO rahjo_worker/);
+  assert.match(rawInputSql, /REVOKE ALL ON rahjo\.intake_raw_values FROM PUBLIC, rahjo_app, rahjo_worker/);
+  assert.match(rawInputSql, /GRANT INSERT ON rahjo\.intake_raw_values TO rahjo_app/);
+  assert.match(rawInputSql, /GRANT SELECT, DELETE ON rahjo\.intake_raw_values TO rahjo_worker/);
+  assert.doesNotMatch(rawInputSql, /GRANT SELECT[^;]*rahjo_app/);
+  assert.match(repository, /INSERT INTO rahjo\.intake_raw_values/);
+  assert.doesNotMatch(repository, /SELECT[^;]*FROM rahjo\.intake_raw_values/i);
 });

@@ -311,12 +311,13 @@ export class CrmRepository {
     return { id: interaction.id, coreId, ...interaction.attributes, source };
   }
 
-  async createIntake(context, input, rawIdempotencyKey, correlationId) {
+  async createIntake(context, input, rawIdempotencyKey, correlationId, rawInput = input) {
     requireScope(context, "intake:write");
     requireRole(context, ["owner", "admin", "operator", "intake"]);
     const idempotencyKey = requiredIdempotencyKey(rawIdempotencyKey);
-    const payload = normalizeIntake(input);
-    const digest = payloadDigest(payload);
+    const payload = normalizeIntake(input, { rawInput });
+    const { rawValues, ...canonicalPayload } = payload;
+    const digest = payloadDigest(canonicalPayload);
 
     const selectedService = await this.database.withWorkspace(context, async (client) => {
       const service = await client.query(
@@ -338,11 +339,16 @@ export class CrmRepository {
         if (prior.status === "completed") return { replay: true, response: prior.response };
         throw problems.conflict("INTAKE_REQUIRES_RECONCILIATION", "The prior intake attempt is not safely replayable and requires reconciliation");
       }
-      await client.query(
+      const intakeRequest = await client.query(
         `INSERT INTO rahjo.intake_requests
           (workspace_id, idempotency_key, payload_sha256, source_channel, attribution, status, created_by)
-         VALUES ($1,$2,$3,$4,$5,'processing',$6)`,
+         VALUES ($1,$2,$3,$4,$5,'processing',$6) RETURNING id`,
         [context.workspace_id, idempotencyKey, digest, payload.sourceChannel, payload.attribution, context.membership_id]
+      );
+      await client.query(
+        `INSERT INTO rahjo.intake_raw_values (workspace_id, intake_request_id, captured_by, raw_values)
+         VALUES ($1,$2,$3,$4)`,
+        [context.workspace_id, intakeRequest.rows[0].id, context.membership_id, rawValues]
       );
       return { replay: false };
     });

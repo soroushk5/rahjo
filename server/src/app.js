@@ -362,7 +362,8 @@ export function createCrmServer({ config, database, repository, relaticle, works
           publicRoute.context,
           publicIntakeInput(publicRoute.serviceId, body),
           idempotencyKey,
-          requestId
+          requestId,
+          body
         );
         status = result.status;
         const publicCorsHeaders = { ...corsHeaders };

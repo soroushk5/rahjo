@@ -79,6 +79,53 @@ test("CRM write operations fail closed without crm:write", async () => {
   );
 });
 
+test("intake persists raw values separately and never returns or reads the restricted record", async () => {
+  const queries = [];
+  let sequence = 0;
+  const database = {
+    async withWorkspace(_context, callback) {
+      return callback({
+        async query(sql, params = []) {
+          queries.push({ sql, params });
+          if (sql.includes("SELECT id, public_id, name FROM rahjo.services")) {
+            return { rows: [{ id: "service-db-id", public_id: "SVC-001", name: "مشاوره" }], rowCount: 1 };
+          }
+          if (sql.includes("SELECT status, payload_sha256, response FROM rahjo.intake_requests")) return { rows: [], rowCount: 0 };
+          if (sql.includes("INSERT INTO rahjo.intake_requests")) return { rows: [{ id: "intake-db-id" }], rowCount: 1 };
+          if (sql.includes("INSERT INTO rahjo.leads")) return { rows: [{ id: "lead-db-id" }], rowCount: 1 };
+          if (sql.includes("INSERT INTO rahjo.cases")) return { rows: [{ id: "case-db-id" }], rowCount: 1 };
+          if (sql.includes("INSERT INTO rahjo.approvals")) return { rows: [{ id: "approval-db-id" }], rowCount: 1 };
+          return { rows: [], rowCount: 1 };
+        }
+      });
+    }
+  };
+  const relaticle = {
+    mode: "native_deferred",
+    async createAccount(_workspaceId, { name }) { return { id: "upstream-account", attributes: { name } }; },
+    async createContact(_workspaceId, { name, accountId }) { return { id: "upstream-contact", attributes: { name, account_id: accountId } }; }
+  };
+  const repository = new CrmRepository({ database, relaticle });
+  const raw = {
+    organization: " شركت يارا ", contactName: "علي", email: " Sales@example.com ",
+    phone: "۰۹۱۲ ۱۲۳ ۴۵۶۷", purpose: "درخواست", serviceId: "SVC-001",
+    unrelated: "must not be retained"
+  };
+  const result = await repository.createIntake(
+    { ...owner, scopes: ["read", "intake:write"] }, raw, "intake:raw-001", "corr-raw-001"
+  );
+  const rawInsert = queries.find(({ sql }) => sql.includes("INSERT INTO rahjo.intake_raw_values"));
+
+  assert.ok(rawInsert);
+  assert.deepEqual(rawInsert.params[3], {
+    organization: " شركت يارا ", contactName: "علي", email: " Sales@example.com ",
+    phone: "۰۹۱۲ ۱۲۳ ۴۵۶۷", purpose: "درخواست", serviceId: "SVC-001"
+  });
+  assert.equal(queries.some(({ sql }) => /SELECT[^;]*FROM rahjo\.intake_raw_values/i.test(sql)), false);
+  assert.equal(JSON.stringify(result).includes("Sales@example.com"), false);
+  assert.equal(JSON.stringify(result).includes("must not be retained"), false);
+});
+
 
 test("CRM core creates and stages an Opportunity with provider-neutral audit evidence", async () => {
   const { repository, queries } = fixture();
