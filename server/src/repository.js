@@ -547,10 +547,10 @@ export class CrmRepository {
                FROM rahjo.crm_entity_identifiers identity
                JOIN rahjo.crm_entity_refs ref
                  ON ref.workspace_id=identity.workspace_id AND ref.id=identity.entity_ref_id
-               JOIN jsonb_to_recordset($2::jsonb) AS sought(identifier_type text, normalized_value text)
+               JOIN unnest($2::text[], $3::text[]) AS sought(identifier_type, normalized_value)
                  ON sought.identifier_type=identity.identifier_type AND sought.normalized_value=identity.normalized_value
               WHERE identity.workspace_id=$1 AND ref.entity_type='contact'`,
-            [context.workspace_id, JSON.stringify(soughtIdentifiers.map(({ type, normalizedValue }) => ({ identifier_type: type, normalized_value: normalizedValue })))]
+            [context.workspace_id, soughtIdentifiers.map(({ type }) => type), soughtIdentifiers.map(({ normalizedValue }) => normalizedValue)]
           )
         : { rows: [] };
       const refsById = new Map([...fuzzyRefs, ...exactRefs.rows].map((ref) => [ref.id, ref]));
