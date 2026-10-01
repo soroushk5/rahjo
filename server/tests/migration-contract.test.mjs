@@ -9,6 +9,7 @@ const publicIntakeHardeningSql = await readFile(new URL("../migrations/005_publi
 const emailLoginSql = await readFile(new URL("../migrations/006_email_first_login.sql", import.meta.url), "utf8");
 const rawInputSql = await readFile(new URL("../migrations/007_w0_005_raw_intake_values.sql", import.meta.url), "utf8");
 const crmContractsSql = await readFile(new URL("../migrations/008_crm_contract_values.sql", import.meta.url), "utf8");
+const rawRetentionSql = await readFile(new URL("../migrations/009_raw_retention_cleanup.sql", import.meta.url), "utf8");
 const migrator = await readFile(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
 const database = await readFile(new URL("../src/database.js", import.meta.url), "utf8");
 const repository = await readFile(new URL("../src/repository.js", import.meta.url), "utf8");
@@ -123,4 +124,20 @@ test("typed CRM contract values and identifiers are tenant-scoped while raw valu
   assert.match(crmContractsSql, /GRANT INSERT ON rahjo\.crm_restricted_raw_values TO rahjo_app/);
   assert.match(crmContractsSql, /GRANT SELECT, DELETE ON rahjo\.crm_restricted_raw_values TO rahjo_worker/);
   assert.doesNotMatch(crmContractsSql, /GRANT SELECT[^;]*crm_restricted_raw_values TO rahjo_app/);
+});
+
+test("raw retention is exactly 30 days and cleanup is worker-only, tenant-scoped and expired-only", async () => {
+  for (const table of ["intake_raw_values", "crm_restricted_raw_values"]) {
+    assert.match(rawRetentionSql, new RegExp(`UPDATE rahjo\\.${table}[\\s\\S]*created_at \\+ interval '30 days'`));
+    assert.match(rawRetentionSql, new RegExp(`ALTER TABLE rahjo\\.${table}[\\s\\S]*retention_until SET NOT NULL`));
+    assert.match(rawRetentionSql, new RegExp(`${table}_exact_30_day_retention[\\s\\S]*retention_until = created_at \\+ interval '30 days'`));
+    assert.match(rawRetentionSql, new RegExp(`FROM rahjo\\.${table}[\\s\\S]*workspace_id = p_workspace_id[\\s\\S]*retention_until <= now\\(\\)`));
+  }
+  assert.match(rawRetentionSql, /SECURITY INVOKER/);
+  assert.match(rawRetentionSql, /current_user <> 'rahjo_worker'/);
+  assert.match(rawRetentionSql, /v_workspace_setting IS DISTINCT FROM p_workspace_id::text/);
+  assert.match(rawRetentionSql, /GRANT EXECUTE ON FUNCTION rahjo\.cleanup_expired_raw_values\(uuid, integer\) TO rahjo_worker/);
+  assert.doesNotMatch(rawRetentionSql, /GRANT EXECUTE ON FUNCTION rahjo\.cleanup_expired_raw_values\(uuid, integer\) TO rahjo_app/);
+  assert.equal((repository.match(/retention_until\)\s+VALUES \(\$1,\$2,\$3,\$4,now\(\),now\(\) \+ interval '30 days'\)/g) ?? []).length, 3);
+  assert.match(await readFile(new URL("../scripts/cleanup-expired-raw.mjs", import.meta.url), "utf8"), /SET LOCAL ROLE rahjo_worker/);
 });

@@ -403,27 +403,135 @@ test("server-backed intake-to-outcome path passes with every model provider abse
       WHERE workspace_id=${workspaceA.id} AND import_row_id=${importData.rows[0].rowId}`;
     assert.equal(importedRaw.length, 1);
     assert.equal(importedRaw[0].raw_values.email, " SARA@example.com ");
-    assert.equal(importedRaw[0].retention_until, null);
-    const contactRaw = await admin`SELECT raw_values FROM rahjo.crm_restricted_raw_values
+    const retentionMs = 30 * 24 * 60 * 60 * 1000;
+    assert.equal(importedRaw[0].retention_until.getTime() - importedRaw[0].created_at.getTime(), retentionMs);
+    const contactRaw = await admin`SELECT raw_values, created_at, retention_until, id FROM rahjo.crm_restricted_raw_values
       WHERE workspace_id=${workspaceA.id}
         AND entity_ref_id=(SELECT id FROM rahjo.crm_entity_refs WHERE workspace_id=${workspaceA.id} AND relaticle_id=${contactData.id})`;
     assert.equal(contactRaw[0].raw_values.name, " سارا يوسفی ");
     assert.equal(contactRaw[0].raw_values.email, " SARA@example.com ");
+    assert.equal(contactRaw[0].retention_until.getTime() - contactRaw[0].created_at.getTime(), retentionMs);
+    const intakeRaw = await admin`SELECT raw.created_at, raw.retention_until, request.id
+      FROM rahjo.intake_raw_values AS raw
+      JOIN rahjo.intake_requests AS request ON request.workspace_id=raw.workspace_id AND request.id=raw.intake_request_id
+     WHERE raw.workspace_id=${workspaceA.id} AND request.idempotency_key='intake:e2e:0001'`;
+    assert.equal(intakeRaw.length, 1);
+    assert.equal(intakeRaw[0].retention_until.getTime() - intakeRaw[0].created_at.getTime(), retentionMs);
+
+    const beforeExpiryCleanup = await admin.begin(async (tx) => {
+      await tx`SET LOCAL ROLE rahjo_worker`;
+      await tx`SELECT set_config('rahjo.workspace_id', ${workspaceA.id}, true)`;
+      const [counts] = await tx`SELECT * FROM rahjo.cleanup_expired_raw_values(${workspaceA.id}::uuid, 10)`;
+      return counts;
+    });
+    assert.deepEqual(beforeExpiryCleanup, { intake_deleted: 0, crm_deleted: 0 });
+
+    await admin`UPDATE rahjo.crm_restricted_raw_values
+       SET created_at=created_at - interval '31 days', retention_until=created_at - interval '1 day'
+     WHERE workspace_id=${workspaceA.id} AND id=${contactRaw[0].id}`;
+    await admin`UPDATE rahjo.intake_raw_values AS raw
+       SET created_at=raw.created_at - interval '31 days', retention_until=raw.created_at - interval '1 day'
+      FROM rahjo.intake_requests AS request
+     WHERE raw.workspace_id=${workspaceA.id} AND raw.intake_request_id=request.id
+       AND request.workspace_id=${workspaceA.id} AND request.idempotency_key='intake:e2e:0001'`;
+    const workspaceBRetentionId = `RETENTION-B-${workspaceSuffix}`;
+    const [workspaceBRef] = await admin`INSERT INTO rahjo.crm_entity_refs
+      (workspace_id, entity_type, rahjo_id, relaticle_id, snapshot)
+      VALUES (${workspaceB.id}, 'contact', ${workspaceBRetentionId}, ${workspaceBRetentionId}, '{"name":"isolated fixture"}'::jsonb)
+      RETURNING id`;
+    const [expiredWorkspaceBRaw] = await admin`INSERT INTO rahjo.crm_restricted_raw_values
+      (workspace_id, entity_ref_id, captured_by, raw_values, created_at, retention_until)
+      VALUES (${workspaceB.id}, ${workspaceBRef.id}, ${membershipB.id}, '{"fixture":"expired-b"}'::jsonb,
+        now() - interval '31 days', now() - interval '1 day') RETURNING id`;
+
+    const workspaceAWorkerCannotTouchB = await admin.begin(async (tx) => {
+      await tx`SET LOCAL ROLE rahjo_worker`;
+      await tx`SELECT set_config('rahjo.workspace_id', ${workspaceA.id}, true)`;
+      const visible = await tx`SELECT id FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceB.id}`;
+      const deleted = await tx`DELETE FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceB.id} RETURNING id`;
+      return { visible: visible.length, deleted: deleted.length };
+    });
+    assert.deepEqual(workspaceAWorkerCannotTouchB, { visible: 0, deleted: 0 });
+    await assert.rejects(
+      () => admin.begin(async (tx) => {
+        await tx`SET LOCAL ROLE rahjo_worker`;
+        await tx`SELECT set_config('rahjo.workspace_id', ${workspaceA.id}, true)`;
+        return tx`SELECT * FROM rahjo.cleanup_expired_raw_values(${workspaceB.id}::uuid, 10)`;
+      }),
+      (error) => error.code === "42501"
+    );
+
+    const expiredCleanup = await admin.begin(async (tx) => {
+      await tx`SET LOCAL ROLE rahjo_worker`;
+      await tx`SELECT set_config('rahjo.workspace_id', ${workspaceA.id}, true)`;
+      const [counts] = await tx`SELECT * FROM rahjo.cleanup_expired_raw_values(${workspaceA.id}::uuid, 10)`;
+      return counts;
+    });
+    assert.deepEqual(expiredCleanup, { intake_deleted: 1, crm_deleted: 1 });
+    const afterExpiryCleanup = await admin.begin(async (tx) => {
+      await tx`SET LOCAL ROLE rahjo_worker`;
+      await tx`SELECT set_config('rahjo.workspace_id', ${workspaceA.id}, true)`;
+      const [counts] = await tx`SELECT * FROM rahjo.cleanup_expired_raw_values(${workspaceA.id}::uuid, 10)`;
+      return counts;
+    });
+    assert.deepEqual(afterExpiryCleanup, { intake_deleted: 0, crm_deleted: 0 });
+    const cleanupReadback = await admin`
+      SELECT
+        (SELECT count(*) FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id} AND entity_ref_id=(SELECT id FROM rahjo.crm_entity_refs WHERE workspace_id=${workspaceA.id} AND relaticle_id=${contactData.id})) AS contact_raw_count,
+        (SELECT count(*) FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id} AND import_row_id=${importData.rows[0].rowId}) AS import_raw_count,
+        (SELECT count(*) FROM rahjo.import_rows WHERE workspace_id=${workspaceA.id} AND id=${importData.rows[0].rowId}) AS canonical_import_count,
+        (SELECT count(*) FROM rahjo.crm_entity_refs WHERE workspace_id=${workspaceA.id} AND relaticle_id=${contactData.id}) AS canonical_contact_count,
+        (SELECT count(*) FROM rahjo.intake_requests WHERE workspace_id=${workspaceA.id} AND id=${intakeRaw[0].id}) AS canonical_intake_count,
+        (SELECT count(*) FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceB.id} AND id=${expiredWorkspaceBRaw.id}) AS workspace_b_raw_count`;
+    assert.equal(cleanupReadback[0].contact_raw_count, 0);
+    assert.equal(cleanupReadback[0].import_raw_count, 1);
+    assert.equal(cleanupReadback[0].canonical_import_count, 1);
+    assert.equal(cleanupReadback[0].canonical_contact_count, 1);
+    assert.equal(cleanupReadback[0].canonical_intake_count, 1);
+    assert.equal(cleanupReadback[0].workspace_b_raw_count, 1);
+
     await admin.begin(async (tx) => {
       await tx`SET LOCAL ROLE rahjo_worker`;
       await tx`SELECT set_config('rahjo.workspace_id', ${workspaceA.id}, true)`;
       const workerRowsA = await tx`SELECT id FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id}`;
-      assert.ok(workerRowsA.length >= 2);
+      assert.ok(workerRowsA.length >= 1);
       await tx`SELECT set_config('rahjo.workspace_id', ${workspaceB.id}, true)`;
       const workerRowsB = await tx`SELECT id FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id}`;
       assert.equal(workerRowsB.length, 0);
       const deletedRowsB = await tx`DELETE FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceA.id} RETURNING id`;
       assert.equal(deletedRowsB.length, 0);
+      const ownWorkspaceRaw = await tx`SELECT id FROM rahjo.crm_restricted_raw_values WHERE workspace_id=${workspaceB.id}`;
+      assert.ok(ownWorkspaceRaw.some((row) => row.id === expiredWorkspaceBRaw.id));
+      const foreignIntakeRaw = await tx`SELECT id FROM rahjo.intake_raw_values WHERE workspace_id=${workspaceA.id}`;
+      assert.equal(foreignIntakeRaw.length, 0);
+      const deletedForeignIntakeRaw = await tx`DELETE FROM rahjo.intake_raw_values WHERE workspace_id=${workspaceA.id} RETURNING id`;
+      assert.equal(deletedForeignIntakeRaw.length, 0);
     });
     const authA = await database.authenticate(tokenDigest(tokenA, pepper));
     await assert.rejects(
       () => database.withWorkspace(authA, (client) => client.query(
         "SELECT raw_values FROM rahjo.crm_restricted_raw_values WHERE workspace_id=$1",
+        [workspaceA.id]
+      )),
+      (error) => error.code === "42501"
+    );
+    await assert.rejects(
+      () => database.withWorkspace(authA, (client) => client.query(
+        "DELETE FROM rahjo.crm_restricted_raw_values WHERE workspace_id=$1",
+        [workspaceA.id]
+      )),
+      (error) => error.code === "42501"
+    );
+    await assert.rejects(
+      () => database.withWorkspace(authA, (client) => client.query(
+        "SELECT raw_values FROM rahjo.intake_raw_values WHERE workspace_id=$1",
+        [workspaceA.id]
+      )),
+      (error) => error.code === "42501"
+    );
+    await assert.rejects(
+      () => database.withWorkspace(authA, (client) => client.query(
+        "DELETE FROM rahjo.intake_raw_values WHERE workspace_id=$1",
         [workspaceA.id]
       )),
       (error) => error.code === "42501"

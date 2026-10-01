@@ -75,6 +75,12 @@ jobs:
           RAHJO_TOKEN_PEPPER: crm-ci-token-pepper-0000000000000001
         run: node --test tests/postgres-no-llm.integration.test.mjs
 
+      - name: Exercise tenant-scoped raw retention maintenance command
+        working-directory: server
+        env:
+          CRM_MAINTENANCE_DATABASE_URL: postgresql://postgres:postgres-ci-only@127.0.0.1:5432/relaticle
+        run: npm run cleanup:expired-raw -- 00000000-0000-4000-8000-000000000000
+
       - name: Audit runtime role and RLS policy inventory
         env:
           PGPASSWORD: postgres-ci-only

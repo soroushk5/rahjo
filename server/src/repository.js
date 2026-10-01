@@ -115,8 +115,8 @@ async function persistCrmEntity(client, context, {
   if (entityRefId && rawValues && Object.keys(rawValues).length) {
     await client.query(
       `INSERT INTO rahjo.crm_restricted_raw_values
-         (workspace_id, entity_ref_id, captured_by, raw_values)
-       VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+         (workspace_id, entity_ref_id, captured_by, raw_values, created_at, retention_until)
+       VALUES ($1,$2,$3,$4,now(),now() + interval '30 days') ON CONFLICT DO NOTHING`,
       [context.workspace_id, entityRefId, context.membership_id, rawValues]
     );
   }
@@ -639,8 +639,9 @@ export class CrmRepository {
         );
         const importRowId = rowResult.rows[0]?.id;
         await client.query(
-          `INSERT INTO rahjo.crm_restricted_raw_values(workspace_id, import_row_id, captured_by, raw_values)
-           VALUES ($1,$2,$3,$4)`,
+          `INSERT INTO rahjo.crm_restricted_raw_values
+             (workspace_id, import_row_id, captured_by, raw_values, created_at, retention_until)
+           VALUES ($1,$2,$3,$4,now(),now() + interval '30 days')`,
           [context.workspace_id, importRowId, context.membership_id, raw]
         );
         const incoming = {
@@ -811,8 +812,9 @@ export class CrmRepository {
         [context.workspace_id, idempotencyKey, digest, payload.sourceChannel, payload.attribution, context.membership_id]
       );
       await client.query(
-        `INSERT INTO rahjo.intake_raw_values (workspace_id, intake_request_id, captured_by, raw_values)
-         VALUES ($1,$2,$3,$4)`,
+        `INSERT INTO rahjo.intake_raw_values
+          (workspace_id, intake_request_id, captured_by, raw_values, created_at, retention_until)
+         VALUES ($1,$2,$3,$4,now(),now() + interval '30 days')`,
         [context.workspace_id, intakeRequest.rows[0].id, context.membership_id, rawValues]
       );
       return { replay: false };
