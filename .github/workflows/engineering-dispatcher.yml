@@ -1,0 +1,158 @@
+name: Engineering Dispatcher V1
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+  id-token: write
+
+concurrency:
+  group: engineering-dispatch-${{ github.repository }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      startsWith(github.event.issue.title, '[READY_FOR_AGENT]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DISPATCHER_MODE: ${{ vars.ENGINEERING_DISPATCHER_MODE || 'dry-run' }}
+      OPENAI_WIF_AUDIENCE: ${{ vars.OPENAI_WIF_AUDIENCE }}
+      OPENAI_IDENTITY_PROVIDER_ID: ${{ vars.OPENAI_IDENTITY_PROVIDER_ID }}
+      OPENAI_SERVICE_ACCOUNT_ID: ${{ vars.OPENAI_SERVICE_ACCOUNT_ID }}
+      OPENAI_AGENT_MODEL: ${{ vars.OPENAI_AGENT_MODEL || 'gpt-6-astra' }}
+      OPENAI_AGENT_REASONING: ${{ vars.OPENAI_AGENT_REASONING || 'medium' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Safety preflight
+        id: preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .dispatcher/out
+          python .github/engineering-dispatch/engineering_dispatcher.py preflight \
+            --event "$GITHUB_EVENT_PATH" \
+            --repo "$GITHUB_REPOSITORY" \
+            --output .dispatcher/preflight.json
+          python - <<'PY'
+          import json, os
+          d=json.load(open('.dispatcher/preflight.json', encoding='utf-8'))
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
+              for key in ('branch','dispatch_id','canonical_id','base_branch','issue_number'):
+                  f.write(f"{key}={d[key] if key != 'issue_number' else d[key]}\n")
+          PY
+
+      - name: Refuse duplicate dispatch branch
+        id: duplicate
+        env:
+          BRANCH: ${{ steps.preflight.outputs.branch }}
+        run: |
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dry-run receipt
+        if: steps.duplicate.outputs.exists == 'false' && env.DISPATCHER_MODE != 'agents_api'
+        run: |
+          python .github/engineering-dispatch/engineering_agent_runner.py \
+            --mode dry-run --repo-root . \
+            --dispatch .dispatcher/preflight.json \
+            --output-dir .dispatcher/out
+          cat .dispatcher/out/runner-summary.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install OpenAI SDK
+        if: steps.duplicate.outputs.exists == 'false' && env.DISPATCHER_MODE == 'agents_api'
+        run: python -m pip install --upgrade 'openai>=2.0.0'
+
+      - name: Run managed coding agent
+        if: steps.duplicate.outputs.exists == 'false' && env.DISPATCHER_MODE == 'agents_api'
+        run: |
+          python .github/engineering-dispatch/engineering_agent_runner.py \
+            --mode agents_api --repo-root . \
+            --dispatch .dispatcher/preflight.json \
+            --output-dir .dispatcher/out
+
+      - name: Validate and apply patch
+        if: steps.duplicate.outputs.exists == 'false' && env.DISPATCHER_MODE == 'agents_api'
+        env:
+          BASE_BRANCH: ${{ steps.preflight.outputs.base_branch }}
+        run: |
+          set -euo pipefail
+          test -s .dispatcher/out/changes.patch
+          git fetch origin "$BASE_BRANCH"
+          git checkout --detach "origin/$BASE_BRANCH"
+          git apply --check .dispatcher/out/changes.patch
+          git apply .dispatcher/out/changes.patch
+          git diff --check
+          git diff --name-only > .dispatcher/changed-files.txt
+          python .github/engineering-dispatch/engineering_dispatcher.py validate-changed-files \
+            --dispatch .dispatcher/preflight.json \
+            --changed-files .dispatcher/changed-files.txt
+          python - <<'PY'
+          import json
+          r=json.load(open('.dispatcher/out/receipt.json', encoding='utf-8'))
+          tests=r.get('tests',[])
+          if not isinstance(tests,list): raise SystemExit('receipt tests must be a list')
+          bad=[t for t in tests if not isinstance(t,dict) or t.get('status') not in {'passed','skipped'}]
+          if bad: raise SystemExit(f'non-passing agent checks: {bad}')
+          PY
+
+      - name: Create isolated branch and Draft PR
+        if: steps.duplicate.outputs.exists == 'false' && env.DISPATCHER_MODE == 'agents_api'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.preflight.outputs.branch }}
+          CANONICAL_ID: ${{ steps.preflight.outputs.canonical_id }}
+          DISPATCH_ID: ${{ steps.preflight.outputs.dispatch_id }}
+          BASE_BRANCH: ${{ steps.preflight.outputs.base_branch }}
+          ISSUE_NUMBER: ${{ steps.preflight.outputs.issue_number }}
+        run: |
+          set -euo pipefail
+          git config user.name 'engineering-dispatcher[bot]'
+          git config user.email 'engineering-dispatcher@users.noreply.github.com'
+          git switch -c "$BRANCH"
+          git add --pathspec-from-file=.dispatcher/changed-files.txt
+          git diff --cached --quiet && { echo 'No staged dispatcher changes'; exit 1; }
+          git commit -m "agent: ${CANONICAL_ID} (${DISPATCH_ID})"
+          git push origin "$BRANCH"
+          python - <<'PY'
+          import json, os
+          r=json.load(open('.dispatcher/out/receipt.json', encoding='utf-8'))
+          body=("## Engineering Dispatcher V1\n\n"
+                f"- Dispatch: `{os.environ['DISPATCH_ID']}`\n"
+                f"- Canonical: `{os.environ['CANONICAL_ID']}`\n"
+                f"- Queue issue: #{os.environ['ISSUE_NUMBER']}\n"
+                "- Autonomy: L1 build only\n"
+                "- Merge/deploy/Production actions: NOT authorized\n\n"
+                "## Agent receipt\n```json\n"+
+                json.dumps(r,ensure_ascii=False,indent=2)[:30000]+"\n```\n\n"
+                f"Closes #{os.environ['ISSUE_NUMBER']}\n")
+          open('.dispatcher/pr-body.md','w',encoding='utf-8').write(body)
+          PY
+          gh pr create --draft --base "$BASE_BRANCH" --head "$BRANCH" \
+            --title "agent: ${CANONICAL_ID} — ${DISPATCH_ID}" \
+            --body-file .dispatcher/pr-body.md
+
+      - name: Upload dispatcher evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engineering-dispatch-${{ github.run_id }}
+          path: .dispatcher/
+          if-no-files-found: ignore
+          retention-days: 14
