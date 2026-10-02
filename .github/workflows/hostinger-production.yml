@@ -14,8 +14,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      production_relevant: ${{ steps.scope.outputs.production_relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+      - name: Classify dispatcher-only changes
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          production_relevant=true
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            changed="$(git diff --name-only HEAD^ HEAD)"
+            if [ -n "$changed" ]; then
+              production_relevant=false
+              while IFS= read -r path; do
+                case "$path" in
+                  .github/engineering-dispatch/*|.github/workflows/engineering-dispatcher.yml)
+                    ;;
+                  *)
+                    production_relevant=true
+                    break
+                    ;;
+                esac
+              done <<< "$changed"
+            fi
+          fi
+          echo "production_relevant=$production_relevant" >> "$GITHUB_OUTPUT"
+          printf 'Production relevant: %s\n' "$production_relevant"
   publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: classify
+    if: ${{ github.event.workflow_run.conclusion == 'success' && needs.classify.outputs.production_relevant == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
