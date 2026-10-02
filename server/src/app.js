@@ -192,6 +192,7 @@ export function createCrmServer({ config, database, repository, relaticle, works
     const requestId = typeof request.headers["x-request-id"] === "string" && /^[A-Za-z0-9._:-]{8,100}$/.test(request.headers["x-request-id"])
       ? request.headers["x-request-id"]
       : randomUUID();
+    const requestPath = typeof request.url === "string" ? request.url.split("?", 1)[0] : "/";
     const startedAt = performance.now();
     let status = 500;
     const origin = request.headers.origin;
@@ -362,7 +363,8 @@ export function createCrmServer({ config, database, repository, relaticle, works
           publicRoute.context,
           publicIntakeInput(publicRoute.serviceId, body),
           idempotencyKey,
-          requestId
+          requestId,
+          body
         );
         status = result.status;
         const publicCorsHeaders = { ...corsHeaders };
@@ -406,6 +408,35 @@ export function createCrmServer({ config, database, repository, relaticle, works
         const contact = await repository.createContact(context, body, requestId);
         status = 201;
         json(response, status, { dataMode: "server", data: contact }, requestId, corsHeaders);
+        return;
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/crm/search") {
+        const results = await repository.searchCrm(context, {
+          field: url.searchParams.get("field"),
+          value: url.searchParams.get("value"),
+          calendar: url.searchParams.get("calendar"),
+          timeZone: url.searchParams.get("timeZone"),
+          unit: url.searchParams.get("unit"),
+          identifierType: url.searchParams.get("identifierType")
+        });
+        status = 200;
+        json(response, status, { dataMode: "server", results }, requestId, corsHeaders);
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/import/contacts") {
+        requireCsrf(request, context);
+        const body = await readJson(request, config.bodyLimit);
+        rejectWorkspaceOverride(request, body);
+        const result = await repository.stageContactImport(context, body);
+        status = 202;
+        json(response, status, { dataMode: "server", data: result }, requestId, corsHeaders);
+        return;
+      }
+      const contactImport = routeMatch(url.pathname, /^\/api\/v1\/import\/contacts\/([^/]+)$/);
+      if (request.method === "GET" && contactImport) {
+        const result = await repository.getContactImport(context, decodeURIComponent(contactImport[1]));
+        status = 200;
+        json(response, status, { dataMode: "server", data: result }, requestId, corsHeaders);
         return;
       }
       if (request.method === "POST" && url.pathname === "/api/v1/opportunities") {
@@ -633,14 +664,22 @@ export function createCrmServer({ config, database, repository, relaticle, works
 
       throw problems.notFound();
     } catch (error) {
-      const problem = toProblem(error, request.url ?? "/", requestId);
+      const problem = toProblem(error, requestPath, requestId);
       status = problem.status;
       json(response, status, problem.body, requestId, { ...corsHeaders, ...problem.headers, "Content-Type": "application/problem+json; charset=utf-8" });
       if (!(error instanceof HttpProblem) || error.status >= 500) {
-        logger.error?.({ requestId, code: error.code ?? "UNHANDLED", status });
+        logger.error?.({
+          requestId,
+          code: error.code ?? "UNHANDLED",
+          status,
+          ...(error.routine ? { pgRoutine: error.routine } : {}),
+          ...(error.file ? { pgFile: error.file } : {}),
+          ...(error.line ? { pgLine: error.line } : {}),
+          ...(error.constraint_name ? { pgConstraint: error.constraint_name } : {})
+        });
       }
     } finally {
-      logger.info?.({ requestId, method: request.method, path: request.url, status, durationMs: Math.round(performance.now() - startedAt) });
+      logger.info?.({ requestId, method: request.method, path: requestPath, status, durationMs: Math.round(performance.now() - startedAt) });
     }
   }
 

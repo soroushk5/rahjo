@@ -7,6 +7,9 @@ const identitySql = await readFile(new URL("../migrations/002_w15_identity_lifec
 const publicIntakeSql = await readFile(new URL("../migrations/004_public_intake_routing.sql", import.meta.url), "utf8");
 const publicIntakeHardeningSql = await readFile(new URL("../migrations/005_public_intake_hardening.sql", import.meta.url), "utf8");
 const emailLoginSql = await readFile(new URL("../migrations/006_email_first_login.sql", import.meta.url), "utf8");
+const rawInputSql = await readFile(new URL("../migrations/007_w0_005_raw_intake_values.sql", import.meta.url), "utf8");
+const crmContractsSql = await readFile(new URL("../migrations/008_crm_contract_values.sql", import.meta.url), "utf8");
+const rawRetentionSql = await readFile(new URL("../migrations/009_raw_retention_cleanup.sql", import.meta.url), "utf8");
 const migrator = await readFile(new URL("../scripts/migrate.mjs", import.meta.url), "utf8");
 const database = await readFile(new URL("../src/database.js", import.meta.url), "utf8");
 const repository = await readFile(new URL("../src/repository.js", import.meta.url), "utf8");
@@ -84,4 +87,57 @@ test("email-first login resolves only one active workspace and remains fail-clos
   assert.match(emailLoginSql, /consume_account_recovery_code_by_email/);
   assert.match(emailLoginSql, /v_matches <> 1/);
   assert.match(emailLoginSql, /GRANT EXECUTE ON FUNCTION rahjo\.consume_account_recovery_code_by_email\(text,text,text,text\) TO rahjo_app/);
+});
+
+test("raw intake values are tenant-scoped, append-only to the runtime role, and worker-readable only", () => {
+  assert.match(rawInputSql, /CREATE TABLE IF NOT EXISTS rahjo\.intake_raw_values/);
+  assert.match(rawInputSql, /FOREIGN KEY \(workspace_id, intake_request_id\)/);
+  assert.match(rawInputSql, /ALTER TABLE rahjo\.intake_raw_values FORCE ROW LEVEL SECURITY/);
+  assert.match(rawInputSql, /FOR INSERT TO rahjo_app/);
+  assert.match(rawInputSql, /FOR SELECT TO rahjo_worker/);
+  assert.match(rawInputSql, /FOR DELETE TO rahjo_worker/);
+  assert.match(rawInputSql, /REVOKE ALL ON rahjo\.intake_raw_values FROM PUBLIC, rahjo_app, rahjo_worker/);
+  assert.match(rawInputSql, /GRANT INSERT ON rahjo\.intake_raw_values TO rahjo_app/);
+  assert.match(rawInputSql, /GRANT SELECT, DELETE ON rahjo\.intake_raw_values TO rahjo_worker/);
+  assert.doesNotMatch(rawInputSql, /GRANT SELECT[^;]*rahjo_app/);
+  assert.match(repository, /INSERT INTO rahjo\.intake_raw_values/);
+  assert.doesNotMatch(repository, /SELECT[^;]*FROM rahjo\.intake_raw_values/i);
+});
+
+test("typed CRM contract values and identifiers are tenant-scoped while raw values remain worker-only", () => {
+  assert.match(crmContractsSql, /CREATE TABLE IF NOT EXISTS rahjo\.crm_entity_contract_values/);
+  assert.match(crmContractsSql, /deadline_kind = 'date-only'.*deadline_date IS NOT NULL AND deadline_at IS NULL/s);
+  assert.match(crmContractsSql, /deadline_kind = 'instant'.*deadline_date IS NULL AND deadline_at IS NOT NULL/s);
+  assert.match(crmContractsSql, /money_amount_irr numeric,/);
+  assert.match(crmContractsSql, /money_amount_irr = trunc\(money_amount_irr\)/);
+  assert.match(crmContractsSql, /CREATE TABLE IF NOT EXISTS rahjo\.crm_entity_identifiers/);
+  assert.match(crmContractsSql, /UNIQUE \(workspace_id, entity_ref_id, identifier_type, normalized_value\)/);
+  assert.match(crmContractsSql, /CREATE UNIQUE INDEX IF NOT EXISTS crm_entity_identifiers_workspace_unique_idx[\s\S]*WHERE unique_scope = 'workspace'/);
+  assert.match(crmContractsSql, /CREATE TABLE IF NOT EXISTS rahjo\.crm_restricted_raw_values/);
+  assert.match(crmContractsSql, /duplicate_candidates_one_target[\s\S]*candidate_import_batch_id = source_import_batch_id/);
+  assert.match(crmContractsSql, /duplicate_candidates_source_import_row_fkey[\s\S]*FOREIGN KEY \(workspace_id, source_import_batch_id, import_row_id\)/);
+  assert.match(crmContractsSql, /duplicate_candidates_import_row_fkey[\s\S]*REFERENCES rahjo\.import_rows\(workspace_id, batch_id, id\)/);
+  assert.match(crmContractsSql, /ALTER TABLE rahjo\.crm_entity_contract_values FORCE ROW LEVEL SECURITY/);
+  assert.match(crmContractsSql, /ALTER TABLE rahjo\.crm_entity_identifiers FORCE ROW LEVEL SECURITY/);
+  assert.match(crmContractsSql, /ALTER TABLE rahjo\.crm_restricted_raw_values FORCE ROW LEVEL SECURITY/);
+  assert.match(crmContractsSql, /GRANT SELECT, INSERT, UPDATE ON rahjo\.crm_entity_contract_values,/);
+  assert.match(crmContractsSql, /GRANT INSERT ON rahjo\.crm_restricted_raw_values TO rahjo_app/);
+  assert.match(crmContractsSql, /GRANT SELECT, DELETE ON rahjo\.crm_restricted_raw_values TO rahjo_worker/);
+  assert.doesNotMatch(crmContractsSql, /GRANT SELECT[^;]*crm_restricted_raw_values TO rahjo_app/);
+});
+
+test("raw retention is exactly 30 days and cleanup is worker-only, tenant-scoped and expired-only", async () => {
+  for (const table of ["intake_raw_values", "crm_restricted_raw_values"]) {
+    assert.match(rawRetentionSql, new RegExp(`UPDATE rahjo\\.${table}[\\s\\S]*created_at \\+ interval '30 days'`));
+    assert.match(rawRetentionSql, new RegExp(`ALTER TABLE rahjo\\.${table}[\\s\\S]*retention_until SET NOT NULL`));
+    assert.match(rawRetentionSql, new RegExp(`${table}_exact_30_day_retention[\\s\\S]*retention_until = created_at \\+ interval '30 days'`));
+    assert.match(rawRetentionSql, new RegExp(`FROM rahjo\\.${table}[\\s\\S]*workspace_id = p_workspace_id[\\s\\S]*retention_until <= now\\(\\)`));
+  }
+  assert.match(rawRetentionSql, /SECURITY INVOKER/);
+  assert.match(rawRetentionSql, /current_user <> 'rahjo_worker'/);
+  assert.match(rawRetentionSql, /v_workspace_setting IS DISTINCT FROM p_workspace_id::text/);
+  assert.match(rawRetentionSql, /GRANT EXECUTE ON FUNCTION rahjo\.cleanup_expired_raw_values\(uuid, integer\) TO rahjo_worker/);
+  assert.doesNotMatch(rawRetentionSql, /GRANT EXECUTE ON FUNCTION rahjo\.cleanup_expired_raw_values\(uuid, integer\) TO rahjo_app/);
+  assert.equal((repository.match(/retention_until\)\s+VALUES \(\$1,\$2,\$3,\$4,now\(\),now\(\) \+ interval '30 days'\)/g) ?? []).length, 3);
+  assert.match(await readFile(new URL("../scripts/cleanup-expired-raw.mjs", import.meta.url), "utf8"), /SET LOCAL ROLE rahjo_worker/);
 });
