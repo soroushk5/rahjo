@@ -33,8 +33,8 @@ class DispatchError(ValueError):
 
 
 def extract_payload(body: str) -> dict[str, Any]:
-    if START not in body or END not in body:
-        raise DispatchError("dispatcher markers are missing")
+    if body.count(START) != 1 or body.count(END) != 1 or body.index(START) > body.index(END):
+        raise DispatchError("exactly one ordered dispatcher payload is required")
     chunk = body.split(START, 1)[1].split(END, 1)[0].strip()
     if chunk.startswith("```json"):
         chunk = chunk[len("```json"):]
@@ -66,6 +66,13 @@ def require_list(payload: dict[str, Any], key: str) -> list[Any]:
 
 
 def validate_payload(payload: dict[str, Any], current_repo: str) -> dict[str, Any]:
+    supported = {
+        "schema_version", "dispatch_id", "canonical_id", "target_repo", "base_branch",
+        "autonomy_level", "risk_class", "objective", "acceptance", "allowed_paths",
+        "non_goals", "forbidden", "safety", "source_links",
+    }
+    if set(payload) - supported:
+        raise DispatchError("unsupported dispatcher fields")
     if payload.get("schema_version") != 1:
         raise DispatchError("schema_version must equal 1")
 
@@ -78,8 +85,12 @@ def validate_payload(payload: dict[str, Any], current_repo: str) -> dict[str, An
         raise DispatchError("target_repo must match the repository running the dispatcher")
 
     canonical_id = require_string(payload, "canonical_id")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{1,79}", canonical_id):
+        raise DispatchError("canonical_id is invalid")
     objective = require_string(payload, "objective")
     base_branch = require_string(payload, "base_branch")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,119}", base_branch) or ".." in base_branch or base_branch.endswith("/"):
+        raise DispatchError("base_branch is invalid")
     autonomy_level = require_string(payload, "autonomy_level")
     if autonomy_level not in ALLOWED_AUTONOMY:
         raise DispatchError(f"autonomy_level must be one of {sorted(ALLOWED_AUTONOMY)}")
@@ -118,6 +129,10 @@ def validate_payload(payload: dict[str, Any], current_repo: str) -> dict[str, An
     allowed_paths = payload.get("allowed_paths", [])
     if not isinstance(allowed_paths, list) or not allowed_paths or not all(isinstance(x, str) and x.strip() for x in allowed_paths):
         raise DispatchError("allowed_paths must contain at least one bounded glob")
+    for pattern in allowed_paths:
+        if (len(pattern) > 240 or pattern.startswith(("/", "\\")) or "\\" in pattern
+                or ":" in pattern or any(part in {"", ".", ".."} for part in pattern.split("/"))):
+            raise DispatchError("allowed_paths contains an unsafe pattern")
 
     non_goals = payload.get("non_goals", [])
     if not isinstance(non_goals, list) or not all(isinstance(x, str) for x in non_goals):
@@ -202,7 +217,9 @@ def validate_changed_files(payload: dict[str, Any], changed_files: list[str]) ->
         raise DispatchError("agent produced no changed files")
     denied_prefixes = (".git/",)
     for path in changed_files:
-        if path.startswith(denied_prefixes):
+        if (path.startswith(denied_prefixes) or path.startswith(("/", "\\"))
+                or "\\" in path or ":" in path
+                or any(part in {"", ".", ".."} for part in path.split("/"))):
             raise DispatchError(f"changed path is always forbidden: {path}")
         if not any(fnmatch.fnmatch(path, pattern) for pattern in allowed):
             raise DispatchError(f"changed path is outside allowed_paths: {path}")
@@ -222,6 +239,10 @@ def cmd_validate_changed_files(args: argparse.Namespace) -> int:
 def cmd_preflight(args: argparse.Namespace) -> int:
     event = json.loads(Path(args.event).read_text(encoding="utf-8"))
     issue = event.get("issue") or {}
+    owner = args.repo.split("/", 1)[0]
+    if (not isinstance(issue, dict) or (issue.get("user") or {}).get("login") != owner
+            or (event.get("sender") or {}).get("login") != owner):
+        raise DispatchError("dispatcher issue and event actor must be the repository owner")
     title = str(issue.get("title") or "")
     if not title.startswith(TITLE_PREFIX):
         print(json.dumps({"status": "NOOP", "reason": "not a dispatcher issue"}))
