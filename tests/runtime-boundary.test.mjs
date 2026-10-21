@@ -94,7 +94,7 @@ test("a cold Hostinger browser performs one safe API bootstrap hop without loopi
   let replacedWith = "";
   const browserWindow = {
     location: {
-      href: "https://crm.example.test/login?returnTo=%2Fdashboard",
+      href: "https://crm.example.test/dashboard?returnTo=%2Fdashboard",
       replace(value) { replacedWith = value; }
     }
   };
@@ -110,6 +110,10 @@ test("a cold Hostinger browser performs one safe API bootstrap hop without loopi
 
   browserWindow.location.href = returnUrl.toString();
   replacedWith = "";
+  assert.equal(maybeStartBrowserBootstrap(config, { state: "unavailable", reason: "request-failed" }, browserWindow), false);
+  assert.equal(replacedWith, "");
+
+  browserWindow.location.href = "https://crm.example.test/login";
   assert.equal(maybeStartBrowserBootstrap(config, { state: "unavailable", reason: "request-failed" }, browserWindow), false);
   assert.equal(replacedWith, "");
 
