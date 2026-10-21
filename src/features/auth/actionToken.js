@@ -4,6 +4,7 @@
  * a manual paste fallback avoids making the account impossible to activate.
  * This never sends the token through a query string or stores it locally.
  */
+/** @param {unknown} value @param {string} [expectedMode] @returns {string} */
 export function parseOneTimeToken(value, expectedMode = "") {
   const raw = typeof value === "string" ? value.trim() : "";
   if (!raw || raw.length > 2048) return "";
