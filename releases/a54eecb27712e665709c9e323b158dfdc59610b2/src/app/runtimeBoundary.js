@@ -5,6 +5,8 @@ import { mountPrototypeChrome } from "./prototypeChrome.js";
 import { mountServerOperationalRoute, renderServerOperationalRoute } from "../features/operations/serverOperationalPages.js";
 
 const PUBLIC_SERVER_PATHS = new Set(["/", "/product", "/services", "/use-cases", "/how-it-works", "/pilot", "/trust", "/about", "/contact", "/privacy", "/terms", "/track-request", "/accept-invite", "/recover-account", "/account"]);
+// /login must remain server-authenticated, but an API outage must never navigate it away to a 503 page.
+const NO_AUTOMATIC_BOOTSTRAP_PATHS = new Set([...PUBLIC_SERVER_PATHS, "/login"]);
 
 /** @param {{render:() => string}} route */
 function renderServerPublicRoute(route) {
@@ -108,7 +110,7 @@ export function maybeStartBrowserBootstrap(config, snapshot, browserWindow = glo
 
   const current = new URL(browserWindow.location.href);
   const apiOrigin = new URL(config.apiBase).origin;
-  if (PUBLIC_SERVER_PATHS.has(current.pathname)
+  if (NO_AUTOMATIC_BOOTSTRAP_PATHS.has(current.pathname)
     || current.origin === apiOrigin
     || current.searchParams.has(API_BOOTSTRAP_MARKER)) return false;
 
