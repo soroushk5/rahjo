@@ -2,6 +2,7 @@
 import { readRuntimeConfig } from "../../config/runtimeConfig.js";
 import { escapeHtml } from "../../lib/html.js";
 import { runtimeData } from "../../services/runtimeDataFacade.js";
+import { parseOneTimeToken } from "./actionToken.js";
 
 function shell(title, lead, body) {
   return `<div class="phase-site server-auth-page">
@@ -29,6 +30,7 @@ export function renderAcceptInvitePage() {
   return shell("فعال‌کردن حساب CRM", "دعوت را روی هر دستگاهی باز کنید و برای حساب خود گذرواژه تعیین کنید.", `
     <header><small>دعوت فضای کاری</small><h2>ساخت حساب</h2><p>لینک دعوت یک‌بارمصرف و زمان‌دار است.</p></header>
     <form id="crm-invite-accept" class="auth-form server-login-form" novalidate>
+      <label>لینک دعوت یا کد فعال‌سازی (اگر لینک به‌درستی باز نشد)<input name="inviteLink" autocomplete="off" spellcheck="false" /></label>
       ${passwordFields()}
       ${feedback("invite-feedback")}
       <button class="button button--primary button--large" type="submit">فعال‌کردن حساب</button>
@@ -43,6 +45,7 @@ export function renderRecoverAccountPage() {
       <div data-recovery-identity>
         <label>ایمیل<input name="email" type="email" autocomplete="username" required /></label>
         <label>کد بازیابی<input name="recoveryCode" autocomplete="one-time-code" /></label>
+        <label>لینک بازنشانی رمز (در صورت حذف‌شدن بخش # از آدرس)<input name="resetLink" autocomplete="off" spellcheck="false" /></label>
       </div>
       ${passwordFields("new-")}
       ${feedback("recovery-feedback")}
@@ -130,17 +133,17 @@ function setText(id, message, tone = "") {
 export function mountAcceptInvitePage() {
   const form = document.querySelector("#crm-invite-accept");
   if (!(form instanceof HTMLFormElement)) return;
-  const { token } = tokenFromFragment();
-  if (!token) {
-    setText("invite-feedback", "لینک دعوت معتبر نیست یا توکن آن حذف شده است.", "error");
-    form.querySelector("button")?.setAttribute("disabled", "");
-    return;
+  const { token: fragmentToken } = tokenFromFragment();
+  if (!fragmentToken) {
+    setText("invite-feedback", "اگر لینک در مرورگر ناقص باز شد، لینک کامل دعوت را در کادر بالا جای‌گذاری کنید.");
   }
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const button = form.querySelector("button[type=submit]");
     try {
       const password = validatePair(form, "password", "confirm");
+      const token = parseOneTimeToken(fragmentToken) || parseOneTimeToken(String(new FormData(form).get("inviteLink") || ""));
+      if (!token) throw new Error("لینک یا کد دعوت معتبر لازم است.");
       if (button) button.disabled = true;
       setText("invite-feedback", "در حال فعال‌سازی حساب…");
       const config = lifecycleConfig();
@@ -171,8 +174,10 @@ export function mountRecoverAccountPage() {
       if (button) button.disabled = true;
       setText("recovery-feedback", "در حال بازیابی امن حساب…");
       const config = lifecycleConfig();
-      if (token && mode === "reset") {
-        await publicApi(config, "/api/v1/account/reset", { method: "POST", body: JSON.stringify({ token, password }) });
+      const resetToken = mode === "reset" ? parseOneTimeToken(token, "reset") : "";
+      const pastedToken = parseOneTimeToken(String(fields.get("resetLink") || ""), "reset");
+      if (resetToken || pastedToken) {
+        await publicApi(config, "/api/v1/account/reset", { method: "POST", body: JSON.stringify({ token: resetToken || pastedToken, password }) });
       } else {
         await publicApi(config, "/api/v1/account/recovery", {
           method: "POST",
